@@ -1,0 +1,90 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $PreferencesView: Box {
+    Adw.ToolbarView {
+        [top]
+        Adw.HeaderBar {
+            title-widget: Adw.WindowTitle {
+                title: "Ignis Preferences";
+            };
+        }
+
+        Adw.PreferencesPage {
+            Adw.PreferencesGroup {
+                title: "Notifications";
+                description: "Options for the NotificationService";
+
+                Adw.SwitchRow dnd {
+                    title: "Do Not Disturb";
+                    subtitle: "Disable notification popups";
+                }
+
+                Adw.SpinRow popup_timeout {
+                    title: "Popup Timeout";
+                    subtitle: "The timeout before a popup dismissed automatically, in milliseconds";
+
+                    adjustment: Adjustment {
+                        lower: 0;
+                        upper: 60000;
+                        page-increment: 5000;
+                        step-increment: 1000;
+                    };
+                }
+
+                Adw.SpinRow max_popups {
+                    title: "Max Popups Count";
+                    subtitle: "The maximum number of popups";
+
+                    adjustment: Adjustment {
+                        lower: 0;
+                        upper: 10;
+                        page-increment: 5;
+                        step-increment: 1;
+                    };
+                }
+            }
+
+            Adw.PreferencesGroup {
+                title: "Recorder";
+                description: "Options for the RecorderService";
+
+                Adw.SpinRow bitrate {
+                    title: "Bitrate";
+                    subtitle: "The bitrate of the recording";
+
+                    adjustment: Adjustment {
+                        lower: 0;
+                        upper: 100000;
+                        page-increment: 5000;
+                        step-increment: 1000;
+                    };
+                }
+
+                Adw.EntryRow recorder_filename {
+                    title: "Default Filename";
+                }
+            }
+
+            Adw.PreferencesGroup {
+                title: "Wallpaper";
+                description: "Options for the WallpaperService";
+
+                Adw.ActionRow wallpaper_path {
+                    title: "Wallpaper path";
+
+                    styles [
+                        "property",
+                    ]
+
+                    [suffix]
+                    Button {
+                        icon-name: "document-open-symbolic";
+                        tooltip-text: "Open File";
+                        clicked => $on_wallpaper_select_clicked();
+                    }
+                }
+            }
+        }
+    }
+}

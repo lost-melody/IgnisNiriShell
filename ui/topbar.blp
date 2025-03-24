@@ -1,0 +1,57 @@
+using Gtk 4.0;
+
+template $TopbarView: CenterBox {
+    [start]
+    Box {
+        styles [
+            "bar-bg",
+            "rounded-tr",
+            "rounded-br",
+        ]
+
+        Button {
+            icon-name: "view-grid-symbolic";
+            clicked => $on_activities_clicked();
+
+            styles [
+                "rounded-tr",
+                "rounded-br",
+                "hover",
+                "px-2",
+                "transparent",
+                "unset",
+            ]
+        }
+
+        $NiriWorkspaces {}
+    }
+
+    [center]
+    Box {
+        styles [
+            "bar-bg",
+            "rounded",
+        ]
+
+        $NiriActiveWindow {}
+    }
+
+    [end]
+    Box {
+        styles [
+            "bar-bg",
+            "rounded-tl",
+            "rounded-bl",
+        ]
+
+        $IgnisTray {}
+
+        $IgnisAudio {}
+
+        $IgnisNetwork {}
+
+        $IgnisClock {}
+
+        $IgnisBatteries {}
+    }
+}

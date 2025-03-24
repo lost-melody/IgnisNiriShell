@@ -1,0 +1,34 @@
+using Gtk 4.0;
+
+template $IgnisAppLauncherGridItem: Box {
+    hexpand: true;
+
+    styles [
+        "mx-2",
+    ]
+
+    Image icon {
+        pixel-size: 32;
+
+        styles [
+            "icon-dropshadow",
+            "p-1",
+        ]
+    }
+
+    Label label {
+        hexpand: true;
+        halign: start;
+        ellipsize: end;
+
+        styles [
+            "p-1",
+        ]
+    }
+
+    PopoverMenu menu {
+        styles [
+            "menu",
+        ]
+    }
+}

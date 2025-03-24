@@ -1,0 +1,20 @@
+using Gtk 4.0;
+
+template $NotificationPopupsView: Box {
+    $IgnisRevealer revealer {
+        transition-type: slide-down;
+        hexpand: true;
+
+        ListBox list_box {
+            width-request: 384;
+            activate-on-single-click: true;
+            selection-mode: none;
+            hexpand: true;
+
+            styles [
+                "boxed-list-separate",
+                "m-2",
+            ]
+        }
+    }
+}

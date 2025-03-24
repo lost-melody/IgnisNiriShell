@@ -1,0 +1,81 @@
+using Gtk 4.0;
+using Adw 1;
+using Gio 2.0;
+
+template $IgnisAppLauncherView: Box {
+    orientation: vertical;
+    width-request: 960;
+    height-request: 768;
+    halign: center;
+    valign: center;
+    focusable: true;
+
+    $IgnisRevealer revealer {
+        hexpand: true;
+        vexpand: true;
+        transition-type: crossfade;
+
+        Box {
+            Adw.ToolbarView {
+                top-bar-style: raised;
+
+                styles [
+                    "m-2",
+                    "rounded",
+                    "shadow",
+                ]
+
+                [top]
+                SearchBar search_bar {
+                    styles [
+                        "applauncher-searchbar",
+                        "view",
+                    ]
+
+                    SearchEntry search_entry {
+                        width-request: 512;
+                        activate => $on_search_activate();
+                        search-changed => $on_search_changed();
+                        next-match => $on_search_next();
+                        previous-match => $on_search_previous();
+                        stop-search => $on_search_stop();
+                    }
+                }
+
+                Adw.Clamp {
+                    maximum-size: 768;
+                    tightening-threshold: 768;
+
+                    styles [
+                        "background",
+                    ]
+
+                    ScrolledWindow {
+                        hexpand: true;
+                        vexpand: true;
+
+                        ListView app_grid {
+                            styles [
+                                "frame",
+                                "view",
+                            ]
+
+                            model: SingleSelection selection {
+                                model: Gio.ListStore list_store {};
+                            };
+
+                            factory: BuilderListItemFactory {
+                                template ListItem {
+                                    child: $IgnisAppLauncherGridItem {
+                                        item: bind template;
+                                        application: bind template.item;
+                                    };
+                                }
+                            };
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

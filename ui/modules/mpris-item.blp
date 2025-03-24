@@ -1,0 +1,49 @@
+using Gtk 4.0;
+
+template $MprisItem: Box {
+    styles [
+        "px-1",
+    ]
+
+    Button previous {
+        icon-name: "media-skip-backward-symbolic";
+        clicked => $on_previous_clicked();
+
+        styles [
+            "hover",
+            "px-1",
+            "unset",
+        ]
+    }
+
+    Button pause {
+        icon-name: "media-playback-start-symbolic";
+        clicked => $on_pause_clicked();
+
+        styles [
+            "hover",
+            "px-1",
+            "unset",
+        ]
+    }
+
+    Button next {
+        icon-name: "media-skip-forward-symbolic";
+        clicked => $on_next_clicked();
+
+        styles [
+            "hover",
+            "px-1",
+            "unset",
+        ]
+    }
+
+    Label title {
+        label: "title";
+
+        styles [
+            "hover",
+            "px-1",
+        ]
+    }
+}

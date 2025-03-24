@@ -1,0 +1,33 @@
+using Gtk 4.0;
+
+template $AudioControlStream: ListBoxRow {
+    selectable: false;
+
+    styles [
+        "rounded",
+        "transition",
+    ]
+
+    Box {
+        Image icon {
+            icon-name: "audio-speakers-symbolic";
+
+            styles [
+                "hover-bg-5",
+                "p-2",
+                "rounded",
+                "transition",
+            ]
+        }
+
+        Inscription inscription {
+            hexpand: true;
+            valign: center;
+            text-overflow: ellipsize_end;
+
+            styles [
+                "caption",
+            ]
+        }
+    }
+}

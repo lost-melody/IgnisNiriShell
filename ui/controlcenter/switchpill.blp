@@ -1,0 +1,50 @@
+using Gtk 4.0;
+
+template $ControlSwitchPill: Box {
+    styles [
+        "card",
+        "m-2",
+        "rounded",
+    ]
+
+    Box pill {
+        styles [
+            "hover-bg-5",
+            "p-1",
+            "rounded",
+            "transition",
+        ]
+
+        Image icon {
+            icon-name: "controls-symbolic";
+
+            styles [
+                "p-2",
+            ]
+        }
+
+        Box {
+            orientation: vertical;
+            hexpand: true;
+
+            Label title {
+                label: "Title";
+                halign: start;
+
+                styles [
+                    "caption-heading",
+                ]
+            }
+
+            Label subtitle {
+                label: "subtitle";
+                halign: start;
+
+                styles [
+                    "caption",
+                    "dimmed",
+                ]
+            }
+        }
+    }
+}

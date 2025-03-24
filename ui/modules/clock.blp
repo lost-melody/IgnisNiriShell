@@ -1,0 +1,15 @@
+using Gtk 4.0;
+
+template $IgnisClock: Box {
+    styles [
+        "hover",
+        "px-1",
+        "rounded",
+    ]
+
+    Label label {}
+
+    Popover popover {
+        Calendar calendar {}
+    }
+}

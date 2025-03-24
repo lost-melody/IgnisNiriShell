@@ -1,0 +1,31 @@
+using Gtk 4.0;
+
+template $NiriActiveWindow: CenterBox {
+    width-request: 192;
+    tooltip-text: "Click:\tcenter column\nRClick:\tswitch column width\nScroll:\tfocus prev/next column";
+
+    styles [
+        "hover",
+        "px-1",
+        "rounded",
+    ]
+
+    [center]
+    Box box {
+        Image icon {
+            pixel-size: 16;
+
+            styles [
+                "px-1",
+            ]
+        }
+
+        Label label {
+            label: "niri";
+
+            styles [
+                "px-1",
+            ]
+        }
+    }
+}

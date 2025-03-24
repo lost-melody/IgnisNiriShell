@@ -1,0 +1,31 @@
+using Gtk 4.0;
+
+template $BottomBarView: CenterBox {
+    [start]
+    Box {
+        styles [
+            "bar-bg",
+            "rounded-tr",
+            "rounded-br",
+        ]
+
+        $Mpris {}
+    }
+
+    [center]
+    Box {
+        styles [
+            "bar-bg",
+            "rounded",
+        ]
+    }
+
+    [end]
+    Box {
+        styles [
+            "bar-bg",
+            "rounded-tl",
+            "rounded-bl",
+        ]
+    }
+}

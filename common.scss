@@ -1,0 +1,109 @@
+@use "sass:list";
+
+.unset {
+  all: unset;
+}
+
+@function break_point($i) {
+  @if $i > 32 {
+    @return mod($i, 8) == 0;
+  } @else if $i > 16 {
+    @return mod($i, 4) == 0;
+  } @else if $i > 8 {
+    @return mod($i, 2) == 0;
+  } @else {
+    @return true;
+  }
+}
+
+@for $i from 0 through 64 {
+  @if break_point($i) {
+    :root {
+      --length-#{$i}: #{0.25rem * $i};
+    }
+    $len: var(--length-#{$i});
+    .px-#{$i} {
+      padding-left: $len;
+      padding-right: $len;
+    }
+    .py-#{$i} {
+      padding-top: $len;
+      padding-bottom: $len;
+    }
+    .p-#{$i} {
+      padding: $len;
+    }
+    .mx-#{$i} {
+      margin-left: $len;
+      margin-right: $len;
+    }
+    .my-#{$i} {
+      margin-top: $len;
+      margin-bottom: $len;
+    }
+    .m-#{$i} {
+      margin: $len;
+    }
+    .w-#{$i} {
+      min-width: $len;
+    }
+    .h-#{$i} {
+      min-height: $len;
+    }
+  }
+}
+
+$corners: tl, tr, br, bl;
+$corner_names: top-left, top-right, bottom-right, bottom-left;
+
+@for $i from 1 through 4 {
+  $corner: list.nth($corners, $i);
+  $corner_name: list.nth($corner_names, $i);
+  .rounded-#{$corner} {
+    border-#{$corner_name}-radius: var(--window-radius);
+  }
+}
+
+@for $i from 0 through 100/5 {
+  $alpha: 5 * $i;
+  .bg-#{$alpha} {
+    background-color: rgb(0 0 0 / #{calc(1% * $alpha)});
+  }
+  .hover-bg-#{$alpha}:hover {
+    background-color: #{alpha }(currentColor, #{calc(0.01 * $alpha)});
+  }
+}
+
+@for $i from 0 through 360/15 {
+  $deg: 15 * $i;
+  .rotate-#{$deg} {
+    transform: rotate(1deg * $deg);
+  }
+  .rotate-icon-#{$deg} {
+    -gtk-icon-transform: rotate(1deg * $deg);
+  }
+}
+
+.transparent {
+  background-color: transparent;
+}
+
+.backdrop {
+  @extend .bg-20;
+}
+
+.hover:hover {
+  @extend .hover-bg-20;
+}
+
+.transition {
+  transition: all 0.2s ease;
+}
+
+.shadow {
+  box-shadow: 0 0 var(--length-2) var(--length-1) var(--popover-shade-color);
+}
+
+.rounded {
+  border-radius: var(--window-radius);
+}

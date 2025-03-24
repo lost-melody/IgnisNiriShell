@@ -1,0 +1,78 @@
+using Gtk 4.0;
+
+template $NotificationCenter: Box {
+    orientation: vertical;
+    hexpand: true;
+
+    CenterBox {
+        styles [
+            "mx-2",
+        ]
+
+        [start]
+        Label {
+            label: "Notifications";
+        }
+
+        [end]
+        Button clear_all {
+            label: "Clear";
+            clicked => $on_clear_all_clicked();
+
+            styles [
+                "rounded",
+            ]
+        }
+    }
+
+    Stack stack {
+        vhomogeneous: false;
+        transition-type: crossfade;
+
+        StackPage {
+            name: "no-notifications";
+
+            child: Box {
+                Label {
+                    hexpand: true;
+                    valign: start;
+                    label: "No notifications";
+
+                    styles [
+                        "dim-label",
+                        "frame",
+                        "m-2",
+                        "p-4",
+                        "rounded",
+                    ]
+                }
+            };
+        }
+
+        StackPage {
+            name: "notifications";
+
+            child: Box {
+                ScrolledWindow {
+                    hexpand: true;
+                    vexpand: true;
+
+                    styles [
+                        "transparent",
+                    ]
+
+                    ListBox list_box {
+                        selection-mode: none;
+                        hexpand: true;
+
+                        styles [
+                            "boxed-list-separate",
+                            "m-2",
+                            "transparent",
+                        ]
+                    }
+                }
+            };
+        }
+    }
+}

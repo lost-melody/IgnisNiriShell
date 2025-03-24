@@ -1,0 +1,94 @@
+using Gtk 4.0;
+
+template $ControlCenterView: Box {
+    $IgnisRevealer revealer {
+        transition-type: slide-left;
+        hexpand: true;
+        vexpand: true;
+
+        Box {
+            width-request: 384;
+            orientation: vertical;
+
+            styles [
+                "background",
+                "m-2",
+                "rounded",
+                "shadow",
+            ]
+
+            Grid {
+                column-homogeneous: true;
+
+                styles [
+                    "m-2",
+                ]
+
+                CenterBox {
+                    layout {
+                        row: 1;
+                        column: 1;
+                        column-span: 2;
+                    }
+
+                    styles [
+                        "mx-2",
+                    ]
+
+                    [start]
+                    Label {
+                        label: "Control Center";
+                    }
+
+                    [end]
+                    Button preferences_button {
+                        icon-name: "preferences-desktop-symbolic";
+                        clicked => $on_preferences_button_clicked();
+
+                        styles [
+                            "rounded",
+                        ]
+                    }
+                }
+
+                $AudioControlGroupSpeaker {
+                    layout {
+                        row: 2;
+                        column: 1;
+                        column-span: 2;
+                    }
+                }
+
+                $AudioControlGroupMicrophone {
+                    layout {
+                        row: 3;
+                        column: 1;
+                        column-span: 2;
+                    }
+                }
+
+                $ColorSchemeSwitcher {
+                    layout {
+                        row: 4;
+                        column: 1;
+                    }
+                }
+
+                $IgnisRecorder {
+                    layout {
+                        row: 4;
+                        column: 2;
+                    }
+                }
+
+                $NotificationCenter {
+                    layout {
+                        row: 10;
+                        column: 1;
+                        column-span: 2;
+                    }
+                }
+            }
+        }
+    }
+}

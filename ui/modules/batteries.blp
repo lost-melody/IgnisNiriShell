@@ -1,0 +1,93 @@
+using Gtk 4.0;
+
+template $IgnisBatteries: Box {
+    styles [
+        "hover",
+        "px-1",
+        "rounded-tl",
+        "rounded-bl",
+    ]
+
+    Stack stack {
+        hhomogeneous: false;
+
+        StackPage {
+            name: "no-batteries";
+
+            child: Image {
+                icon-name: "system-shutdown-symbolic";
+
+                styles [
+                    "px-1",
+                ]
+            };
+        }
+
+        StackPage {
+            name: "batteries";
+
+            child: Box box {};
+        }
+    }
+
+    PopoverMenu popover {
+        menu-model: power_menu;
+    }
+}
+
+menu power_menu {
+    section {
+        item {
+            label: "Lock";
+            action: "power.lock";
+        }
+    }
+
+    section {
+        item {
+            label: "Suspend";
+            action: "power.suspend";
+        }
+
+        submenu {
+            label: "Shutdown";
+
+            item {
+                label: "Cancel";
+            }
+
+            item {
+                label: "Confirm";
+                action: "power.shutdown";
+            }
+        }
+
+        submenu {
+            label: "Reboot";
+
+            item {
+                label: "Cancel";
+            }
+
+            item {
+                label: "Confirm";
+                action: "power.reboot";
+            }
+        }
+    }
+
+    section {
+        submenu {
+            label: "Logout";
+
+            item {
+                label: "Cancel";
+            }
+
+            item {
+                label: "Confirm";
+                action: "power.logout";
+            }
+        }
+    }
+}

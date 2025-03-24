@@ -1,0 +1,26 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $NotificationItem: ListBoxRow {
+    Box {
+        orientation: vertical;
+
+        Adw.ActionRow action_row {
+            [prefix]
+            $IgnisIcon icon {
+                icon-name: "info-symbolic";
+                icon-size: large;
+            }
+        }
+
+        Box actions {
+            homogeneous: true;
+            hexpand: true;
+
+            styles [
+                "linked",
+                "m-2",
+            ]
+        }
+    }
+}

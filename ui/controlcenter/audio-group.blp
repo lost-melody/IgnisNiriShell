@@ -1,0 +1,70 @@
+using Gtk 4.0;
+
+template $AudioControlGroup: Box {
+    orientation: vertical;
+
+    styles [
+        "card",
+        "m-2",
+        "rounded",
+    ]
+
+    Box caption {
+        styles [
+            "hover-bg-5",
+            "p-1",
+            "rounded",
+            "transition",
+        ]
+
+        Image icon {
+            icon-name: "audio-speakers-symbolic";
+
+            styles [
+                "hover-bg-5",
+                "p-2",
+                "rounded",
+                "transition",
+            ]
+        }
+
+        Scale scale {
+            hexpand: true;
+            value-changed => $on_scale_value_changed();
+
+            styles [
+                "mx-2",
+            ]
+        }
+
+        Label label {
+            label: "0";
+            width-chars: 3;
+
+            styles [
+                "p-1",
+            ]
+        }
+
+        Image arrow {
+            icon-name: "pan-end-symbolic";
+
+            styles [
+                "hover-bg-5",
+                "p-2",
+                "rounded",
+                "transition",
+            ]
+        }
+    }
+
+    Revealer revealer {
+        ListBox list_box {
+            selection-mode: none;
+
+            styles [
+                "transparent",
+            ]
+        }
+    }
+}

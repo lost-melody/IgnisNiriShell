@@ -1,0 +1,29 @@
+import os
+import modules.adw as _
+from ignis.app import IgnisApp
+from ignis.services.wallpaper import WallpaperService
+from ignis.utils.monitor import get_n_monitors
+from modules.applauncher import AppLauncher
+from modules.backdrop import OverlayBackdrop
+from modules.controlcenter import ControlCenter, NotificationPopups
+from modules.preferences import Preferences
+from modules.topbar import Topbar
+from modules.bottombar import BottomBar
+
+
+app = IgnisApp.get_default()
+WallpaperService.get_default()
+
+if app._config_path is not None:
+    config_dir = os.path.dirname(app._config_path)
+    app.apply_css(os.path.join(config_dir, "style.scss"))
+
+AppLauncher()
+ControlCenter()
+NotificationPopups()
+Preferences()
+
+for idx in range(get_n_monitors()):
+    Topbar(idx)
+    BottomBar(idx)
+    OverlayBackdrop(idx)
