@@ -4,6 +4,7 @@ from gi.repository import Gio, GObject, Gtk
 from ignis.app import IgnisApp
 from ignis.widgets import Widget
 from ignis.services.audio import AudioService, Stream
+from ignis.services.hyprland import HyprlandService
 from ignis.services.mpris import MprisPlayer, MprisService
 from ignis.services.network import Ethernet, NetworkService, Wifi
 from ignis.services.niri import NiriService
@@ -384,7 +385,7 @@ class Batteries(Gtk.Box):
         self.__add_action("suspend", lambda: run_cmd_async("systemctl suspend"))
         self.__add_action("shutdown", lambda: run_cmd_async("systemctl poweroff"))
         self.__add_action("reboot", lambda: run_cmd_async("systemctl reboot"))
-        self.__add_action("logout", lambda: niri_action("Quit", {"skip_confirmation": True}))
+        self.__add_action("logout", self.__logout_session)
 
         set_on_click(
             self,
@@ -395,6 +396,15 @@ class Batteries(Gtk.Box):
         self.__service.connect("battery_added", self.__on_battery_added)
         self.__service.connect("notify::batteries", self.__on_change)
         self.__on_change()
+
+    def __logout_session(self):
+        niri = NiriService.get_default()
+        if niri.is_available:
+            niri_action("Quit", {"skip_confirmation": True})
+
+        hypr = HyprlandService.get_default()
+        if hypr.is_available:
+            run_cmd_async("hyprctl dispatch exit")
 
     def __add_action(self, name: str, callback: Callable):
         def do_action(*_):
