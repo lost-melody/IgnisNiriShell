@@ -4,6 +4,7 @@ from gi.repository import Adw, Gio, GLib, Gtk
 from ignis.app import IgnisApp
 from ignis.widgets import Widget
 from ignis.services.audio import AudioService, Stream
+from ignis.services.network import Ethernet, EthernetDevice, NetworkService
 from ignis.services.notifications import Notification, NotificationAction, NotificationService
 from ignis.services.recorder import RecorderService
 from ignis.options import options, Options
@@ -372,6 +373,38 @@ class DndSwitch(Gtk.Box):
     def __on_clicked(self, *_):
         if self.__group:
             self.__group.dnd = not self.__group.dnd
+
+
+class EthernetStatus(Gtk.Box):
+    __gtype_name__ = "EthernetStatus"
+
+    def __init__(self):
+        self.__service = NetworkService.get_default()
+        self.__ethernet: Ethernet = self.__service.get_ethernet()
+        super().__init__()
+
+        self.__pill = ControlSwitchPill()
+        self.append(self.__pill)
+        self.__pill.set_title("Ethernet")
+
+        self.__ethernet.connect("notify::icon-name", self.__on_status_changed)
+        self.__ethernet.connect("notify::devices", self.__on_status_changed)
+        self.__on_status_changed()
+
+    def __on_status_changed(self, *_):
+        self.__pill.icon.set_from_icon_name(self.__ethernet.get_icon_name())
+        if not self.__ethernet.get_is_connected():
+            self.__pill.set_subtitle("disconnected")
+            return
+
+        devices: list[EthernetDevice] = self.__ethernet.get_devices()
+        match len(devices):
+            case 0:
+                self.__pill.set_subtitle("no device")
+            case 1:
+                self.__pill.set_subtitle(devices[0].get_name() or "")
+            case _:
+                self.__pill.set_subtitle(f"{len(devices)} devices")
 
 
 @gtk_template("controlcenter/notification-item")
