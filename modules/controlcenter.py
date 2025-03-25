@@ -549,7 +549,7 @@ class NotificationPopups(Widget.RevealerWindow):
             namespace=WindowName.notification_popups.value,
             anchor=["top", "right"],
             visible=False,
-            margin_top=48,
+            margin_top=8,
             margin_right=8,
             css_classes=["notification-popups"],
             revealer=Widget.Revealer(),
