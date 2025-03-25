@@ -7,6 +7,7 @@ from ignis.services.audio import AudioService, Stream
 from ignis.services.notifications import Notification, NotificationAction, NotificationService
 from ignis.services.recorder import RecorderService
 from ignis.utils.thread import run_in_thread
+from ignis.utils.timeout import Timeout
 from .backdrop import overlay_window
 from .constants import AudioStreamType, WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
@@ -274,6 +275,7 @@ class ColorSchemeSwitcher(Gtk.Box):
 
         current_index = self.__color_scheme_range.index(self.__color_scheme)
         value = self.__color_scheme_range[(current_index + delta) % len(self.__color_scheme_range)]
+        niri_action("DoScreenTransition")
         self.__desktop_settings.set_string("color-scheme", value)
 
 
@@ -331,11 +333,13 @@ class IgnisRecorder(Gtk.Box):
 class NotificationItem(Gtk.ListBoxRow):
     __gtype_name__ = "NotificationItem"
 
+    revealer: Gtk.Revealer = gtk_template_child()
     action_row: Adw.ActionRow = gtk_template_child()
     icon: Widget.Icon = gtk_template_child()
     actions: Gtk.Box = gtk_template_child()
 
     def __init__(self, notify: Notification, is_popup: bool):
+        self.notify_id = notify.id
         self._notification = notify
         self._is_popup = is_popup
         super().__init__()
@@ -358,13 +362,30 @@ class NotificationItem(Gtk.ListBoxRow):
             button.connect("clicked", self.__on_action(action))
             self.actions.append(button)
 
+        self.revealer.connect("notify::child-revealed", self.__on_child_revealed)
+        self.connect("realize", self.__on_realized)
         set_on_click(self.action_row, left=self.__on_clicked, right=self.__on_right_clicked)
 
+    def __on_realized(self, *_):
+        Timeout(ms=0, target=lambda: self.revealer.set_reveal_child(True))
+
+    def __on_child_revealed(self, *_):
+        if self.revealer.get_reveal_child():
+            self.revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_UP)
+        else:
+            self.revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
+
     def __on_clicked(self, *_):
+        if not self.revealer.get_reveal_child():
+            return
+
         if self._is_popup:
             app.open_window(WindowName.control_center.value)
 
     def __on_right_clicked(self, *_):
+        if not self.revealer.get_reveal_child():
+            return
+
         if self._is_popup:
             self._notification.dismiss()
         else:
@@ -390,12 +411,12 @@ class NotificationCenter(Gtk.Box):
         self.__service = NotificationService.get_default()
         super().__init__()
         self._notifications = Gio.ListStore()
-        self.list_box.bind_model(model=self._notifications, create_widget_func=lambda n: NotificationItem(n, False))
+        self.list_box.bind_model(model=self._notifications, create_widget_func=lambda i: i)
 
         self._notifications.connect("notify::n-items", self.__on_store_changed)
         self.__service.connect("notified", self.__on_notified)
 
-        for notify in reversed(self.__service.get_notifications()):
+        for notify in self.__service.get_notifications():
             self.__on_notified(self.__service, notify)
         self.__on_store_changed()
 
@@ -407,13 +428,25 @@ class NotificationCenter(Gtk.Box):
             self.clear_all.set_sensitive(False)
             self.stack.set_visible_child_name("no-notifications")
 
+    def __find_notify(self, notify: Notification):
+        return self._notifications.find_with_equal_func(notify, lambda i, n: i.notify_id == n.id)
+
     def __on_notified(self, _, notify: Notification):
-        self._notifications.insert(0, notify)
+        item = NotificationItem(notify, False)
+        self._notifications.insert(0, item)
 
         def on_closed(notify: Notification):
-            found, pos = self._notifications.find(notify)
+            found, pos = self.__find_notify(notify)
             if found:
-                self._notifications.remove(pos)
+                item: NotificationItem = self._notifications.get_item(pos)  # type: ignore
+
+                def on_child_folded(*_):
+                    found, pos = self.__find_notify(notify)
+                    if found:
+                        self._notifications.remove(pos)
+
+                item.revealer.set_reveal_child(False)
+                item.revealer.connect("notify::child-revealed", on_child_folded)
 
         notify.connect("closed", on_closed)
 
@@ -449,24 +482,36 @@ class NotificationPopups(Widget.RevealerWindow):
         self.set_revealer(self.__view.revealer)
 
         self._popups = Gio.ListStore()
-        self.__view.list_box.bind_model(
-            model=self._popups, create_widget_func=lambda item: NotificationItem(item, True)
-        )
+        self.__view.list_box.bind_model(model=self._popups, create_widget_func=lambda i: i)
 
+        self._popups.connect("notify::n-items", self.__on_store_changed)
         self.__service.connect("new_popup", self.__on_new_popup)
 
-    def __on_new_popup(self, _, popup: Notification):
-        self._popups.append(popup)
-        if not self.get_visible():
+    def __on_store_changed(self, *_):
+        if self._popups.get_n_items() != 0:
             self.set_visible(True)
+        else:
+            self.set_visible(False)
+
+    def __find_popup(self, popup: Notification):
+        return self._popups.find_with_equal_func(popup, lambda i, p: i.notify_id == p.id)
+
+    def __on_new_popup(self, _, popup: Notification):
+        item = NotificationItem(popup, True)
+        self._popups.insert(0, item)
 
         def on_dismissed(popup: Notification):
-            found, pos = self._popups.find(popup)
+            found, pos = self.__find_popup(popup)
             if found:
-                self._popups.remove(pos)
+                item: NotificationItem = self._popups.get_item(pos)  # type: ignore
 
-            if len(self._popups) == 0:
-                self.set_visible(False)
+                def on_child_folded(*_):
+                    found, pos = self.__find_popup(popup)
+                    if found:
+                        self._popups.remove(pos)
+
+                item.revealer.set_reveal_child(False)
+                item.revealer.connect("notify::child-revealed", on_child_folded)
 
         popup.connect("dismissed", on_dismissed)
 
