@@ -6,6 +6,7 @@ from ignis.services.applications import Application, ApplicationAction, Applicat
 from .backdrop import overlay_window
 from .constants import WindowName
 from .template import gtk_template, gtk_template_child
+from .useroptions import user_options, UserOptions
 from .utils import connect_window, set_on_click
 
 
@@ -94,6 +95,10 @@ class AppLauncherView(Gtk.Box):
         self.app_grid.connect("activate", self.__on_item_activate)
         connect_window(self, "notify::visible", self.__on_window_visible_change)
 
+        self.__app_options: UserOptions.AppLauncher | None = None
+        if user_options and user_options.applauncher:
+            self.__app_options = user_options.applauncher
+
     def __prepare_actions(self, apps: list[Application]):
         for action in self.__group.list_actions():
             self.__group.remove_action(action)
@@ -108,10 +113,12 @@ class AppLauncherView(Gtk.Box):
                 self.__add_action(f"{app.get_id()}.{act.get_action()}", act.launch)
 
     def __launch_app(self, app: Application):
-        app.launch(
-            command_format="niri msg action spawn -- %command%",
-            terminal_format="niri msg action spawn -- foot %command%",
-        )
+        command_format: str | None = None
+        terminal_format: str | None = None
+        if self.__app_options:
+            command_format = self.__app_options.command_format
+            terminal_format = self.__app_options.terminal_format
+        app.launch(command_format=command_format, terminal_format=terminal_format)
 
     def __add_action(self, name: str, callback: Callable[[], Any]):
         def do_action(*_):

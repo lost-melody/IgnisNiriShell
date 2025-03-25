@@ -63,6 +63,7 @@ template $PreferencesView: Box {
 
                 Adw.EntryRow recorder_filename {
                     title: "Default Filename";
+                    tooltip-text: "The default filename for recordings";
                 }
             }
 
@@ -83,6 +84,21 @@ template $PreferencesView: Box {
                         tooltip-text: "Open File";
                         clicked => $on_wallpaper_select_clicked();
                     }
+                }
+            }
+
+            Adw.PreferencesGroup {
+                title: "App Launcher";
+                description: "Options for the application launcher";
+
+                Adw.EntryRow command_format {
+                    title: "Command Format";
+                    tooltip-text: "Command to run for launching applications";
+                }
+
+                Adw.EntryRow terminal_format {
+                    title: "Terminal Format";
+                    tooltip-text: "Command to run for launching terminal applications";
                 }
             }
         }
