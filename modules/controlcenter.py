@@ -116,7 +116,6 @@ class AudioControlGroup(Gtk.Box):
         self.list_box.bind_model(
             model=self._streams, create_widget_func=lambda item: self.AudioControlStream(item, self._stream_type)
         )
-        self.scale.set_range(0, 100)
 
         set_on_click(self.icon, left=self.__on_mute_clicked)
         set_on_click(self.caption, left=self.__on_caption_clicked)

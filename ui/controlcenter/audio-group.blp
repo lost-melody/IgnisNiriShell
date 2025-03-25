@@ -5,7 +5,7 @@ template $AudioControlGroup: Box {
 
     styles [
         "card",
-        "m-2",
+        "m-1",
         "rounded",
     ]
 
@@ -32,8 +32,15 @@ template $AudioControlGroup: Box {
             hexpand: true;
             value-changed => $on_scale_value_changed();
 
+            adjustment: Adjustment {
+                lower: 0;
+                upper: 100;
+                step-increment: 5;
+                page-increment: 10;
+            };
+
             styles [
-                "mx-2",
+                "mx-1",
             ]
         }
 
