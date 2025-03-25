@@ -27,18 +27,20 @@ template $ControlSwitchPill: Box {
             orientation: vertical;
             hexpand: true;
 
-            Label title {
-                label: "Title";
-                halign: start;
+            Inscription title {
+                text: "Title";
+                halign: fill;
+                text-overflow: ellipsize_end;
 
                 styles [
                     "caption-heading",
                 ]
             }
 
-            Label subtitle {
-                label: "subtitle";
-                halign: start;
+            Inscription subtitle {
+                text: "subtitle";
+                halign: fill;
+                text-overflow: ellipsize_end;
 
                 styles [
                     "caption",

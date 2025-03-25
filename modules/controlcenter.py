@@ -213,11 +213,22 @@ class ControlSwitchPill(Gtk.Box):
 
     pill: Gtk.Box = gtk_template_child()
     icon: Gtk.Image = gtk_template_child()
-    title: Gtk.Label = gtk_template_child()
-    subtitle: Gtk.Label = gtk_template_child()
+    title: Gtk.Inscription = gtk_template_child()
+    subtitle: Gtk.Inscription = gtk_template_child()
 
     def __init__(self):
         super().__init__()
+
+    def set_title(self, title: str | None = None):
+        self.title.set_text(title)
+        self.title.set_tooltip_text(title)
+
+    def set_subtitle(self, subtitle: str | None = None):
+        self.subtitle.set_text(subtitle)
+        self.subtitle.set_tooltip_text(subtitle)
+
+    def set_icon(self, icon_name: str | None = None):
+        self.icon.set_from_icon_name(icon_name)
 
 
 class ColorSchemeSwitcher(Gtk.Box):
@@ -228,8 +239,8 @@ class ColorSchemeSwitcher(Gtk.Box):
 
         self.__pill = ControlSwitchPill()
         self.append(self.__pill)
-        self.__pill.icon.set_from_icon_name("dark-mode-symbolic")
-        self.__pill.title.set_label("Color Scheme")
+        self.__pill.set_icon("dark-mode-symbolic")
+        self.__pill.set_title("Color Scheme")
 
         self.__color_scheme = "default"
         self.__color_scheme_range: list[str] = []
@@ -262,7 +273,7 @@ class ColorSchemeSwitcher(Gtk.Box):
             return
 
         self.__color_scheme = self.__desktop_settings.get_string("color-scheme")
-        self.__pill.subtitle.set_label(self.__color_scheme)
+        self.__pill.set_subtitle(self.__color_scheme)
 
         if self.__color_scheme != "default":
             self.__pill.pill.add_css_class("accent")
@@ -288,8 +299,8 @@ class IgnisRecorder(Gtk.Box):
 
         self.__pill = ControlSwitchPill()
         self.append(self.__pill)
-        self.__pill.title.set_label("Recorder")
-        self.__pill.subtitle.set_label("screen recorder")
+        self.__pill.set_title("Recorder")
+        self.__pill.set_subtitle("screen recorder")
 
         self.__service.connect("notify::active", self.__on_status_changed)
         self.__service.connect("notify::is-paused", self.__on_status_changed)
