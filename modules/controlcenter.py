@@ -6,12 +6,13 @@ from ignis.widgets import Widget
 from ignis.services.audio import AudioService, Stream
 from ignis.services.notifications import Notification, NotificationAction, NotificationService
 from ignis.services.recorder import RecorderService
+from ignis.options import options, Options
 from ignis.utils.thread import run_in_thread
 from ignis.utils.timeout import Timeout
 from .backdrop import overlay_window
 from .constants import AudioStreamType, WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
-from .utils import connect_window, set_on_click
+from .utils import connect_window, connect_option, niri_action, set_on_click
 
 
 app = IgnisApp.get_default()
@@ -338,6 +339,39 @@ class IgnisRecorder(Gtk.Box):
                 self.__service.continue_recording()
             else:
                 self.__service.pause_recording()
+
+
+class DndSwitch(Gtk.Box):
+    __gtype_name__ = "DndSwitch"
+
+    def __init__(self):
+        self.__group: Options.Notifications | None = None
+        super().__init__()
+
+        self.__pill = ControlSwitchPill()
+        self.append(self.__pill)
+        self.__pill.set_title("Do Not Disturb")
+
+        set_on_click(self, left=self.__on_clicked)
+        if options and options.notifications:
+            self.__group = options.notifications
+            connect_option(self.__group, "dnd", self.__on_option_changed)
+            self.__on_option_changed()
+
+    def __on_option_changed(self, *_):
+        if self.__group:
+            if self.__group.dnd:
+                self.__pill.set_subtitle("disable popups")
+                self.__pill.pill.add_css_class("accent")
+                self.__pill.icon.set_from_icon_name("notifications-disabled-symbolic")
+            else:
+                self.__pill.set_subtitle("default")
+                self.__pill.pill.remove_css_class("accent")
+                self.__pill.icon.set_from_icon_name("notifications-symbolic")
+
+    def __on_clicked(self, *_):
+        if self.__group:
+            self.__group.dnd = not self.__group.dnd
 
 
 @gtk_template("controlcenter/notification-item")
