@@ -16,6 +16,7 @@ class BottomBar(Widget.Window):
         super().__init__(
             namespace=f"{WindowName.bottom_bar.value}-{monitor}",
             monitor=monitor,
+            exclusivity="exclusive",
             anchor=["bottom", "left", "right"],
             css_classes=["bottombar"],
         )

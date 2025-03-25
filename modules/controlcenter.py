@@ -535,8 +535,8 @@ class ControlCenter(Widget.RevealerWindow):
         super().__init__(
             namespace=WindowName.control_center.value,
             kb_mode="exclusive",
-            margin_top=48,
-            margin_bottom=48,
+            margin_top=8,
+            margin_bottom=8,
             margin_end=8,
             anchor=["top", "right", "bottom"],
             layer="overlay",

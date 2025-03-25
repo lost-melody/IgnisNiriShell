@@ -24,6 +24,7 @@ class Topbar(Widget.Window):
         super().__init__(
             namespace=f"{WindowName.top_bar.value}-{monitor}",
             monitor=monitor,
+            exclusivity="exclusive",
             anchor=["top", "left", "right"],
             css_classes=["topbar"],
         )

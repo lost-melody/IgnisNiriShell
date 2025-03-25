@@ -45,6 +45,7 @@ class OverlayBackdrop(Widget.RevealerWindow):
         super().__init__(
             namespace=f"{WindowName.backdrop.value}-{monitor}",
             monitor=monitor,
+            exclusivity="ignore",
             anchor=["top", "right", "bottom", "left"],
             visible=False,
             css_classes=["transparent"],
