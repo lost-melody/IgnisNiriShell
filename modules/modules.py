@@ -1,6 +1,6 @@
 import datetime, math
 from typing import Any, Callable
-from gi.repository import Gio, Gtk
+from gi.repository import Gio, GObject, Gtk
 from ignis.app import IgnisApp
 from ignis.widgets import Widget
 from ignis.services.audio import AudioService, Stream
@@ -93,6 +93,31 @@ class Workspaces(Widget.Box):
 
     def __on_scroll(self, _, dx: float, dy: float):
         niri_action(f"FocusWorkspace{"Up" if dx + dy < 0 else "Down"}")
+
+
+class CommandPill(Gtk.Button):
+    __gtype_name__ = "CommandPill"
+
+    def __init__(self):
+        self._click_cmd: str = ""
+        super().__init__()
+
+        self.connect("clicked", self.__on_clicked)
+
+    def __on_clicked(self, *_):
+        self.set_sensitive(False)
+        Utils.Timeout(ms=1000, target=lambda: self.set_sensitive(True))
+
+        if self._click_cmd != "":
+            run_cmd_async(self._click_cmd)
+
+    @GObject.Property(type=str)
+    def click_command(self) -> str:  # type: ignore
+        return self._click_cmd
+
+    @click_command.setter
+    def click_command(self, cmd: str):
+        self._click_cmd = cmd
 
 
 class Tray(Widget.Box):
