@@ -24,25 +24,3 @@
   @extend .h-8;
   font-size: calc(var(--length-4) * 0.875);
 }
-
-.workspaces {
-  @extend .mx-2;
-  &:hover {
-    @extend .hover-bg-20;
-  }
-}
-
-.workspace-item {
-  @extend .px-1;
-  &.selected {
-    background-color: rgb(255 255 255 / 20%);
-  }
-  &:hover {
-    border-bottom-style: solid;
-    border-bottom-width: var(--length-1);
-    border-bottom-color: rgb(255 255 255 / 50%);
-  }
-  > * {
-    @extend .px-1;
-  }
-}
