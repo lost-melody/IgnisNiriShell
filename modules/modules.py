@@ -1,3 +1,4 @@
+import asyncio
 import datetime, math
 from typing import Callable
 from gi.repository import Gio, GObject, Gtk
@@ -10,6 +11,7 @@ from ignis.services.network import Ethernet, NetworkService, Wifi
 from ignis.services.niri import NiriService, NiriWorkspace
 from ignis.services.system_tray import SystemTrayItem, SystemTrayService
 from ignis.services.upower import UPowerDevice, UPowerService
+from ignis.dbus_menu import DBusMenu
 from ignis.utils import Utils
 from ignis.utils.icon import get_app_icon_name
 from .constants import WindowName
@@ -234,15 +236,16 @@ class Tray(Widget.Box):
             super().__init__(tooltip_text=item.bind("tooltip"), child=[Widget.Icon(image=item.bind("icon"))])
             set_on_click(
                 self,
-                left=lambda _: item.activate(),
-                middle=lambda _: item.secondary_activate(),
+                left=lambda _: asyncio.create_task(item.activate_async()),
+                middle=lambda _: asyncio.create_task(item.secondary_activate_async()),
                 right=self.__on_right_click,
             )
             set_on_scroll(self, self.__on_scroll)
 
             self.__item = item
-            if item.menu:
-                self.__menu = item.menu.copy()
+            self.__menu: DBusMenu | None = item.get_menu()
+            if self.__menu:
+                self.__menu = self.__menu.copy()
                 self.append(self.__menu)
 
         def __on_scroll(self, _, dx: float, dy: float):
