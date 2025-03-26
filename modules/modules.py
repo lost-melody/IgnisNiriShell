@@ -487,7 +487,7 @@ class Batteries(Gtk.Box):
         self.__group = Gio.SimpleActionGroup()
         self.insert_action_group("power", self.__group)
 
-        self.__add_action("lock", lambda: run_cmd_async("swaylock"))
+        self.__add_action("lock", lambda: run_cmd_async("loginctl lock-session"))
         self.__add_action("suspend", lambda: run_cmd_async("systemctl suspend"))
         self.__add_action("shutdown", lambda: run_cmd_async("systemctl poweroff"))
         self.__add_action("reboot", lambda: run_cmd_async("systemctl reboot"))
