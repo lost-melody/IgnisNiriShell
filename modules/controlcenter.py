@@ -375,6 +375,39 @@ class DndSwitch(Gtk.Box):
             self.__group.dnd = not self.__group.dnd
 
 
+class CaffeineSwitch(Gtk.Box):
+    __gtype_name__ = "CaffeineSwitch"
+
+    def __init__(self):
+        self._enabled: bool = False
+        self.__cookie: int = 0
+        super().__init__()
+
+        self.__pill = ControlSwitchPill()
+        self.append(self.__pill)
+        self.__pill.set_title("Caffeine")
+        self.__pill.set_subtitle("disabled")
+        self.__pill.set_icon("my-caffeine-off-symbolic")
+        self.set_tooltip_text("Click to toggle")
+
+        set_on_click(self, left=self.__on_clicked)
+
+    def __on_clicked(self, *_):
+        self._enabled = not self._enabled
+        self.__pill.set_subtitle("enabled" if self._enabled else "disabled")
+
+        if self._enabled:
+            window: Widget.Window | None = self.get_ancestor(Widget.Window)  # type: ignore
+            self.__cookie = app.inhibit(window=window, flags=Gtk.ApplicationInhibitFlags.IDLE, reason="Caffeine Mode Enabled")
+            self.__pill.set_icon("my-caffeine-on-symbolic")
+            self.__pill.pill.add_css_class("accent")
+        else:
+            if self.__cookie != 0:
+                app.uninhibit(self.__cookie)
+            self.__pill.set_icon("my-caffeine-off-symbolic")
+            self.__pill.pill.remove_css_class("accent")
+
+
 class EthernetStatus(Gtk.Box):
     __gtype_name__ = "EthernetStatus"
 
