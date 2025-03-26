@@ -223,11 +223,9 @@ class ControlSwitchPill(Gtk.Box):
 
     def set_title(self, title: str | None = None):
         self.title.set_text(title)
-        self.title.set_tooltip_text(title)
 
     def set_subtitle(self, subtitle: str | None = None):
         self.subtitle.set_text(subtitle)
-        self.subtitle.set_tooltip_text(subtitle)
 
     def set_icon(self, icon_name: str | None = None):
         self.icon.set_from_icon_name(icon_name)
@@ -303,6 +301,7 @@ class IgnisRecorder(Gtk.Box):
         self.append(self.__pill)
         self.__pill.set_title("Recorder")
         self.__pill.set_subtitle("screen recorder")
+        self.set_tooltip_text("Click to start/stop; right click to pause")
 
         self.__service.connect("notify::active", self.__on_status_changed)
         self.__service.connect("notify::is-paused", self.__on_status_changed)
@@ -352,6 +351,7 @@ class DndSwitch(Gtk.Box):
         self.__pill = ControlSwitchPill()
         self.append(self.__pill)
         self.__pill.set_title("Do Not Disturb")
+        self.set_tooltip_text("Click to toggle")
 
         set_on_click(self, left=self.__on_clicked)
         if options and options.notifications:
@@ -402,7 +402,9 @@ class EthernetStatus(Gtk.Box):
             case 0:
                 self.__pill.set_subtitle("no device")
             case 1:
-                self.__pill.set_subtitle(devices[0].get_name() or "")
+                device_name: str | None = devices[0].get_name()
+                self.__pill.set_subtitle(device_name)
+                self.set_tooltip_text(device_name)
             case _:
                 self.__pill.set_subtitle(f"{len(devices)} devices")
 
