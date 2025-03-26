@@ -13,8 +13,9 @@ ScrollFlags = Gtk.EventControllerScrollFlags
 
 
 def niri_action(action: str, args: Any = {}):
-    cmd = json.dumps({"Action": {action: args}})
-    return NiriService.get_default().send_command(cmd + "\n")
+    niri = NiriService.get_default()
+    if niri.is_available:
+        return niri.send_command({"Action": {action: args}})
 
 
 def run_cmd_async(cmd: str):

@@ -7,7 +7,7 @@ from ignis.services.audio import AudioService, Stream
 from ignis.services.hyprland import HyprlandService, HyprlandWindow, HyprlandWorkspace
 from ignis.services.mpris import MprisPlayer, MprisService
 from ignis.services.network import Ethernet, NetworkService, Wifi
-from ignis.services.niri import NiriService
+from ignis.services.niri import NiriService, NiriWindow, NiriWorkspace
 from ignis.services.system_tray import SystemTrayItem, SystemTrayService
 from ignis.services.upower import UPowerDevice, UPowerService
 from ignis.utils import Utils
@@ -29,84 +29,127 @@ class ActiveWindow(Gtk.CenterBox):
     label: Gtk.Label = gtk_template_child()
 
     def __init__(self):
-        self.__service = NiriService.get_default()
+        self.__niri = NiriService.get_default()
+        self.__hypr = HyprlandService.get_default()
         super().__init__()
 
-        if self.__service.is_available:
-            self.__service.connect("notify::active-window", self.__on_change)
-            set_on_click(
-                self, left=lambda _: niri_action("CenterColumn"), right=lambda _: niri_action("SwitchPresetColumnWidth")
-            )
-            set_on_scroll(self, self.__on_scroll)
+        set_on_click(
+            self,
+            left=lambda _: self.__on_click("LEFT"),
+            right=lambda _: self.__on_click("RIGHT"),
+            middle=lambda _: self.__on_click("MIDDLE"),
+        )
+        set_on_scroll(self, self.__on_scroll)
 
-    def __on_change(self, niri: NiriService, _):
-        win = niri.active_window
-        self.icon.set_visible(win is not None)
-        if win:
-            icon = get_app_icon_name(win["app_id"])
-            self.icon.set_from_icon_name(icon)
-            self.label.set_label(win["title"])
-        else:
-            self.label.set_label("niri")
+        if self.__niri.is_available:
+            self.__niri.connect("notify::active-window", self.__on_change)
+
+        if self.__hypr.is_available:
+            self.__hypr.connect("notify::active-window", self.__on_change)
+
+    @property
+    def has_active_window(self) -> bool:
+        if self.__niri.is_available:
+            return self.__niri.active_window.id > 0
+        elif self.__hypr.is_available:
+            return self.__hypr.active_window.address != ""
+        return False
+
+    def __on_change(self, *_):
+        icon: str | None = None
+        label = ""
+
+        if self.__niri.is_available:
+            if self.has_active_window:
+                icon = self.__niri.active_window.app_id
+                label = self.__niri.active_window.title
+            else:
+                label = "niri"
+
+        if self.__hypr.is_available:
+            if self.has_active_window:
+                icon = self.__hypr.active_window.class_name
+                label = self.__hypr.active_window.title
+            else:
+                label = "Hyprland"
+
+        self.icon.set_visible(self.has_active_window)
+        self.icon.set_from_icon_name(icon)
+        self.label.set_label(label)
+
+    def __on_click(self, key: str = "LEFT"):
+        if self.__niri.is_available:
+            match key:
+                case "LEFT":
+                    niri_action("CenterColumn")
+                case "RIGHT":
+                    niri_action("SwitchPresetColumnWidth")
 
     def __on_scroll(self, _, dx: float, dy: float):
-        niri_action(f"FocusColumn{"Left" if dx + dy < 0 else "Right"}")
+        if self.__niri.is_available:
+            niri_action(f"FocusColumn{"Left" if dx + dy < 0 else "Right"}")
+
+        if self.__hypr.is_available:
+            self.__hypr.send_command(f"dispatch cyclenext {"prev" if dx + dy < 0 else ""}")
 
 
 class Workspaces(Widget.Box):
     __gtype_name__ = "NiriWorkspaces"
 
-    class NiriWorkspaceItem(Widget.Box):
-        __gtype_name__ = "NiriWorkspaceItem"
+    class WorkspaceItem(Gtk.Box):
+        __gtype_name__ = "WorkspaceItem"
 
-        def __init__(self, ws: dict[str, Any]):
-            self.__ws = ws
-            self.__is_focused: bool = ws["is_focused"]
-            self.__is_active: bool = ws["is_active"]
-            label = f"{ws["idx"]}"
-            super().__init__(css_classes=["workspace-item"], child=[Widget.Label(label=label)])
-
-            set_on_click(self, left=self.__on_click)
-
-            if self.__is_focused:
-                self.add_css_class("focused")
-            if self.__is_active:
-                self.add_css_class("selected")
-
-        def __on_click(self, _):
-            if not self.__is_active:
-                niri_action("FocusWorkspace", {"reference": {"Id": self.__ws["id"]}})
-
-    class HyprWorkspaceItem(Widget.Box):
-        __gtype_name__ = "HyprWorkspaceItem"
-
-        def __init__(self, ws: HyprlandWorkspace):
+        def __init__(self, niri_ws: NiriWorkspace | None = None, hypr_ws: HyprlandWorkspace | None = None):
+            self.__niri = NiriService.get_default()
             self.__hypr = HyprlandService.get_default()
-            self.__ws = ws
-            label = f"{ws.name or ws.id}"
-            super().__init__(css_classes=["workspace-item"], child=[Widget.Label(label=label)])
+            self.__niri_ws = niri_ws
+            self.__hypr_ws = hypr_ws
+            super().__init__()
 
-            set_on_click(self, left=self.__on_click)
-            self.__hypr.connect("notify::active-workspace", self.__on_changed)
+            self.icon = Gtk.Image(icon_name="pager-checked-symbolic")
+            self.append(self.icon)
+
+            set_on_click(self, left=self.__on_clicked)
             self.__on_changed()
 
-        def __on_changed(self, *_):
-            active: HyprlandWorkspace = self.__hypr.get_active_workspace()
-            if self.__ws.id == active.id:
-                self.add_css_class("selected")
-            else:
-                self.remove_css_class("selected")
+            if self.__niri.is_available:
+                self.__niri.connect("notify::active-workspace", self.__on_changed)
+            if self.__hypr.is_available:
+                self.__hypr.connect("notify::active-workspace", self.__on_changed)
 
-        def __on_click(self, _):
-            active: HyprlandWorkspace = self.__hypr.get_active_workspace()
-            if self.__ws.id != active.id:
-                active.switch_to()
+        @property
+        def is_active(self) -> bool:
+            if self.__niri_ws:
+                return self.__niri_ws.is_active
+            if self.__hypr_ws:
+                return self.__hypr_ws.is_active
+            return False
+
+        def __set_ws_active(self, active: bool):
+            if active:
+                self.remove_css_class("dimmed")
+            else:
+                self.add_css_class("dimmed")
+
+        def __on_changed(self, *_):
+            if self.__niri_ws:
+                self.set_tooltip_text(f"Workspace {self.__niri_ws.name or self.__niri_ws.idx}")
+                self.__set_ws_active(self.is_active)
+            if self.__hypr_ws:
+                self.set_tooltip_text(f"Workspace {self.__hypr_ws.name or self.__hypr_ws.id}")
+                self.__set_ws_active(self.is_active)
+
+        def __on_clicked(self, *_):
+            if self.__niri_ws:
+                self.__niri_ws.switch_to()
+            if self.__hypr_ws:
+                self.__hypr_ws.switch_to()
 
     def __init__(self):
         self.__niri = NiriService.get_default()
         self.__hypr = HyprlandService.get_default()
         self.__connector: str | None = None
-        super().__init__(css_classes=["workspaces"])
+        super().__init__(css_classes=["hover", "rounded", "p-2"])
 
         self.connect("realize", self.__on_realize)
         set_on_scroll(self, self.__on_scroll)
@@ -125,18 +168,18 @@ class Workspaces(Widget.Box):
     def __on_change(self, *_):
         if self.__niri.is_available:
             self.set_child(
-                [self.NiriWorkspaceItem(ws) for ws in self.__niri.workspaces if ws["output"] == self.__connector]
+                [self.WorkspaceItem(niri_ws=ws) for ws in self.__niri.workspaces if ws.output == self.__connector]
             )
         if self.__hypr.is_available:
             self.set_child(
-                [self.HyprWorkspaceItem(ws) for ws in self.__hypr.workspaces if ws.monitor == self.__connector]
+                [self.WorkspaceItem(hypr_ws=ws) for ws in self.__hypr.workspaces if ws.monitor == self.__connector]
             )
 
     def __on_scroll(self, _, dx: float, dy: float):
         if self.__niri.is_available:
             niri_action(f"FocusWorkspace{"Up" if dx + dy < 0 else "Down"}")
         if self.__hypr.is_available:
-            run_cmd_async(f"")
+            run_cmd_async(f"dispatch movetoworkspace {"r-1" if dx + dy < 0 else "r+1"}")
 
 
 class CommandPill(Gtk.Button):
