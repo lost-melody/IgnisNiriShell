@@ -141,7 +141,7 @@ class Workspaces(Widget.Box):
             if self.__niri_ws:
                 return self.__niri_ws.is_active
             if self.__hypr_ws:
-                return self.__hypr_ws.is_active
+                return self.__hypr_ws.id == self.__hypr.active_workspace.id
             return False
 
         def __set_ws_active(self, active: bool):
@@ -198,7 +198,7 @@ class Workspaces(Widget.Box):
         if self.__niri.is_available:
             niri_action(f"FocusWorkspace{"Up" if dx + dy < 0 else "Down"}")
         if self.__hypr.is_available:
-            run_cmd_async(f"dispatch movetoworkspace {"r-1" if dx + dy < 0 else "r+1"}")
+            self.__hypr.send_command(f"dispatch workspace {"r-1" if dx + dy < 0 else "r+1"}")
 
 
 class CommandPill(Gtk.Button):
