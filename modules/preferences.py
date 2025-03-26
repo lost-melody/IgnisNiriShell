@@ -3,7 +3,7 @@ from ignis.widgets import Widget
 from ignis.options import options
 from .constants import WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
-from .useroptions import user_options, UserOptions
+from .useroptions import user_options
 from .utils import bind_option
 
 
@@ -22,10 +22,15 @@ class Preferences(Widget.RegularWindow):
         wallpaper_path: Adw.ActionRow = gtk_template_child()
         command_format: Adw.EntryRow = gtk_template_child()
         terminal_format: Adw.EntryRow = gtk_template_child()
+        on_active_click: Adw.EntryRow = gtk_template_child()
+        on_active_right_click: Adw.EntryRow = gtk_template_child()
+        on_active_middle_click: Adw.EntryRow = gtk_template_child()
+        on_active_scroll_up: Adw.EntryRow = gtk_template_child()
+        on_active_scroll_down: Adw.EntryRow = gtk_template_child()
+        on_active_scroll_left: Adw.EntryRow = gtk_template_child()
+        on_active_scroll_right: Adw.EntryRow = gtk_template_child()
 
         def __init__(self):
-            self.__options = options
-            self.__user_options = user_options
             super().__init__()
             self.__file_chooser = Gtk.FileDialog()
 
@@ -64,9 +69,18 @@ class Preferences(Widget.RegularWindow):
                     bind_option(user_options.applauncher, "command_format", self.command_format, "text")
                     bind_option(user_options.applauncher, "terminal_format", self.terminal_format, "text")
 
+                if user_options and user_options.activewindow:
+                    bind_option(user_options.activewindow, "on_click", self.on_active_click, "text")
+                    bind_option(user_options.activewindow, "on_right_click", self.on_active_right_click, "text")
+                    bind_option(user_options.activewindow, "on_middle_click", self.on_active_middle_click, "text")
+                    bind_option(user_options.activewindow, "on_scroll_up", self.on_active_scroll_up, "text")
+                    bind_option(user_options.activewindow, "on_scroll_down", self.on_active_scroll_down, "text")
+                    bind_option(user_options.activewindow, "on_scroll_left", self.on_active_scroll_left, "text")
+                    bind_option(user_options.activewindow, "on_scroll_right", self.on_active_scroll_right, "text")
+
         @gtk_template_callback
         def on_wallpaper_select_clicked(self, *_):
-            group = self.__options and self.__options.wallpaper
+            group = options and options.wallpaper
             if group:
 
                 def on_file_open(file_chooser: Gtk.FileDialog, res: Gio.AsyncResult, *_):

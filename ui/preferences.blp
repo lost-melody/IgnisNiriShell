@@ -101,6 +101,46 @@ template $PreferencesView: Box {
                     tooltip-text: "Command to run for launching terminal applications";
                 }
             }
+
+            Adw.PreferencesGroup {
+                title: "Active Window";
+                description: "Options for the active window indicator";
+
+                Adw.EntryRow on_active_click {
+                    title: "Click";
+                    tooltip-text: "Command to run on clicked";
+                }
+
+                Adw.EntryRow on_active_right_click {
+                    title: "Right Click";
+                    tooltip-text: "Command to run on right clicked";
+                }
+
+                Adw.EntryRow on_active_middle_click {
+                    title: "Middle Click";
+                    tooltip-text: "Command to run on middle clicked";
+                }
+
+                Adw.EntryRow on_active_scroll_up {
+                    title: "Scroll Up";
+                    tooltip-text: "Command to run on scrolled up";
+                }
+
+                Adw.EntryRow on_active_scroll_down {
+                    title: "Scroll Down";
+                    tooltip-text: "Command to run on scrolled down";
+                }
+
+                Adw.EntryRow on_active_scroll_left {
+                    title: "Scroll Left";
+                    tooltip-text: "Command to run on scrolled left";
+                }
+
+                Adw.EntryRow on_active_scroll_right {
+                    title: "Scroll Right";
+                    tooltip-text: "Command to run on scrolled right";
+                }
+            }
         }
     }
 }

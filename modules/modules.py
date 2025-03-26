@@ -1,19 +1,20 @@
 import datetime, math
-from typing import Any, Callable
+from typing import Callable
 from gi.repository import Gio, GObject, Gtk
 from ignis.app import IgnisApp
 from ignis.widgets import Widget
 from ignis.services.audio import AudioService, Stream
-from ignis.services.hyprland import HyprlandService, HyprlandWindow, HyprlandWorkspace
+from ignis.services.hyprland import HyprlandService, HyprlandWorkspace
 from ignis.services.mpris import MprisPlayer, MprisService
 from ignis.services.network import Ethernet, NetworkService, Wifi
-from ignis.services.niri import NiriService, NiriWindow, NiriWorkspace
+from ignis.services.niri import NiriService, NiriWorkspace
 from ignis.services.system_tray import SystemTrayItem, SystemTrayService
 from ignis.services.upower import UPowerDevice, UPowerService
 from ignis.utils import Utils
 from ignis.utils.icon import get_app_icon_name
 from .constants import WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
+from .useroptions import user_options, UserOptions
 from .utils import get_widget_monitor_id, get_widget_monitor, niri_action, run_cmd_async, set_on_click, set_on_scroll
 
 
@@ -32,6 +33,10 @@ class ActiveWindow(Gtk.CenterBox):
         self.__niri = NiriService.get_default()
         self.__hypr = HyprlandService.get_default()
         super().__init__()
+
+        self.__options: UserOptions.ActiveWindow | None = None
+        if user_options and user_options.activewindow:
+            self.__options = user_options.activewindow
 
         set_on_click(
             self,
@@ -61,14 +66,14 @@ class ActiveWindow(Gtk.CenterBox):
 
         if self.__niri.is_available:
             if self.has_active_window:
-                icon = self.__niri.active_window.app_id
+                icon = get_app_icon_name(self.__niri.active_window.app_id)
                 label = self.__niri.active_window.title
             else:
                 label = "niri"
 
         if self.__hypr.is_available:
             if self.has_active_window:
-                icon = self.__hypr.active_window.class_name
+                icon = get_app_icon_name(self.__hypr.active_window.class_name)
                 label = self.__hypr.active_window.title
             else:
                 label = "Hyprland"
@@ -78,19 +83,31 @@ class ActiveWindow(Gtk.CenterBox):
         self.label.set_label(label)
 
     def __on_click(self, key: str = "LEFT"):
-        if self.__niri.is_available:
+        if self.__options:
+            cmd: str = ""
             match key:
                 case "LEFT":
-                    niri_action("CenterColumn")
+                    cmd = self.__options.on_click
                 case "RIGHT":
-                    niri_action("SwitchPresetColumnWidth")
+                    cmd = self.__options.on_right_click
+                case "MIDDLE":
+                    cmd = self.__options.on_middle_click
+            if cmd != "":
+                run_cmd_async(cmd)
 
     def __on_scroll(self, _, dx: float, dy: float):
-        if self.__niri.is_available:
-            niri_action(f"FocusColumn{"Left" if dx + dy < 0 else "Right"}")
-
-        if self.__hypr.is_available:
-            self.__hypr.send_command(f"dispatch cyclenext {"prev" if dx + dy < 0 else ""}")
+        if self.__options:
+            cmd: str = ""
+            if dx < 0:
+                cmd = self.__options.on_scroll_left
+            elif dx > 0:
+                cmd = self.__options.on_scroll_right
+            elif dy < 0:
+                cmd = self.__options.on_scroll_up
+            elif dy > 0:
+                cmd = self.__options.on_scroll_down
+            if cmd != "":
+                run_cmd_async(cmd)
 
 
 class Workspaces(Widget.Box):
