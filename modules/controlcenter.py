@@ -12,7 +12,7 @@ from ignis.utils.thread import run_in_thread
 from .backdrop import overlay_window
 from .constants import AudioStreamType, WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
-from .utils import connect_window, connect_option, niri_action, set_on_click
+from .utils import connect_window, connect_option, gproperty, niri_action, run_cmd_async, set_on_click
 
 
 app = IgnisApp.get_default()
@@ -228,6 +228,87 @@ class ControlSwitchPill(Gtk.Box):
 
     def set_icon(self, icon_name: str | None = None):
         self.icon.set_from_icon_name(icon_name)
+
+
+class ControlSwitchCmd(Gtk.Box):
+    __gtype_name__ = "ControlSwitchCmd"
+
+    def __init__(self):
+        self._enabled: bool = False
+        self._status_cmd: str = ""
+        self._enable_cmd: str = ""
+        self._disable_cmd: str = ""
+        super().__init__()
+
+        self.__pill = ControlSwitchPill()
+        self.append(self.__pill)
+        set_on_click(self, self.__on_clicked)
+
+    @gproperty(type=str)
+    def title(self) -> str:  # type: ignore
+        return self.__pill.title.get_text() or ""
+
+    @title.setter
+    def title(self, title: str):
+        self.__pill.set_title(title)
+
+    @gproperty(type=str)
+    def icon_name(self) -> str:  # type: ignore
+        return self.__pill.icon.get_icon_name() or ""
+
+    @icon_name.setter
+    def icon_name(self, icon: str):
+        self.__pill.icon.set_from_icon_name(icon)
+
+    @gproperty(type=str)
+    def status_cmd(self) -> str:  # type: ignore
+        return self._status_cmd
+
+    @status_cmd.setter
+    def status_cmd(self, cmd: str):
+        self._status_cmd = cmd
+
+        if cmd != "":
+
+            def on_cmd_done(status: int):
+                self._enabled = status == 0
+                self.__on_status_changed()
+
+            task = run_cmd_async(cmd)
+            task.add_done_callback(lambda x, *_: on_cmd_done(x.result().returncode))
+
+    @gproperty(type=str)
+    def enable_cmd(self) -> str:  # type: ignore
+        return self._enable_cmd
+
+    @enable_cmd.setter
+    def enable_cmd(self, cmd: str):
+        self._enable_cmd = cmd
+
+    @gproperty(type=str)
+    def disable_cmd(self) -> str:  # type: ignore
+        return self._disable_cmd
+
+    @disable_cmd.setter
+    def disable_cmd(self, cmd: str):
+        self._disable_cmd = cmd
+
+    def __on_clicked(self, *_):
+        self._enabled = not self._enabled
+        self.__on_status_changed()
+
+        if self._enabled and self.enable_cmd != "":
+            run_cmd_async(self.enable_cmd)
+        elif not self._enabled and self.disable_cmd != "":
+            run_cmd_async(self.disable_cmd)
+
+    def __on_status_changed(self):
+        if self._enabled:
+            self.__pill.set_subtitle("enabled")
+            self.__pill.pill.add_css_class("accent")
+        else:
+            self.__pill.set_subtitle("disabled")
+            self.__pill.pill.remove_css_class("accent")
 
 
 class ColorSchemeSwitcher(Gtk.Box):
