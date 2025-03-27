@@ -330,7 +330,7 @@ class Network(Widget.Box):
             css_classes=["network", "hover", "hpadding", "rounded"],
             child=[self.NetworkEthernet(self.__service.ethernet), self.NetworkWifi(self.__service.wifi)],
         )
-        set_on_click(self, right=lambda _: app.toggle_window(WindowName.control_center.value))
+        set_on_click(self, left=lambda _: app.toggle_window(WindowName.control_center.value))
 
 
 class Mpris(Widget.Box):
