@@ -8,7 +8,6 @@ from modules.backdrop import OverlayBackdrop
 from modules.controlcenter import ControlCenter, NotificationPopups
 from modules.preferences import Preferences
 from modules.topbar import Topbar
-from modules.bottombar import BottomBar
 
 
 app = IgnisApp.get_default()
@@ -25,5 +24,4 @@ Preferences()
 
 for idx in range(get_n_monitors()):
     Topbar(idx)
-    BottomBar(idx)
     OverlayBackdrop(idx)

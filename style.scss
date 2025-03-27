@@ -12,15 +12,13 @@
   }
 }
 
-.topbar,
-.bottombar {
+.topbar {
   * {
     @extend .transition;
   }
 }
 
-.topbar,
-.bottombar {
+.topbar {
   @extend .h-8;
   font-size: calc(var(--length-4) * 0.875);
 }
