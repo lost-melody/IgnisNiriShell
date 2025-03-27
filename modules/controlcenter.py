@@ -397,8 +397,11 @@ class CaffeineSwitch(Gtk.Box):
         self.__pill.set_subtitle("enabled" if self._enabled else "disabled")
 
         if self._enabled:
-            window: Widget.Window | None = self.get_ancestor(Widget.Window)  # type: ignore
-            self.__cookie = app.inhibit(window=window, flags=Gtk.ApplicationInhibitFlags.IDLE, reason="Caffeine Mode Enabled")
+            window = self.get_ancestor(Widget.Window)
+            if isinstance(window, Widget.Window):
+                self.__cookie = app.inhibit(
+                    window=window, flags=Gtk.ApplicationInhibitFlags.IDLE, reason="Caffeine Mode Enabled"
+                )
             self.__pill.set_icon("my-caffeine-on-symbolic")
             self.__pill.pill.add_css_class("accent")
         else:

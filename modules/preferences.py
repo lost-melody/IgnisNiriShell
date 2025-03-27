@@ -88,8 +88,9 @@ class Preferences(Widget.RegularWindow):
                     if file:
                         group.wallpaper_path = file.get_path()
 
-                window: Gtk.Window | None = self.get_ancestor(Gtk.Window)  # type: ignore
-                self.__file_chooser.open(parent=window, callback=on_file_open)
+                window = self.get_ancestor(Gtk.Window)
+                if isinstance(window, Gtk.Window):
+                    self.__file_chooser.open(parent=window, callback=on_file_open)
 
     def __init__(self):
         super().__init__(

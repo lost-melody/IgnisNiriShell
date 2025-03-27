@@ -1,4 +1,3 @@
-import json
 from asyncio import create_task
 from typing import Any, Callable
 from gi.repository import Gdk, GObject, Gtk
@@ -48,7 +47,7 @@ def format_time_duration(seconds: int, minutes: int = 0, hours: int = 0) -> str:
 def connect_window(widget: Gtk.Widget, signal: str, callback: Callable[..., Any]):
     def on_realize(widget: Gtk.Widget):
         window = widget.get_ancestor(Widget.Window)
-        if window is not None:
+        if isinstance(window, Widget.Window):
             window.connect(signal, callback)
 
     widget.connect("realize", on_realize)

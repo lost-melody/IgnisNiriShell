@@ -130,8 +130,8 @@ class AppLauncherView(Gtk.Box):
         self.__group.add_action(action)
 
     def __on_item_activate(self, _: Gtk.ListView, pos: int):
-        item: Application | None = self.selection.get_item(pos)  # type: ignore
-        if item is not None:
+        item = self.selection.get_item(pos)
+        if isinstance(item, Application):
             self.__launch_app(item)
         self.on_search_stop()
 
