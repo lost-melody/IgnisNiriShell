@@ -1,49 +1,96 @@
 using Gtk 4.0;
 
 template $MprisItem: Box {
+    orientation: vertical;
+
     styles [
-        "px-1",
+        "card",
+        "hover-bg-5",
+        "m-1",
+        "p-2",
+        "rounded",
+        "transition",
     ]
 
-    Button previous {
-        icon-name: "media-skip-backward-symbolic";
-        clicked => $on_previous_clicked();
+    Box {
+        Image avatar {
+            valign: center;
+            icon-name: "music-app-symbolic";
+            pixel-size: 48;
 
-        styles [
-            "hover",
-            "px-1",
-            "unset",
-        ]
+            styles [
+                "icon-dropshadow",
+                "m-1",
+                "rounded",
+            ]
+        }
+
+        Box {
+            hexpand: true;
+            valign: center;
+            orientation: vertical;
+
+            Inscription title {
+                text: "Unknown Title";
+                halign: fill;
+                text-overflow: ellipsize_end;
+
+                styles [
+                    "caption-heading",
+                    "m-1",
+                ]
+            }
+
+            Inscription artist {
+                text: "Unknown Artist";
+                halign: fill;
+                text-overflow: ellipsize_end;
+
+                styles [
+                    "caption",
+                    "dimmed",
+                    "m-1",
+                ]
+            }
+        }
     }
 
-    Button pause {
-        icon-name: "media-playback-start-symbolic";
-        clicked => $on_pause_clicked();
+    Box {
+        ProgressBar progress {
+            hexpand: true;
+            valign: center;
 
-        styles [
-            "hover",
-            "px-1",
-            "unset",
-        ]
-    }
+            styles [
+                "dimmed",
+                "mx-2",
+            ]
+        }
 
-    Button next {
-        icon-name: "media-skip-forward-symbolic";
-        clicked => $on_next_clicked();
+        Button previous {
+            icon-name: "media-skip-backward-symbolic";
+            clicked => $on_previous_clicked();
 
-        styles [
-            "hover",
-            "px-1",
-            "unset",
-        ]
-    }
+            styles [
+                "flat",
+            ]
+        }
 
-    Label title {
-        label: "title";
+        Button pause {
+            icon-name: "media-playback-pause-symbolic";
+            clicked => $on_pause_clicked();
 
-        styles [
-            "hover",
-            "px-1",
-        ]
+            styles [
+                "flat",
+            ]
+        }
+
+        Button next {
+            icon-name: "media-skip-forward-symbolic";
+            clicked => $on_next_clicked();
+
+            styles [
+                "flat",
+            ]
+        }
     }
 }

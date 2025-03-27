@@ -34,6 +34,17 @@ def get_widget_monitor(widget: Gtk.Widget) -> Gdk.Monitor | None:
         return get_monitor(monitor_id)
 
 
+def format_time_duration(seconds: int, minutes: int = 0, hours: int = 0) -> str:
+    minutes += seconds // 60
+    seconds %= 60
+    hours += minutes // 60
+    minutes %= 60
+    if hours != 0:
+        return "%d:%02d:%02d" % (hours, minutes, seconds)
+    else:
+        return "%d:%02d" % (minutes, seconds)
+
+
 def connect_window(widget: Gtk.Widget, signal: str, callback: Callable[..., Any]):
     def on_realize(widget: Gtk.Widget):
         window = widget.get_ancestor(Widget.Window)
