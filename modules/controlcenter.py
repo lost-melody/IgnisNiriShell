@@ -9,7 +9,6 @@ from ignis.services.notifications import Notification, NotificationAction, Notif
 from ignis.services.recorder import RecorderService
 from ignis.options import options, Options
 from ignis.utils.thread import run_in_thread
-from ignis.utils.timeout import Timeout
 from .backdrop import overlay_window
 from .constants import AudioStreamType, WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
@@ -258,7 +257,7 @@ class ColorSchemeSwitcher(Gtk.Box):
             self.set_tooltip_text("/".join(self.__color_scheme_range))
 
             gs.connect("changed::color-scheme", self.__on_color_scheme_changed)
-            self.connect("realize", self.__on_color_scheme_changed)
+            self.__on_color_scheme_changed()
             set_on_click(
                 self, left=lambda *_: self.__switch_color_scheme(1), right=lambda *_: self.__switch_color_scheme(-1)
             )
@@ -479,11 +478,8 @@ class NotificationItem(Gtk.ListBoxRow):
             self.actions.append(button)
 
         self.revealer.connect("notify::child-revealed", self.__on_child_revealed)
-        self.connect("realize", self.__on_realized)
+        self.connect("map", lambda *_: self.revealer.set_reveal_child(True))
         set_on_click(self.action_row, left=self.__on_clicked, right=self.__on_right_clicked)
-
-    def __on_realized(self, *_):
-        Timeout(ms=0, target=lambda: self.revealer.set_reveal_child(True))
 
     def __on_child_revealed(self, *_):
         if self.revealer.get_reveal_child():
@@ -550,21 +546,28 @@ class NotificationCenter(Gtk.Box):
     def __on_notified(self, _, notify: Notification):
         item = NotificationItem(notify, False)
         self._notifications.insert(0, item)
+        notify.connect("closed", self.__on_notify_closed)
 
-        def on_closed(notify: Notification):
+    def __on_notify_closed(self, notify: Notification):
+        found, pos = self.__find_notify(notify)
+        if not found:
+            return
+
+        item = self._notifications.get_item(pos)
+        if not isinstance(item, NotificationItem):
+            return
+
+        if not item.revealer.get_reveal_child():
+            self._notifications.remove(pos)
+            return
+
+        def on_child_folded(*_):
             found, pos = self.__find_notify(notify)
             if found:
-                item: NotificationItem = self._notifications.get_item(pos)  # type: ignore
+                self._notifications.remove(pos)
 
-                def on_child_folded(*_):
-                    found, pos = self.__find_notify(notify)
-                    if found:
-                        self._notifications.remove(pos)
-
-                item.revealer.set_reveal_child(False)
-                item.revealer.connect("notify::child-revealed", on_child_folded)
-
-        notify.connect("closed", on_closed)
+        item.revealer.set_reveal_child(False)
+        item.revealer.connect("notify::child-revealed", on_child_folded)
 
     @gtk_template_callback
     def on_clear_all_clicked(self, *_):
@@ -615,21 +618,28 @@ class NotificationPopups(Widget.RevealerWindow):
     def __on_new_popup(self, _, popup: Notification):
         item = NotificationItem(popup, True)
         self._popups.insert(0, item)
+        popup.connect("dismissed", self.__on_popup_dismissed)
 
-        def on_dismissed(popup: Notification):
+    def __on_popup_dismissed(self, popup: Notification):
+        found, pos = self.__find_popup(popup)
+        if not found:
+            return
+
+        item = self._popups.get_item(pos)
+        if not isinstance(item, NotificationItem):
+            return
+
+        if not item.revealer.get_reveal_child():
+            self._popups.remove(pos)
+            return
+
+        def on_child_folded(*_):
             found, pos = self.__find_popup(popup)
             if found:
-                item: NotificationItem = self._popups.get_item(pos)  # type: ignore
+                self._popups.remove(pos)
 
-                def on_child_folded(*_):
-                    found, pos = self.__find_popup(popup)
-                    if found:
-                        self._popups.remove(pos)
-
-                item.revealer.set_reveal_child(False)
-                item.revealer.connect("notify::child-revealed", on_child_folded)
-
-        popup.connect("dismissed", on_dismissed)
+        item.revealer.set_reveal_child(False)
+        item.revealer.connect("notify::child-revealed", on_child_folded)
 
 
 class ControlCenter(Widget.RevealerWindow):
