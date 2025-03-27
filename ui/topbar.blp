@@ -9,9 +9,9 @@ template $TopbarView: CenterBox {
             "rounded-br",
         ]
 
-        Button {
+        $CommandPill {
             icon-name: "view-grid-symbolic";
-            clicked => $on_activities_clicked();
+            click_command: "ignis toggle ignis-applauncher";
 
             styles [
                 "rounded-tr",

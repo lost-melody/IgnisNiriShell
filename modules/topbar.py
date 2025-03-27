@@ -16,10 +16,6 @@ class Topbar(Widget.Window):
     class View(Gtk.CenterBox):
         __gtype_name__ = "TopbarView"
 
-        @Gtk.Template.Callback()
-        def on_activities_clicked(self, *_):
-            app.toggle_window(WindowName.app_launcher.value)
-
     def __init__(self, monitor: int = 0):
         super().__init__(
             namespace=f"{WindowName.top_bar.value}-{monitor}",
