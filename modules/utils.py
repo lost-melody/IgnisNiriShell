@@ -11,6 +11,9 @@ from ignis.utils.monitor import get_monitor
 ScrollFlags = Gtk.EventControllerScrollFlags
 
 
+gproperty: Callable[..., type[property]] = GObject.Property  # type: ignore
+
+
 def niri_action(action: str, args: Any = {}):
     niri = NiriService.get_default()
     if niri.is_available:

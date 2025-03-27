@@ -7,7 +7,7 @@ from .backdrop import overlay_window
 from .constants import WindowName
 from .template import gtk_template, gtk_template_child
 from .useroptions import user_options, UserOptions
-from .utils import connect_window, set_on_click
+from .utils import connect_window, gproperty, set_on_click
 
 
 app = IgnisApp.get_default()
@@ -43,7 +43,7 @@ class AppLauncherGridItem(Gtk.Box):
         item = Gio.MenuItem.new(label=label, detailed_action=action)
         self._menu.append_item(item)
 
-    @GObject.Property(type=Gtk.ListItem)
+    @gproperty(type=Gtk.ListItem)
     def item(self) -> Gtk.ListItem | None:  # type: ignore
         return self._item
 
@@ -51,7 +51,7 @@ class AppLauncherGridItem(Gtk.Box):
     def item(self, item: Gtk.ListItem | None):
         self._item = item
 
-    @GObject.Property(type=Application)
+    @gproperty(type=Application)
     def application(self) -> Application | None:  # type: ignore
         return self._app
 

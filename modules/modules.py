@@ -21,6 +21,7 @@ from .utils import (
     format_time_duration,
     get_widget_monitor_id,
     get_widget_monitor,
+    gproperty,
     niri_action,
     run_cmd_async,
     set_on_click,
@@ -225,7 +226,7 @@ class CommandPill(Gtk.Button):
         if self._click_cmd != "":
             run_cmd_async(self._click_cmd)
 
-    @GObject.Property(type=str)
+    @gproperty(type=str)
     def click_command(self) -> str:  # type: ignore
         return self._click_cmd
 
