@@ -207,9 +207,9 @@ class AppLauncher(Widget.RevealerWindow):
             layer="overlay",
             popup=True,
             visible=False,
-            css_classes=["rounded"],
             revealer=Widget.Revealer(),
         )
+        self.add_css_class("rounded")
 
         self.__view = AppLauncherView()
         self.set_child(self.__view)

@@ -3,15 +3,12 @@ using Gtk 4.0;
 template $ControlCenterView: Box {
     $IgnisRevealer revealer {
         transition-type: slide-left;
-        hexpand: true;
-        vexpand: true;
 
         Box {
             width-request: 384;
             orientation: vertical;
 
             styles [
-                "background",
                 "p-2",
             ]
 

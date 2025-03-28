@@ -310,7 +310,7 @@ class Network(Widget.Box):
 
         def __init__(self, ethernet: Ethernet):
             self.__ethernet = ethernet
-            super().__init__(child=[Widget.Icon(image=ethernet.bind("icon_name"))])
+            super().__init__(css_classes=["px-1"], child=[Widget.Icon(image=ethernet.bind("icon_name"))])
             ethernet.connect("notify::is-connected", self.__on_change)
             self.__on_change()
 
@@ -323,7 +323,7 @@ class Network(Widget.Box):
 
         def __init__(self, wifi: Wifi):
             self.__wifi = wifi
-            super().__init__(child=[Widget.Icon(image=wifi.bind("icon_name"))])
+            super().__init__(css_classes=["px-1"], child=[Widget.Icon(image=wifi.bind("icon_name"))])
             wifi.connect("notify::enabled", self.__on_change)
             wifi.connect("notify::is-connected", self.__on_change)
             self.__on_change()
@@ -336,7 +336,7 @@ class Network(Widget.Box):
     def __init__(self):
         self.__service = NetworkService.get_default()
         super().__init__(
-            css_classes=["network", "hover", "hpadding", "rounded"],
+            css_classes=["hover", "hpadding", "rounded"],
             child=[self.NetworkEthernet(self.__service.ethernet), self.NetworkWifi(self.__service.wifi)],
         )
         set_on_click(self, left=lambda _: app.toggle_window(WindowName.control_center.value))

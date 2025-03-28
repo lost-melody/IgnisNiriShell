@@ -5,8 +5,7 @@
 }
 
 .tray,
-.audio,
-.network {
+.audio {
   > * {
     @extend .px-1;
   }
