@@ -12,110 +12,77 @@ template $ControlCenterView: Box {
 
             styles [
                 "background",
+                "p-2",
             ]
+
+            CenterBox {
+                styles [
+                    "mx-1",
+                ]
+
+                [start]
+                Label {
+                    valign: center;
+                    label: "Control Center";
+                }
+
+                [end]
+                Button preferences_button {
+                    icon-name: "preferences-desktop-symbolic";
+                    clicked => $on_preferences_button_clicked();
+
+                    styles [
+                        "rounded",
+                    ]
+                }
+            }
+
+            $AudioControlGroupSpeaker {}
+
+            $AudioControlGroupMicrophone {}
 
             Grid {
                 column-homogeneous: true;
 
-                styles [
-                    "m-2",
-                ]
-
-                CenterBox {
-                    layout {
-                        row: 1;
-                        column: 1;
-                        column-span: 2;
-                    }
-
-                    styles [
-                        "mx-1",
-                    ]
-
-                    [start]
-                    Label {
-                        valign: center;
-                        label: "Control Center";
-                    }
-
-                    [end]
-                    Button preferences_button {
-                        icon-name: "preferences-desktop-symbolic";
-                        clicked => $on_preferences_button_clicked();
-
-                        styles [
-                            "rounded",
-                        ]
-                    }
-                }
-
-                $AudioControlGroupSpeaker {
-                    layout {
-                        row: 2;
-                        column: 1;
-                        column-span: 2;
-                    }
-                }
-
-                $AudioControlGroupMicrophone {
-                    layout {
-                        row: 3;
-                        column: 1;
-                        column-span: 2;
-                    }
-                }
-
                 $ColorSchemeSwitcher {
                     layout {
-                        row: 4;
+                        row: 1;
                         column: 1;
                     }
                 }
 
                 $IgnisRecorder {
                     layout {
-                        row: 4;
+                        row: 1;
                         column: 2;
                     }
                 }
 
                 $DndSwitch {
                     layout {
-                        row: 5;
+                        row: 2;
                         column: 1;
                     }
                 }
 
                 $EthernetStatus {
                     layout {
-                        row: 5;
+                        row: 2;
                         column: 2;
                     }
                 }
 
                 $CaffeineSwitch {
                     layout {
-                        row: 6;
+                        row: 3;
                         column: 1;
-                    }
-                }
-
-                $Mpris {
-                    layout {
-                        row: 7;
-                        column: 1;
-                        column-span: 2;
-                    }
-                }
-
-                $NotificationCenter {
-                    layout {
-                        row: 10;
-                        column: 1;
-                        column-span: 2;
                     }
                 }
             }
+
+            $Mpris {}
+
+            $NotificationCenter {}
         }
     }
 }
