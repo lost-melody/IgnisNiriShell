@@ -78,6 +78,19 @@ template $ControlCenterView: Box {
                         column: 1;
                     }
                 }
+
+                $ControlSwitchCmd {
+                    icon-name: "night-light-symbolic";
+                    title: "WlSunset";
+                    status-cmd: "pidof wlsunset";
+                    enable-cmd: "wlsunset -l 39.9 -L 116.4 -t 4000 -T 6000 -d 1800 -g 0.95";
+                    disable-cmd: "pkill wlsunset";
+
+                    layout {
+                        row: 3;
+                        column: 2;
+                    }
+                }
             }
 
             $Mpris {}
