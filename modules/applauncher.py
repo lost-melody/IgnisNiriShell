@@ -201,7 +201,7 @@ class AppLauncher(Widget.RevealerWindow):
             layer="overlay",
             popup=True,
             visible=False,
-            css_classes=[],
+            css_classes=["rounded"],
             revealer=Widget.Revealer(),
         )
 

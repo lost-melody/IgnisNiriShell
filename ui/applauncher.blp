@@ -3,27 +3,17 @@ using Adw 1;
 using Gio 2.0;
 
 template $IgnisAppLauncherView: Box {
-    orientation: vertical;
-    width-request: 960;
-    height-request: 768;
-    halign: center;
-    valign: center;
-    focusable: true;
-
     $IgnisRevealer revealer {
         hexpand: true;
         vexpand: true;
-        transition-type: crossfade;
+        transition-type: slide-up;
 
         Box {
+            width-request: 960;
+            height-request: 768;
+
             Adw.ToolbarView {
                 top-bar-style: raised;
-
-                styles [
-                    "m-2",
-                    "rounded",
-                    "shadow",
-                ]
 
                 [top]
                 SearchBar search_bar {

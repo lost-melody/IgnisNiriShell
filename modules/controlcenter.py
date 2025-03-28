@@ -744,12 +744,12 @@ class ControlCenter(Widget.RevealerWindow):
             kb_mode="exclusive",
             margin_top=8,
             margin_bottom=8,
-            margin_end=8,
+            margin_right=8,
             anchor=["top", "right", "bottom"],
             layer="overlay",
             popup=True,
             visible=False,
-            css_classes=[],
+            css_classes=["rounded"],
             revealer=Widget.Revealer(),
         )
 
