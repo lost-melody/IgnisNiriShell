@@ -1,3 +1,4 @@
+import base64
 from asyncio import create_task
 from typing import Any, Callable
 from gi.repository import Gdk, GObject, Gtk
@@ -12,6 +13,10 @@ ScrollFlags = Gtk.EventControllerScrollFlags
 
 
 gproperty: Callable[..., type[property]] = GObject.Property  # type: ignore
+
+
+def b64enc(input: str) -> str:
+    return base64.b64encode(input.encode()).decode().rstrip("=")
 
 
 def niri_action(action: str, args: Any = {}):

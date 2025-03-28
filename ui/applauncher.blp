@@ -51,7 +51,9 @@ template $IgnisAppLauncherView: Box {
                             ]
 
                             model: SingleSelection selection {
-                                model: Gio.ListStore list_store {};
+                                model: FilterListModel filter_list {
+                                    model: Gio.ListStore list_store {};
+                                };
                             };
 
                             factory: BuilderListItemFactory {
