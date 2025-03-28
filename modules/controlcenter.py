@@ -1,5 +1,4 @@
 import urllib.parse
-from typing import Any, Callable
 from gi.repository import Adw, Gio, GLib, Gtk
 from ignis.app import IgnisApp
 from ignis.widgets import Widget
@@ -16,31 +15,6 @@ from .utils import connect_window, connect_option, gproperty, niri_action, run_c
 
 
 app = IgnisApp.get_default()
-
-
-class RevealerBox(Widget.Box):
-    __gtype_name__ = "IgnisRevealerBox"
-
-    def __init__(
-        self,
-        caption: Gtk.Widget,
-        content: Gtk.Widget,
-        arrow: Widget.Arrow,
-        on_toggle: Callable[[bool], Any] | None = None,
-        **kwargs,
-    ):
-        self.__revealer = Widget.Revealer(child=content)
-        self.__arrow = arrow
-        self.__on_toggle = on_toggle
-        super().__init__(child=[caption, self.__revealer], **kwargs)
-        set_on_click(caption, left=self.__on_caption_click)
-
-    def __on_caption_click(self, _):
-        self.__arrow.toggle()
-        reveal: bool = self.__arrow.get_rotated()
-        self.__revealer.set_reveal_child(reveal)
-        if self.__on_toggle:
-            self.__on_toggle(reveal)
 
 
 @gtk_template("controlcenter/audio-group")
