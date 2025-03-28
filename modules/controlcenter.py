@@ -245,7 +245,7 @@ class ControlSwitchCmd(Gtk.Box):
         set_on_click(self, self.__on_clicked)
 
     @gproperty(type=str)
-    def title(self) -> str:  # type: ignore
+    def title(self) -> str:
         return self.__pill.title.get_text() or ""
 
     @title.setter
@@ -253,7 +253,7 @@ class ControlSwitchCmd(Gtk.Box):
         self.__pill.set_title(title)
 
     @gproperty(type=str)
-    def icon_name(self) -> str:  # type: ignore
+    def icon_name(self) -> str:
         return self.__pill.icon.get_icon_name() or ""
 
     @icon_name.setter
@@ -261,7 +261,7 @@ class ControlSwitchCmd(Gtk.Box):
         self.__pill.icon.set_from_icon_name(icon)
 
     @gproperty(type=str)
-    def status_cmd(self) -> str:  # type: ignore
+    def status_cmd(self) -> str:
         return self._status_cmd
 
     @status_cmd.setter
@@ -278,7 +278,7 @@ class ControlSwitchCmd(Gtk.Box):
             task.add_done_callback(lambda x, *_: on_cmd_done(x.result().returncode))
 
     @gproperty(type=str)
-    def enable_cmd(self) -> str:  # type: ignore
+    def enable_cmd(self) -> str:
         return self._enable_cmd
 
     @enable_cmd.setter
@@ -286,7 +286,7 @@ class ControlSwitchCmd(Gtk.Box):
         self._enable_cmd = cmd
 
     @gproperty(type=str)
-    def disable_cmd(self) -> str:  # type: ignore
+    def disable_cmd(self) -> str:
         return self._disable_cmd
 
     @disable_cmd.setter

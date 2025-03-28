@@ -227,7 +227,7 @@ class CommandPill(Gtk.Button):
             run_cmd_async(self._click_cmd)
 
     @gproperty(type=str)
-    def click_command(self) -> str:  # type: ignore
+    def click_command(self) -> str:
         return self._click_cmd
 
     @click_command.setter

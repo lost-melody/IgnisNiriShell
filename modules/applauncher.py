@@ -44,7 +44,7 @@ class AppLauncherGridItem(Gtk.Box):
         self._menu.append_item(item)
 
     @gproperty(type=Gtk.ListItem)
-    def item(self) -> Gtk.ListItem | None:  # type: ignore
+    def item(self) -> Gtk.ListItem | None:
         return self._item
 
     @item.setter
@@ -52,7 +52,7 @@ class AppLauncherGridItem(Gtk.Box):
         self._item = item
 
     @gproperty(type=Application)
-    def application(self) -> Application | None:  # type: ignore
+    def application(self) -> Application | None:
         return self._app
 
     @application.setter
