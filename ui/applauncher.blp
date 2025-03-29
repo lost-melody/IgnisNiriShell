@@ -32,21 +32,27 @@ template $IgnisAppLauncherView: Box {
 
                 Adw.Clamp {
                     maximum-size: 768;
-                    tightening-threshold: 768;
+                    tightening-threshold: 512;
 
                     ScrolledWindow {
                         hexpand: true;
                         vexpand: true;
 
                         ListView app_grid {
+                            activate => $on_item_activate();
+
                             styles [
                                 "frame",
                                 "view",
                             ]
 
                             model: SingleSelection selection {
-                                model: FilterListModel filter_list {
-                                    model: Gio.ListStore list_store {};
+                                items-changed => $on_items_changed();
+
+                                model: SortListModel sort_list {
+                                    model: FilterListModel filter_list {
+                                        model: Gio.ListStore list_store {};
+                                    };
                                 };
                             };
 

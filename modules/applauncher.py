@@ -5,7 +5,7 @@ from ignis.widgets import Widget
 from ignis.services.applications import Application, ApplicationAction, ApplicationsService
 from .backdrop import overlay_window
 from .constants import WindowName
-from .template import gtk_template, gtk_template_child
+from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options, UserOptions
 from .utils import b64enc, connect_window, gproperty, set_on_click
 
@@ -72,8 +72,9 @@ class AppLauncherGridItem(Gtk.Box):
 
         app_id_b64 = b64enc(app.get_id())
         self.__add_menu_item("Launch", f"app_grid.{app_id_b64}")
-        for act in app.get_actions():
-            app_act_b64 = b64enc(act.get_action())
+        actions: list[ApplicationAction] = app.get_actions()
+        for act in actions:
+            app_act_b64 = b64enc(act.action)
             self.__add_menu_item(act.get_name(), f"app_grid.{app_id_b64}.{app_act_b64}")
 
 
@@ -86,6 +87,7 @@ class AppLauncherView(Gtk.Box):
     search_entry: Gtk.SearchEntry = gtk_template_child()
     app_grid: Gtk.ListView = gtk_template_child()
     selection: Gtk.SingleSelection = gtk_template_child()
+    sort_list: Gtk.SortListModel = gtk_template_child()
     filter_list: Gtk.FilterListModel = gtk_template_child()
     list_store: Gio.ListStore = gtk_template_child()
 
@@ -94,8 +96,13 @@ class AppLauncherView(Gtk.Box):
         super().__init__()
         self.__group = Gio.SimpleActionGroup()
         self.insert_action_group(name="app_grid", group=self.__group)
+
+        self.__filter = Gtk.CustomFilter()
+        self.__sorter = Gtk.CustomSorter()
+        self.filter_list.set_filter(self.__filter)
+        self.sort_list.set_sorter(self.__sorter)
+
         self.__service.connect("notify::apps", self.__on_apps_changed)
-        self.app_grid.connect("activate", self.__on_item_activate)
         connect_window(self, "notify::visible", self.__on_window_visible_change)
 
         self.__app_options: UserOptions.AppLauncher | None = None
@@ -104,8 +111,6 @@ class AppLauncherView(Gtk.Box):
 
     def __on_apps_changed(self, *_):
         self.list_store.remove_all()
-        for action in self.__group.list_actions():
-            self.__group.remove_action(action)
 
         apps: list[Application] = self.__service.get_apps()
         for app in apps:
@@ -116,8 +121,9 @@ class AppLauncherView(Gtk.Box):
 
             app_id_b64 = b64enc(app.get_id())
             self.__add_action(app_id_b64, lambda app=app: self.__launch_app(app))
-            for act in app.get_actions():
-                app_act_b64 = b64enc(act.get_action())
+            actions: list[ApplicationAction] = app.get_actions()
+            for act in actions:
+                app_act_b64 = b64enc(act.action)
                 self.__add_action(f"{app_id_b64}.{app_act_b64}", act.launch)
 
     def __launch_app(self, app: Application):
@@ -137,18 +143,14 @@ class AppLauncherView(Gtk.Box):
         action.connect("activate", do_action)
         self.__group.add_action(action)
 
-    def __on_item_activate(self, _: Gtk.ListView, pos: int):
-        item = self.selection.get_item(pos)
-        if isinstance(item, Application):
-            self.__launch_app(item)
-        self.on_search_stop()
-
     def __move_selection(self, delta: int):
-        if self.selection.get_n_items() == 0:
+        pos, count = self.selection.get_selected(), self.selection.get_n_items()
+        if count == 0:
             return
 
-        pos = (self.selection.get_selected() + delta) % self.selection.get_n_items()
-        self.selection.set_selected(pos)
+        pos = (pos + delta) % count
+        if pos >= count:
+            self.selection.set_selected(pos)
 
         self.app_grid.scroll_to(pos, Gtk.ListScrollFlags.FOCUS | Gtk.ListScrollFlags.SELECT)
 
@@ -162,33 +164,54 @@ class AppLauncherView(Gtk.Box):
         else:
             self.search_bar.set_search_mode(False)
 
-    @Gtk.Template.Callback()
+    def __apps_filter(self, app: Application, result: dict[str, int]) -> bool:
+        return app.id in result
+
+    def __apps_sorter(self, a: Application, b: Application, result: dict[str, int]) -> int:
+        pa, pb = result.get(a.id), result.get(b.id)
+        return (pa or 0) - (pb or 0)
+
+    @gtk_template_callback
+    def on_items_changed(self, *_):
+        self.selection.set_selected(0)
+        self.__move_selection(0)
+
+    @gtk_template_callback
+    def on_item_activate(self, _: Gtk.ListView, pos: int):
+        item = self.selection.get_item(pos)
+        if isinstance(item, Application):
+            self.__launch_app(item)
+        self.on_search_stop()
+
+    @gtk_template_callback
     def on_search_activate(self, *_):
         pos = GLib.Variant.new_uint32(self.selection.get_selected())
         self.app_grid.activate_action("list.activate-item", pos)
 
-    @Gtk.Template.Callback()
+    @gtk_template_callback
     def on_search_changed(self, *_):
         search_text = self.search_entry.get_text()
-        filter = None
         if search_text != "":
-            self.search_bar.set_search_mode(True)
-            app_set = set(app_id for result in Gio.DesktopAppInfo.search(search_text) for app_id in result)
-            filter = Gtk.CustomFilter.new(lambda app, *_: app.id in app_set)
-        self.filter_list.set_filter(filter)
+            search_result = {
+                app_id: priority
+                for priority, result in enumerate(Gio.DesktopAppInfo.search(search_text))
+                for app_id in result
+            }
+            self.__filter.set_filter_func(self.__apps_filter, search_result)
+            self.__sorter.set_sort_func(self.__apps_sorter, search_result)
+        else:
+            self.__filter.set_filter_func(None)
+            self.__sorter.set_sort_func(None)
 
-        self.selection.set_selected(0)
-        self.__move_selection(0)
-
-    @Gtk.Template.Callback()
+    @gtk_template_callback
     def on_search_next(self, *_):
         self.__move_selection(1)
 
-    @Gtk.Template.Callback()
+    @gtk_template_callback
     def on_search_previous(self, *_):
         self.__move_selection(-1)
 
-    @Gtk.Template.Callback()
+    @gtk_template_callback
     def on_search_stop(self, *_):
         self.emit("search-stop")
 
