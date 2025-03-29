@@ -59,7 +59,7 @@ template $IgnisAppLauncherView: Box {
                             factory: BuilderListItemFactory {
                                 template ListItem {
                                     child: $IgnisAppLauncherGridItem {
-                                        item: bind template;
+                                        position: bind template.position;
                                         application: bind template.item;
                                     };
                                 }

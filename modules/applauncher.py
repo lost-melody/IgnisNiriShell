@@ -24,7 +24,7 @@ class AppLauncherGridItem(Gtk.Box):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self._item: Gtk.ListItem | None = None
+        self._pos: int | None = None
         self._app: Application | None = None
         self._menu = Gio.Menu()
         self.menu.set_menu_model(self._menu)
@@ -32,8 +32,8 @@ class AppLauncherGridItem(Gtk.Box):
         set_on_click(self, left=self.__on_left_click, right=self.__on_right_click)
 
     def __on_left_click(self, *_):
-        if self._item is not None:
-            pos = GLib.Variant.new_uint32(self._item.get_position())
+        if self._pos is not None:
+            pos = GLib.Variant.new_uint32(self._pos)
             self.activate_action("list.activate-item", pos)
 
     def __on_right_click(self, *_):
@@ -43,13 +43,13 @@ class AppLauncherGridItem(Gtk.Box):
         item = Gio.MenuItem.new(label=label, detailed_action=action)
         self._menu.append_item(item)
 
-    @gproperty(type=Gtk.ListItem)
-    def item(self) -> Gtk.ListItem | None:
-        return self._item
+    @gproperty(type=int)
+    def position(self) -> int | None:
+        return self._pos
 
-    @item.setter
-    def item(self, item: Gtk.ListItem | None):
-        self._item = item
+    @position.setter
+    def position(self, pos: int | None):
+        self._pos = pos
 
     @gproperty(type=Application)
     def application(self) -> Application | None:
@@ -158,10 +158,7 @@ class AppLauncherView(Gtk.Box):
             self.app_grid.grab_focus()
 
     def __on_window_visible_change(self, window: Widget.Window, _):
-        if window.get_visible():
-            self.search_entry.set_text("")
-            self.on_search_changed()
-        else:
+        if not window.get_visible():
             self.search_bar.set_search_mode(False)
 
     def __apps_filter(self, app: Application, result: dict[str, int]) -> bool:
