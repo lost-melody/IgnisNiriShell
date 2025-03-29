@@ -7,7 +7,7 @@ from .backdrop import overlay_window
 from .constants import WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options, UserOptions
-from .utils import b64enc, connect_window, gproperty, set_on_click
+from .utils import Pool, b64enc, connect_window, gproperty, set_on_click
 
 
 app = IgnisApp.get_default()
@@ -21,8 +21,8 @@ class AppLauncherGridItem(Gtk.Box):
     label: Gtk.Label = gtk_template_child()
     menu: Gtk.PopoverMenu = gtk_template_child()
 
-    def __init__(self, *args):
-        super().__init__(*args)
+    def __init__(self):
+        super().__init__()
 
         self._pos: int | None = None
         self._app: Application | None = None
@@ -42,6 +42,12 @@ class AppLauncherGridItem(Gtk.Box):
     def __add_menu_item(self, label: str, action: str):
         item = Gio.MenuItem.new(label=label, detailed_action=action)
         self._menu.append_item(item)
+
+    @property
+    def app_id(self) -> str:
+        if self.application:
+            return self.application.get_id() or ""
+        return ""
 
     @gproperty(type=int)
     def position(self) -> int | None:
@@ -102,6 +108,7 @@ class AppLauncherView(Gtk.Box):
         self.filter_list.set_filter(self.__filter)
         self.sort_list.set_sorter(self.__sorter)
 
+        self.__pool = Pool(lambda: AppLauncherGridItem())
         self.__service.connect("notify::apps", self.__on_apps_changed)
         connect_window(self, "notify::visible", self.__on_window_visible_change)
 
@@ -110,11 +117,16 @@ class AppLauncherView(Gtk.Box):
             self.__app_options = user_options.applauncher
 
     def __on_apps_changed(self, *_):
+        for item in self.list_store:
+            if isinstance(item, AppLauncherGridItem):
+                self.__pool.release(item)
         self.list_store.remove_all()
 
         apps: list[Application] = self.__service.get_apps()
         for app in apps:
-            self.list_store.append(app)
+            item = self.__pool.acquire()
+            item.application = app
+            self.list_store.append(item)
 
             if app.get_id() is None:
                 continue
@@ -161,11 +173,11 @@ class AppLauncherView(Gtk.Box):
         if not window.get_visible():
             self.search_bar.set_search_mode(False)
 
-    def __apps_filter(self, app: Application, result: dict[str, int]) -> bool:
-        return app.id in result
+    def __apps_filter(self, app: AppLauncherGridItem, result: dict[str, int]) -> bool:
+        return app.app_id in result
 
-    def __apps_sorter(self, a: Application, b: Application, result: dict[str, int]) -> int:
-        pa, pb = result.get(a.id), result.get(b.id)
+    def __apps_sorter(self, a: AppLauncherGridItem, b: Application, result: dict[str, int]) -> int:
+        pa, pb = result.get(a.app_id), result.get(b.app_id)
         return (pa or 0) - (pb or 0)
 
     @gtk_template_callback
@@ -173,11 +185,17 @@ class AppLauncherView(Gtk.Box):
         self.selection.set_selected(0)
         self.__move_selection(0)
 
+        pos = 0
+        for item in self.selection:
+            if isinstance(item, AppLauncherGridItem):
+                item.position = pos
+            pos += 1
+
     @gtk_template_callback
     def on_item_activate(self, _: Gtk.ListView, pos: int):
         item = self.selection.get_item(pos)
-        if isinstance(item, Application):
-            self.__launch_app(item)
+        if isinstance(item, AppLauncherGridItem) and item.application:
+            self.__launch_app(item.application)
         self.on_search_stop()
 
     @gtk_template_callback
