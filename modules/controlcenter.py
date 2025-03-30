@@ -584,8 +584,7 @@ class NotificationItem(Gtk.ListBoxRow):
                 icon = urllib.parse.unquote(icon).removeprefix("file://")
             self.icon.set_image(icon)
 
-        if len(notify.get_actions()) == 0:
-            self.actions.set_visible(False)
+        self.actions.set_visible(len(notify.get_actions()) != 0)
 
         children: list[Gtk.Button] = list(self.actions.observe_children())
         for idx, child in enumerate(children):
@@ -593,6 +592,7 @@ class NotificationItem(Gtk.ListBoxRow):
             child.disconnect(self.__action_signals[idx])
             self.__pool.release(child)
         self.__action_signals.clear()
+
         for action in notify.get_actions():
             action: NotificationAction
             button = self.__pool.acquire()
