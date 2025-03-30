@@ -108,7 +108,7 @@ class AppLauncherView(Gtk.Box):
         self.filter_list.set_filter(self.__filter)
         self.sort_list.set_sorter(self.__sorter)
 
-        self.__pool = Pool(lambda: AppLauncherGridItem())
+        self.__pool = Pool(AppLauncherGridItem)
         self.__service.connect("notify::apps", self.__on_apps_changed)
         connect_window(self, "notify::visible", self.__on_window_visible_change)
 

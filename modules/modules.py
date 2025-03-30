@@ -226,6 +226,10 @@ class Workspaces(Widget.Box):
             self.__connector = monitor.get_connector()
 
     def __on_change(self, *_):
+        children: list[Workspaces.WorkspaceItem] = self.get_child()
+        self.set_child([])
+        for item in children:
+            self.__pool.release(item)
         if self.__niri.is_available:
             self.set_child(
                 [self.__new_item(niri_ws=ws) for ws in self.__niri.workspaces if ws.output == self.__connector]
@@ -339,6 +343,10 @@ class Tray(Widget.Box):
         return item
 
     def __on_change(self, *_):
+        children: list[Tray.TrayItem] = self.get_child()
+        self.set_child([])
+        for item in children:
+            self.__pool.release(item)
         self.set_child([self.__new_item(item) for item in self.__service.items[::-1]])
 
 
