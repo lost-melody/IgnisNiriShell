@@ -5,10 +5,10 @@ from gi.repository import Gio, GObject, Gtk
 from ignis.app import IgnisApp
 from ignis.widgets import Widget
 from ignis.services.audio import AudioService, Stream
-from ignis.services.hyprland import HyprlandService, HyprlandWorkspace
+from ignis.services.hyprland import HyprlandService, HyprlandWindow, HyprlandWorkspace
 from ignis.services.mpris import MprisPlayer, MprisService
 from ignis.services.network import Ethernet, NetworkService, Wifi
-from ignis.services.niri import NiriService, NiriWorkspace
+from ignis.services.niri import NiriService, NiriWindow, NiriWorkspace
 from ignis.services.system_tray import SystemTrayItem, SystemTrayService
 from ignis.services.upower import UPowerDevice, UPowerService
 from ignis.dbus_menu import DBusMenu
@@ -74,24 +74,30 @@ class ActiveWindow(Gtk.CenterBox):
     def __on_change(self, *_):
         icon: str | None = None
         label = ""
+        tooltip: str | None = None
 
         if self.__niri.is_available:
             if self.has_active_window:
-                icon = get_app_icon_name(self.__niri.active_window.app_id)
-                label = self.__niri.active_window.title
+                niri_win: NiriWindow = self.__niri.get_active_window()
+                icon = get_app_icon_name(niri_win.app_id)
+                label = niri_win.title
+                tooltip = f"{niri_win.app_id} - {niri_win.title}"
             else:
                 label = "niri"
 
         if self.__hypr.is_available:
             if self.has_active_window:
-                icon = get_app_icon_name(self.__hypr.active_window.class_name)
-                label = self.__hypr.active_window.title
+                hypr_win: HyprlandWindow = self.__hypr.get_active_window()
+                icon = get_app_icon_name(hypr_win.class_name)
+                label = hypr_win.title
+                tooltip = f"{hypr_win.app_id} - {hypr_win.title}"
             else:
                 label = "Hyprland"
 
         self.icon.set_visible(self.has_active_window)
         self.icon.set_from_icon_name(icon)
         self.label.set_label(label)
+        self.set_tooltip_text(tooltip)
 
     def __on_click(self, key: str = "LEFT"):
         if self.__options:

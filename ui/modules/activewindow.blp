@@ -2,7 +2,6 @@ using Gtk 4.0;
 
 template $NiriActiveWindow: CenterBox {
     width-request: 192;
-    tooltip-text: "Click:\tcenter column\nRClick:\tswitch column width\nScroll:\tfocus prev/next column";
 
     styles [
         "hover",
@@ -22,6 +21,8 @@ template $NiriActiveWindow: CenterBox {
 
         Label label {
             label: "niri";
+            max-width-chars: 64;
+            ellipsize: end;
 
             styles [
                 "px-1",
