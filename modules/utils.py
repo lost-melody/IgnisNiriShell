@@ -157,3 +157,22 @@ def set_on_scroll[Widget: Gtk.Widget](
         controller.connect("scroll", on_scroll)
 
     return widget
+
+
+def set_on_motion[Widget: Gtk.Widget](
+    widget: Widget,
+    enter: Callable[[Widget, float, float], Any] | None = None,
+    leave: Callable[[Widget], Any] | None = None,
+    motion: Callable[[Widget, float, float], Any] | None = None,
+) -> Widget:
+    controller = Gtk.EventControllerMotion()
+    widget.add_controller(controller)
+
+    if enter:
+        controller.connect("enter", lambda _, x, y: enter(widget, x, y))
+    if leave:
+        controller.connect("leave", lambda _: leave(widget))
+    if motion:
+        controller.connect("motion", lambda _, x, y: motion(widget, x, y))
+
+    return widget
