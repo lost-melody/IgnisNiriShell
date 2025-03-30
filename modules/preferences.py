@@ -34,49 +34,59 @@ class Preferences(Widget.RegularWindow):
             super().__init__()
             self.__file_chooser = Gtk.FileDialog()
 
-            if options is not None:
-                if options.notifications is not None:
-                    bind_option(options.notifications, "dnd", self.dnd, "active")
-                    bind_option(
-                        options.notifications,
-                        "popup_timeout",
-                        self.popup_timeout,
-                        "value",
-                        transform_from=lambda f: round(f),
-                    )
-                    bind_option(
-                        options.notifications,
-                        "max_popups_count",
-                        self.max_popups,
-                        "value",
-                        transform_from=lambda f: round(f),
-                    )
+            self.__bind_ignis_options()
+            self.__bind_user_options()
 
-                if options.recorder is not None:
-                    bind_option(options.recorder, "bitrate", self.bitrate, "value", transform_from=lambda f: round(f))
-                    bind_option(options.recorder, "default_filename", self.recorder_filename, "text")
+        def __bind_ignis_options(self):
+            if not options:
+                return
 
-                if options.wallpaper is not None:
-                    bind_option(
-                        options.wallpaper,
-                        "wallpaper_path",
-                        self.wallpaper_path,
-                        "subtitle",
-                        flags=GObject.BindingFlags.DEFAULT,
-                    )
+            if options.notifications is not None:
+                bind_option(options.notifications, "dnd", self.dnd, "active")
+                bind_option(
+                    options.notifications,
+                    "popup_timeout",
+                    self.popup_timeout,
+                    "value",
+                    transform_from=lambda f: round(f),
+                )
+                bind_option(
+                    options.notifications,
+                    "max_popups_count",
+                    self.max_popups,
+                    "value",
+                    transform_from=lambda f: round(f),
+                )
 
-                if user_options and user_options.applauncher:
-                    bind_option(user_options.applauncher, "command_format", self.command_format, "text")
-                    bind_option(user_options.applauncher, "terminal_format", self.terminal_format, "text")
+            if options.recorder is not None:
+                bind_option(options.recorder, "bitrate", self.bitrate, "value", transform_from=lambda f: round(f))
+                bind_option(options.recorder, "default_filename", self.recorder_filename, "text")
 
-                if user_options and user_options.activewindow:
-                    bind_option(user_options.activewindow, "on_click", self.on_active_click, "text")
-                    bind_option(user_options.activewindow, "on_right_click", self.on_active_right_click, "text")
-                    bind_option(user_options.activewindow, "on_middle_click", self.on_active_middle_click, "text")
-                    bind_option(user_options.activewindow, "on_scroll_up", self.on_active_scroll_up, "text")
-                    bind_option(user_options.activewindow, "on_scroll_down", self.on_active_scroll_down, "text")
-                    bind_option(user_options.activewindow, "on_scroll_left", self.on_active_scroll_left, "text")
-                    bind_option(user_options.activewindow, "on_scroll_right", self.on_active_scroll_right, "text")
+            if options.wallpaper is not None:
+                bind_option(
+                    options.wallpaper,
+                    "wallpaper_path",
+                    self.wallpaper_path,
+                    "subtitle",
+                    flags=GObject.BindingFlags.DEFAULT,
+                )
+
+        def __bind_user_options(self):
+            if not user_options:
+                return
+
+            if user_options.applauncher:
+                bind_option(user_options.applauncher, "command_format", self.command_format, "text")
+                bind_option(user_options.applauncher, "terminal_format", self.terminal_format, "text")
+
+            if user_options.activewindow:
+                bind_option(user_options.activewindow, "on_click", self.on_active_click, "text")
+                bind_option(user_options.activewindow, "on_right_click", self.on_active_right_click, "text")
+                bind_option(user_options.activewindow, "on_middle_click", self.on_active_middle_click, "text")
+                bind_option(user_options.activewindow, "on_scroll_up", self.on_active_scroll_up, "text")
+                bind_option(user_options.activewindow, "on_scroll_down", self.on_active_scroll_down, "text")
+                bind_option(user_options.activewindow, "on_scroll_left", self.on_active_scroll_left, "text")
+                bind_option(user_options.activewindow, "on_scroll_right", self.on_active_scroll_right, "text")
 
         @gtk_template_callback
         def on_wallpaper_select_clicked(self, *_):
