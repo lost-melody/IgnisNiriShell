@@ -273,23 +273,51 @@ class Tray(Widget.Box):
     class TrayItem(Widget.Box):
         __gtype_name__ = "IgnisTrayItem"
 
-        def __init__(self, item: SystemTrayItem):
-            super().__init__(tooltip_text=item.bind("tooltip"), child=[Widget.Icon(image=item.bind("icon"))])
-            set_on_click(
-                self,
-                left=lambda _: asyncio.create_task(item.activate_async()),
-                middle=lambda _: asyncio.create_task(item.secondary_activate_async()),
-                right=self.__on_right_click,
-            )
+        def __init__(self):
+            self.__icon = Widget.Icon()
+            super().__init__(child=[self.__icon])
+            set_on_click(self, left=self.__on_clicked, middle=self.__on_middlet_clicked, right=self.__on_right_click)
             set_on_scroll(self, self.__on_scroll)
+            self.__tooltip_id: int = 0
+            self.__icon_id: int = 0
 
-            self.__item = item
-            self.__menu: DBusMenu | None = item.get_menu()
+            self.__item: SystemTrayItem | None = None
+            self.__menu: DBusMenu | None = None
             if self.__menu:
                 self.__menu = self.__menu.copy()
                 self.append(self.__menu)
 
+        @property
+        def tray_item(self) -> SystemTrayItem | None:
+            return self.__item
+
+        @tray_item.setter
+        def tray_item(self, item: SystemTrayItem):
+            if self.__item:
+                self.__item.disconnect(self.__tooltip_id)
+                self.__item.disconnect(self.__icon_id)
+            self.__item = item
+            self.__tooltip_id = item.connect("notify::tooltip", self.__on_changed)
+            self.__icon_id = item.connect("notify::icon", self.__on_changed)
+            self.__on_changed()
+
+        def __on_changed(self, *_):
+            if self.__item:
+                self.__icon.set_image(self.__item.get_icon())
+                self.set_tooltip_text(self.__item.get_tooltip())
+
+        def __on_clicked(self, _):
+            if self.__item:
+                asyncio.create_task(self.__item.activate_async())
+
+        def __on_middlet_clicked(self, _):
+            if self.__item:
+                asyncio.create_task(self.__item.secondary_activate_async())
+
         def __on_scroll(self, _, dx: float, dy: float):
+            if not self.__item:
+                return
+
             if dx != 0:
                 self.__item.scroll(int(dx), orientation="horizontal")
             elif dy != 0:
@@ -303,9 +331,15 @@ class Tray(Widget.Box):
         self.__service = SystemTrayService.get_default()
         super().__init__(css_classes=["hover", "hpadding", "rounded", "tray"])
         self.__service.connect("notify::items", self.__on_change)
+        self.__pool = Pool(self.TrayItem)
+
+    def __new_item(self, tray_item: SystemTrayItem):
+        item = self.__pool.acquire()
+        item.tray_item = tray_item
+        return item
 
     def __on_change(self, *_):
-        self.set_child([self.TrayItem(item) for item in self.__service.items[::-1]])
+        self.set_child([self.__new_item(item) for item in self.__service.items[::-1]])
 
 
 class Audio(Widget.Box):
