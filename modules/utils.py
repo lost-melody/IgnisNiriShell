@@ -1,7 +1,7 @@
 import base64
 from asyncio import create_task
 from typing import Any, Callable
-from gi.repository import Gdk, GObject, Gtk
+from gi.repository import Gdk, Gio, GObject, Gtk
 from ignis.widgets import Widget
 from ignis.services.niri import NiriService
 from ignis.options_manager import OptionsGroup
@@ -32,6 +32,13 @@ class Pool[T]():
 
 def b64enc(input: str) -> str:
     return base64.b64encode(input.encode()).decode().rstrip("=")
+
+
+def get_app_info(app_id: str) -> Gio.DesktopAppInfo | None:
+    try:
+        return Gio.DesktopAppInfo.new(app_id + ".desktop")
+    except TypeError:
+        return
 
 
 def niri_action(action: str, args: Any = {}):

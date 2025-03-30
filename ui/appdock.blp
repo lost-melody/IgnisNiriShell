@@ -1,0 +1,40 @@
+using Gtk 4.0;
+
+template $IgnisAppDockView: Box {
+    orientation: vertical;
+
+    Revealer revealer {
+        transition-type: slide_up;
+
+        CenterBox {
+            width-request: 256;
+
+            styles [
+                "bar-bg",
+            ]
+
+            [center]
+            FlowBox flow_box {
+                selection-mode: none;
+                min-children-per-line: 100;
+                max-children-per-line: 100;
+
+                styles [
+                    "p-1"
+                ]
+            }
+        }
+    }
+
+    Revealer conceal {
+        reveal-child: true;
+
+        Box {
+            height-request: 4;
+
+            styles [
+                "bar-bg",
+            ]
+        }
+    }
+}

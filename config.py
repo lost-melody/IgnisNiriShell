@@ -3,6 +3,7 @@ import modules.adw as _
 from ignis.app import IgnisApp
 from ignis.services.wallpaper import WallpaperService
 from ignis.utils.monitor import get_n_monitors
+from modules.appdock import AppDock
 from modules.applauncher import AppLauncher
 from modules.backdrop import OverlayBackdrop
 from modules.controlcenter import ControlCenter, NotificationPopups
@@ -24,4 +25,5 @@ Preferences()
 
 for idx in range(get_n_monitors()):
     Topbar(idx)
+    AppDock(idx)
     OverlayBackdrop(idx)
