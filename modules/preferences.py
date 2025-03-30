@@ -29,6 +29,9 @@ class Preferences(Widget.RegularWindow):
         on_active_scroll_down: Adw.EntryRow = gtk_template_child()
         on_active_scroll_left: Adw.EntryRow = gtk_template_child()
         on_active_scroll_right: Adw.EntryRow = gtk_template_child()
+        dock_monitor_only: Adw.SwitchRow = gtk_template_child()
+        dock_workspace_only: Adw.SwitchRow = gtk_template_child()
+        dock_conceal_delay: Adw.SpinRow = gtk_template_child()
 
         def __init__(self):
             super().__init__()
@@ -87,6 +90,11 @@ class Preferences(Widget.RegularWindow):
                 bind_option(user_options.activewindow, "on_scroll_down", self.on_active_scroll_down, "text")
                 bind_option(user_options.activewindow, "on_scroll_left", self.on_active_scroll_left, "text")
                 bind_option(user_options.activewindow, "on_scroll_right", self.on_active_scroll_right, "text")
+
+            if user_options.appdock:
+                bind_option(user_options.appdock, "monitor_only", self.dock_monitor_only, "active")
+                bind_option(user_options.appdock, "workspace_only", self.dock_workspace_only, "active")
+                bind_option(user_options.appdock, "conceal_delay", self.dock_conceal_delay, "value")
 
         @gtk_template_callback
         def on_wallpaper_select_clicked(self, *_):
