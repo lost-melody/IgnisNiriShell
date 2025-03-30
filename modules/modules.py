@@ -280,16 +280,13 @@ class Tray(Widget.Box):
         def __init__(self):
             self.__icon = Widget.Icon()
             super().__init__(child=[self.__icon])
-            set_on_click(self, left=self.__on_clicked, middle=self.__on_middlet_clicked, right=self.__on_right_click)
+            set_on_click(self, left=self.__on_clicked, middle=self.__on_middlet_clicked, right=self.__on_right_clicked)
             set_on_scroll(self, self.__on_scroll)
             self.__tooltip_id: int = 0
             self.__icon_id: int = 0
 
             self.__item: SystemTrayItem | None = None
             self.__menu: DBusMenu | None = None
-            if self.__menu:
-                self.__menu = self.__menu.copy()
-                self.append(self.__menu)
 
         @property
         def tray_item(self) -> SystemTrayItem | None:
@@ -300,9 +297,17 @@ class Tray(Widget.Box):
             if self.__item:
                 self.__item.disconnect(self.__tooltip_id)
                 self.__item.disconnect(self.__icon_id)
+            if self.__menu:
+                self.remove(self.__menu)
+
             self.__item = item
+            self.__menu = item.get_menu()
             self.__tooltip_id = item.connect("notify::tooltip", self.__on_changed)
             self.__icon_id = item.connect("notify::icon", self.__on_changed)
+            if self.__menu:
+                self.__menu = self.__menu.copy()
+                self.append(self.__menu)
+
             self.__on_changed()
 
         def __on_changed(self, *_):
@@ -327,7 +332,7 @@ class Tray(Widget.Box):
             elif dy != 0:
                 self.__item.scroll(int(dy), orientation="vertical")
 
-        def __on_right_click(self, _):
+        def __on_right_clicked(self, _):
             if self.__menu:
                 self.__menu.popup()
 
