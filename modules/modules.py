@@ -18,6 +18,7 @@ from .constants import WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options, UserOptions
 from .utils import (
+    Pool,
     format_time_duration,
     get_widget_monitor_id,
     get_widget_monitor,
@@ -133,19 +134,17 @@ class Workspaces(Widget.Box):
     class WorkspaceItem(Gtk.Box):
         __gtype_name__ = "WorkspaceItem"
 
-        def __init__(self, niri_ws: NiriWorkspace | None = None, hypr_ws: HyprlandWorkspace | None = None):
+        def __init__(self):
             self.__niri = NiriService.get_default()
             self.__hypr = HyprlandService.get_default()
-            self.__niri_ws = niri_ws
-            self.__hypr_ws = hypr_ws
+            self.__niri_ws: NiriWorkspace | None = None
+            self.__hypr_ws: HyprlandWorkspace | None = None
             super().__init__()
 
             self.icon = Gtk.Image(icon_name="pager-checked-symbolic")
             self.append(self.icon)
 
             set_on_click(self, left=self.__on_clicked)
-            self.__on_changed()
-
             if self.__niri.is_available:
                 self.__niri.connect("notify::active-workspace", self.__on_changed)
             if self.__hypr.is_available:
@@ -158,6 +157,24 @@ class Workspaces(Widget.Box):
             if self.__hypr_ws:
                 return self.__hypr_ws.id == self.__hypr.active_workspace.id
             return False
+
+        @property
+        def niri_ws(self) -> NiriWorkspace | None:
+            return self.__niri_ws
+
+        @niri_ws.setter
+        def niri_ws(self, ws: NiriWorkspace):
+            self.__niri_ws = ws
+            self.__on_changed()
+
+        @property
+        def hypr_ws(self) -> HyprlandWorkspace | None:
+            return self.__hypr_ws
+
+        @hypr_ws.setter
+        def hypr_ws(self, ws: HyprlandWorkspace):
+            self.__hypr_ws = ws
+            self.__on_changed()
 
         def __set_ws_active(self, active: bool):
             if active:
@@ -185,6 +202,7 @@ class Workspaces(Widget.Box):
         self.__connector: str | None = None
         super().__init__(css_classes=["hover", "rounded", "p-2"])
 
+        self.__pool = Pool(self.WorkspaceItem)
         self.connect("realize", self.__on_realize)
         set_on_scroll(self, self.__on_scroll)
 
@@ -194,6 +212,14 @@ class Workspaces(Widget.Box):
         if self.__hypr.is_available:
             self.__hypr.connect("notify::workspaces", self.__on_change)
 
+    def __new_item(self, niri_ws: NiriWorkspace | None = None, hypr_ws: HyprlandWorkspace | None = None):
+        item = self.__pool.acquire()
+        if niri_ws:
+            item.niri_ws = niri_ws
+        if hypr_ws:
+            item.hypr_ws = hypr_ws
+        return item
+
     def __on_realize(self, _):
         monitor = get_widget_monitor(self)
         if monitor:
@@ -202,11 +228,11 @@ class Workspaces(Widget.Box):
     def __on_change(self, *_):
         if self.__niri.is_available:
             self.set_child(
-                [self.WorkspaceItem(niri_ws=ws) for ws in self.__niri.workspaces if ws.output == self.__connector]
+                [self.__new_item(niri_ws=ws) for ws in self.__niri.workspaces if ws.output == self.__connector]
             )
         if self.__hypr.is_available:
             self.set_child(
-                [self.WorkspaceItem(hypr_ws=ws) for ws in self.__hypr.workspaces if ws.monitor == self.__connector]
+                [self.__new_item(hypr_ws=ws) for ws in self.__hypr.workspaces if ws.monitor == self.__connector]
             )
 
     def __on_scroll(self, _, dx: float, dy: float):
