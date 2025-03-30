@@ -11,7 +11,7 @@ from ignis.utils.thread import run_in_thread
 from .backdrop import overlay_window
 from .constants import AudioStreamType, WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
-from .utils import connect_window, connect_option, gproperty, niri_action, run_cmd_async, set_on_click
+from .utils import Pool, connect_window, connect_option, gproperty, niri_action, run_cmd_async, set_on_click
 
 
 app = IgnisApp.get_default()
@@ -36,30 +36,62 @@ class AudioControlGroup(Gtk.Box):
         icon: Gtk.Image = gtk_template_child()
         inscription: Gtk.Inscription = gtk_template_child()
 
-        def __init__(self, stream: Stream, stream_type: AudioStreamType):
+        def __init__(self):
             self.__service = AudioService.get_default()
-            self._stream = stream
-            self._default = stream
-            self._stream_type = stream_type
+            self._stream: Stream | None = None
+            self._default: Stream | None = None
+            self._stream_type: AudioStreamType | None = None
             super().__init__()
 
-            match stream_type:
-                case AudioStreamType.speaker:
-                    self._default = self.__service.get_speaker()
-                case AudioStreamType.microphone:
-                    self._default = self.__service.get_microphone()
+            self.__notify_name = 0
+            self.__notify_icon = 0
+            self.__notify_is_default = 0
+            self.__notify_default_id = 0
 
-            stream.connect("notify::name", self.__on_stream_changed)
-            stream.connect("notify::icon-name", self.__on_stream_changed)
-            stream.connect("notify::is_default", self.__on_default_changed)
-            self._default.connect("notify::id", self.__on_default_changed)
             set_on_click(self.icon, self.__on_mute_clicked)
             set_on_click(self, self.__on_clicked)
 
             self.__on_stream_changed()
             self.__on_default_changed()
 
+        @property
+        def stream(self) -> Stream | None:
+            return self._stream
+
+        @stream.setter
+        def stream(self, stream: Stream):
+            if self._stream:
+                self._stream.disconnect(self.__notify_name)
+                self._stream.disconnect(self.__notify_icon)
+                self._stream.disconnect(self.__notify_is_default)
+            self._stream = stream
+            self.__notify_name = stream.connect("notify::name", self.__on_stream_changed)
+            self.__notify_icon = stream.connect("notify::icon-name", self.__on_stream_changed)
+            self.__notify_is_default = stream.connect("notify::is_default", self.__on_default_changed)
+            self.__on_stream_changed()
+
+        @property
+        def stream_type(self) -> AudioStreamType | None:
+            return self._stream_type
+
+        @stream_type.setter
+        def stream_type(self, stream_type: AudioStreamType):
+            if self._stream_type and self._default:
+                self._default.disconnect(self.__notify_default_id)
+            self._stream_type = stream_type
+            match stream_type:
+                case AudioStreamType.speaker:
+                    self._default = self.__service.get_speaker()
+                case AudioStreamType.microphone:
+                    self._default = self.__service.get_microphone()
+            if self._default:
+                self._default.connect("notify::id", self.__on_default_changed)
+            self.__on_default_changed()
+
         def __on_stream_changed(self, *_):
+            if not self._stream:
+                return
+
             icon: str = self._stream.get_icon_name()
             description: str = self._stream.get_description()
             self.icon.set_from_icon_name(icon)
@@ -67,12 +99,16 @@ class AudioControlGroup(Gtk.Box):
             self.inscription.set_tooltip_text(description)
 
         def __on_default_changed(self, *_):
+            if not self._stream or not self._default:
+                return
             if self._stream.get_id() == self._default.get_id():
                 self.icon.add_css_class("accent")
             else:
                 self.icon.remove_css_class("accent")
 
         def __on_mute_clicked(self, *_):
+            if not self._stream:
+                return
             self._stream.set_is_muted(not self._stream.get_is_muted())
 
         def __on_clicked(self, *_):
@@ -89,9 +125,8 @@ class AudioControlGroup(Gtk.Box):
         self._streams = Gio.ListStore()
 
         super().__init__()
-        self.list_box.bind_model(
-            model=self._streams, create_widget_func=lambda item: self.AudioControlStream(item, self._stream_type)
-        )
+        self.__pool = Pool(self.AudioControlStream)
+        self.list_box.bind_model(model=self._streams, create_widget_func=lambda item: item)
 
         set_on_click(self.icon, left=self.__on_mute_clicked)
         set_on_click(self.caption, left=self.__on_caption_clicked)
@@ -110,6 +145,12 @@ class AudioControlGroup(Gtk.Box):
             self._default.connect("notify::icon-name", self.__on_volume_changed)
             self._default.connect("notify::volume", self.__on_volume_changed)
             self.__on_volume_changed()
+
+    def __new_stream(self, stream: Stream, stream_type: AudioStreamType) -> AudioControlStream:
+        item = self.__pool.acquire()
+        item.stream = stream
+        item.stream_type = stream_type
+        return item
 
     def __on_window_visible_change(self, window: Widget.Window, _):
         if not window.get_visible():
@@ -132,11 +173,14 @@ class AudioControlGroup(Gtk.Box):
             self.scale.set_value(volume)
 
     def __on_stream_added(self, _, stream: Stream):
-        self._streams.append(stream)
+        self._streams.append(self.__new_stream(stream, self._stream_type))
 
         def on_removed(stream: Stream):
             found, pos = self._streams.find(stream)
             if found:
+                item = self._streams.get_item(pos)
+                if isinstance(item, self.AudioControlStream):
+                    self.__pool.release(item)
                 self._streams.remove(pos)
 
         stream.connect("removed", on_removed)
