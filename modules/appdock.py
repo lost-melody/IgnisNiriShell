@@ -52,14 +52,14 @@ class AppDockView(Gtk.Box):
         @hypr_window.setter
         def hypr_window(self, win: HyprlandWindow):
             self.__hypr_win = win
-            self.__icon.set_from_icon_name(get_app_icon_name(win.app_id))
+            self.__icon.set_from_icon_name(get_app_icon_name(win.class_name))
             self.set_tooltip_text(win.title)
 
         def __on_clicked(self, *_):
             if self.__niri_win:
                 self.__niri_win.focus()
             if self.__hypr_win:
-                self.__hypr.send_command(f"dispatch focuswindow {self.__hypr_win.address}")
+                self.__hypr.send_command(f"dispatch focuswindow pid:{self.__hypr_win.pid}")
 
     def __init__(self):
         self.__dock_options: UserOptions.AppDock | None = None
