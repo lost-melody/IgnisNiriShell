@@ -49,7 +49,7 @@ class AppLauncherGridItem(Gtk.Box):
             return self.application.get_id() or ""
         return ""
 
-    @gproperty(type=int)
+    @property
     def position(self) -> int | None:
         return self._pos
 
@@ -57,7 +57,7 @@ class AppLauncherGridItem(Gtk.Box):
     def position(self, pos: int | None):
         self._pos = pos
 
-    @gproperty(type=Application)
+    @property
     def application(self) -> Application | None:
         return self._app
 

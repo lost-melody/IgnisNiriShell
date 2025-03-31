@@ -85,7 +85,7 @@ class AudioControlGroup(Gtk.Box):
                 case AudioStreamType.microphone:
                     self._default = self.__service.get_microphone()
             if self._default:
-                self._default.connect("notify::id", self.__on_default_changed)
+                self.__notify_default_id = self._default.connect("notify::id", self.__on_default_changed)
             self.__on_default_changed()
 
         def __on_stream_changed(self, *_):
