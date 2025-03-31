@@ -91,7 +91,7 @@ class ActiveWindow(Gtk.CenterBox):
                 hypr_win: HyprlandWindow = self.__hypr.get_active_window()
                 icon = get_app_icon_name(hypr_win.class_name)
                 label = hypr_win.title
-                tooltip = f"{hypr_win.app_id} - {hypr_win.title}"
+                tooltip = f"{hypr_win.class_name} - {hypr_win.title}"
             else:
                 label = "Hyprland"
 
