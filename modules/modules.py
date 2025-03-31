@@ -355,7 +355,7 @@ class Tray(Gtk.FlowBox):
 
     def __on_item_added(self, _, tray_item: SystemTrayItem):
         item = self.__new_item(tray_item)
-        self.__list_store.insert(0, item)
+        self.__list_store.append(item)
         tray_item.connect("removed", self.__on_item_removed)
 
     def __on_item_removed(self, tray_item: SystemTrayItem):
