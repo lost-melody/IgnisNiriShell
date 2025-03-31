@@ -289,11 +289,6 @@ class Tray(Gtk.FlowBox):
             self.__menu: DBusMenu | None = None
 
         @property
-        def item_id(self) -> str | None:
-            if self.tray_item:
-                return self.tray_item.id
-
-        @property
         def tray_item(self) -> SystemTrayItem | None:
             return self.__item
 
@@ -349,6 +344,7 @@ class Tray(Gtk.FlowBox):
         self.__service.connect("added", self.__on_item_added)
         self.__list_store = Gio.ListStore()
         self.bind_model(self.__list_store, lambda item: item)
+        self.set_selection_mode(Gtk.SelectionMode.NONE)
         self.set_min_children_per_line(100)
         self.set_max_children_per_line(100)
 
@@ -362,8 +358,8 @@ class Tray(Gtk.FlowBox):
         self.__list_store.insert(0, item)
         tray_item.connect("removed", self.__on_item_removed)
 
-    def __on_item_removed(self, tray_item: TrayItem):
-        found, pos = self.__list_store.find_with_equal_func(tray_item, lambda i, t: i.item_id == t.id)
+    def __on_item_removed(self, tray_item: SystemTrayItem):
+        found, pos = self.__list_store.find_with_equal_func(tray_item, lambda i, t: i.tray_item == t)
         if found:
             item = self.__list_store.get_item(pos)
             self.__list_store.remove(pos)
