@@ -93,6 +93,7 @@ class AppDockView(Gtk.Box):
                 monitor.connect("notify::active-workspace-id", self.__on_workspaces_changed)
         if user_options and user_options.appdock:
             self.__dock_options = user_options.appdock
+            connect_option(self.__dock_options, "auto_conceal", self.__on_auto_conceal_changed)
             connect_option(self.__dock_options, "monitor_only", self.__on_options_changed)
             connect_option(self.__dock_options, "workspace_only", self.__on_options_changed)
 
@@ -100,6 +101,7 @@ class AppDockView(Gtk.Box):
         monitor = get_widget_monitor(self)
         if monitor:
             self.__connector = monitor.get_connector()
+        self.__on_auto_conceal_changed()
 
     def __on_mouse_enter(self, *_):
         if self.__defer_conceal:
@@ -109,6 +111,9 @@ class AppDockView(Gtk.Box):
         self.revealer.set_reveal_child(True)
 
     def __on_mouse_leave(self, *_):
+        if self.__dock_options and not self.__dock_options.auto_conceal:
+            return
+
         delay = 1000
         if self.__dock_options:
             delay = self.__dock_options.conceal_delay
@@ -126,6 +131,15 @@ class AppDockView(Gtk.Box):
         if hypr_win:
             item.hypr_window = hypr_win
         return item
+
+    def __on_auto_conceal_changed(self, *_):
+        if not self.__dock_options:
+            return
+
+        if self.__dock_options.auto_conceal:
+            self.__on_mouse_leave()
+        else:
+            self.__on_mouse_enter()
 
     def __on_options_changed(self, *_):
         self.__on_workspaces_changed()

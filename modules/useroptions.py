@@ -23,6 +23,7 @@ class UserOptions(OptionsManager):
         on_scroll_right: str = "niri msg action focus-window-down-or-column-right"
 
     class AppDock(OptionsGroup):
+        auto_conceal: bool = True
         conceal_delay: int = 1000
         monitor_only: bool = True
         workspace_only: bool = True
