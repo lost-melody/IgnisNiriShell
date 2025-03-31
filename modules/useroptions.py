@@ -1,11 +1,11 @@
-from ignis import CACHE_DIR
+from ignis import DATA_DIR
 from ignis.options_manager import OptionsGroup, OptionsManager
 
 
 class UserOptions(OptionsManager):
     def __init__(self):
         try:
-            super().__init__(file=f"{CACHE_DIR}/ignis_user_options.json")
+            super().__init__(file=f"{DATA_DIR}/user_options.json")
         except FileNotFoundError:
             pass
 
