@@ -35,10 +35,7 @@ def b64enc(input: str) -> str:
 
 
 def get_app_info(app_id: str) -> Gio.DesktopAppInfo | None:
-    try:
-        return Gio.DesktopAppInfo.new(app_id + ".desktop")
-    except TypeError:
-        return
+    return Gio.DesktopAppInfo.new(app_id + ".desktop")
 
 
 def niri_action(action: str, args: Any = {}):

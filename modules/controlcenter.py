@@ -361,7 +361,7 @@ class ColorSchemeSwitcher(Gtk.Box):
                 self, left=lambda *_: self.__switch_color_scheme(1), right=lambda *_: self.__switch_color_scheme(-1)
             )
 
-        except Exception as e:
+        except GLib.Error as e:
             from loguru import logger
 
             logger.warning(f"failed to connect gsettings monitor: {e}")

@@ -1,4 +1,4 @@
-from gi.repository import Adw, Gio, GObject, Gtk
+from gi.repository import Adw, Gio, GLib, GObject, Gtk
 from ignis.widgets import Widget
 from ignis.options import options
 from .constants import WindowName
@@ -102,7 +102,10 @@ class Preferences(Widget.RegularWindow):
             if group:
 
                 def on_file_open(file_chooser: Gtk.FileDialog, res: Gio.AsyncResult, *_):
-                    file = file_chooser.open_finish(res)
+                    try:
+                        file = file_chooser.open_finish(res)
+                    except GLib.Error:
+                        return
                     if file:
                         group.wallpaper_path = file.get_path()
 
