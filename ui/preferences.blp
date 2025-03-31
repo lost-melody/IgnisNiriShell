@@ -68,6 +68,38 @@ template $PreferencesView: Box {
             }
 
             Adw.PreferencesGroup {
+                title: "App Dock";
+                description: "Options for the application dock";
+
+                Adw.SwitchRow dock_auto_conceal {
+                    title: "Audo Conceal";
+                    subtitle: "Auto conceal dock after a delay";
+                }
+
+                Adw.SwitchRow dock_monitor_only {
+                    title: "Monitor Only";
+                    subtitle: "Display windows of current monitors only";
+                }
+
+                Adw.SwitchRow dock_workspace_only {
+                    title: "Workspace Only";
+                    subtitle: "Display windows of current workspace only";
+                }
+
+                Adw.SpinRow dock_conceal_delay {
+                    title: "Conceal Delay";
+                    subtitle: "The timeout before the dock concealled automatically, in milliseconds";
+
+                    adjustment: Adjustment {
+                        lower: 0;
+                        upper: 10000;
+                        page-increment: 1000;
+                        step-increment: 100;
+                    };
+                }
+            }
+
+            Adw.PreferencesGroup {
                 title: "Wallpaper";
                 description: "Options for the WallpaperService";
 
@@ -140,38 +172,6 @@ template $PreferencesView: Box {
                 Adw.EntryRow on_active_scroll_right {
                     title: "Scroll Right";
                     tooltip-text: "Command to run on scrolled right";
-                }
-            }
-
-            Adw.PreferencesGroup {
-                title: "App Dock";
-                description: "Options for the application dock";
-
-                Adw.SwitchRow dock_auto_conceal {
-                    title: "Audo Conceal";
-                    subtitle: "Auto conceal dock after a delay";
-                }
-
-                Adw.SwitchRow dock_monitor_only {
-                    title: "Monitor Only";
-                    subtitle: "Display windows of current monitors only";
-                }
-
-                Adw.SwitchRow dock_workspace_only {
-                    title: "Workspace Only";
-                    subtitle: "Display windows of current workspace only";
-                }
-
-                Adw.SpinRow dock_conceal_delay {
-                    title: "Conceal Delay";
-                    subtitle: "The timeout before the dock concealled automatically, in milliseconds";
-
-                    adjustment: Adjustment {
-                        lower: 0;
-                        upper: 10000;
-                        page-increment: 1000;
-                        step-increment: 100;
-                    };
                 }
             }
         }
