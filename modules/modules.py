@@ -271,7 +271,7 @@ class CommandPill(Gtk.Button):
         self._click_cmd = cmd
 
 
-class Tray(Widget.Box):
+class Tray(Gtk.FlowBox):
     __gtype_name__ = "IgnisTray"
 
     class TrayItem(Widget.Box):
@@ -287,6 +287,11 @@ class Tray(Widget.Box):
 
             self.__item: SystemTrayItem | None = None
             self.__menu: DBusMenu | None = None
+
+        @property
+        def item_id(self) -> str | None:
+            if self.tray_item:
+                return self.tray_item.id
 
         @property
         def tray_item(self) -> SystemTrayItem | None:
@@ -339,20 +344,31 @@ class Tray(Widget.Box):
     def __init__(self):
         self.__service = SystemTrayService.get_default()
         super().__init__(css_classes=["hover", "hpadding", "rounded", "tray"])
-        self.__service.connect("notify::items", self.__on_change)
+
         self.__pool = Pool(self.TrayItem)
+        self.__service.connect("added", self.__on_item_added)
+        self.__list_store = Gio.ListStore()
+        self.bind_model(self.__list_store, lambda item: item)
+        self.set_min_children_per_line(100)
+        self.set_max_children_per_line(100)
 
     def __new_item(self, tray_item: SystemTrayItem):
         item = self.__pool.acquire()
         item.tray_item = tray_item
         return item
 
-    def __on_change(self, *_):
-        children: list[Tray.TrayItem] = self.get_child()
-        self.set_child([])
-        for item in children:
-            self.__pool.release(item)
-        self.set_child([self.__new_item(item) for item in self.__service.items[::-1]])
+    def __on_item_added(self, _, tray_item: SystemTrayItem):
+        item = self.__new_item(tray_item)
+        self.__list_store.insert(0, item)
+        tray_item.connect("removed", self.__on_item_removed)
+
+    def __on_item_removed(self, tray_item: TrayItem):
+        found, pos = self.__list_store.find_with_equal_func(tray_item, lambda i, t: i.item_id == t.id)
+        if found:
+            item = self.__list_store.get_item(pos)
+            self.__list_store.remove(pos)
+            if isinstance(item, Tray.TrayItem):
+                self.__pool.release(item)
 
 
 class Audio(Widget.Box):
