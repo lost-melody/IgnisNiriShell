@@ -179,7 +179,7 @@ class AppDock(Widget.Window):
 
     def __init__(self, monitor: int = 0):
         super().__init__(
-            namespace=WindowName.app_dock.value,
+            namespace=f"{WindowName.app_dock.value}-{monitor}",
             monitor=monitor,
             layer="overlay",
             anchor=["bottom"],

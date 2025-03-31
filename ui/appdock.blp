@@ -14,14 +14,30 @@ template $IgnisAppDockView: Box {
             ]
 
             [center]
-            FlowBox flow_box {
-                selection-mode: none;
-                min-children-per-line: 100;
-                max-children-per-line: 100;
+            Box {
+                $CommandPill {
+                    tooltip-text: "App Launcher";
+                    click_command: "ignis toggle ignis-applauncher";
 
-                styles [
-                    "p-1"
-                ]
+                    child: Image {
+                        icon-name: "view-app-grid-symbolic";
+                        pixel-size: 48;
+                    };
+
+                    styles [
+                        "hover",
+                        "m-1",
+                        "p-1",
+                        "rounded",
+                        "unset",
+                    ]
+                }
+
+                FlowBox flow_box {
+                    selection-mode: none;
+                    min-children-per-line: 100;
+                    max-children-per-line: 100;
+                }
             }
         }
     }
