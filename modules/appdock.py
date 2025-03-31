@@ -60,6 +60,7 @@ class AppDockView(Gtk.Box):
                 self.__niri_win.focus()
             if self.__hypr_win:
                 self.__hypr.send_command(f"dispatch focuswindow pid:{self.__hypr_win.pid}")
+                self.__hypr.send_command("dispatch alterzorder top")
 
     def __init__(self):
         self.__dock_options: UserOptions.AppDock | None = None
@@ -85,9 +86,11 @@ class AppDockView(Gtk.Box):
             self.__niri.connect("notify::workspaces", self.__on_workspaces_changed)
             self.__niri.connect("notify::windows", self.__on_windows_changed)
         if self.__hypr.is_available:
-            self.__hypr.connect("notify::monitors", self.__on_workspaces_changed)
             self.__hypr.connect("notify::workspaces", self.__on_workspaces_changed)
             self.__hypr.connect("notify::windows", self.__on_windows_changed)
+            for monitor in self.__hypr.monitors:
+                monitor: HyprlandMonitor
+                monitor.connect("notify::active-workspace-id", self.__on_workspaces_changed)
         if user_options and user_options.appdock:
             self.__dock_options = user_options.appdock
             connect_option(self.__dock_options, "monitor_only", self.__on_options_changed)
