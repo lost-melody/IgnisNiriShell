@@ -7,7 +7,7 @@ from ignis.utils.icon import get_app_icon_name
 from ignis.utils.timeout import Timeout
 from .constants import WindowName
 from .template import gtk_template, gtk_template_child
-from .useroptions import user_options, UserOptions
+from .useroptions import user_options
 from .utils import Pool, connect_option, get_widget_monitor, set_on_click, set_on_motion
 
 
@@ -63,7 +63,7 @@ class AppDockView(Gtk.Box):
                 self.__hypr.send_command("dispatch alterzorder top")
 
     def __init__(self):
-        self.__dock_options: UserOptions.AppDock | None = None
+        self.__dock_options = user_options and user_options.appdock
         self.__apps = ApplicationsService.get_default()
         self.__niri = NiriService.get_default()
         self.__hypr = HyprlandService.get_default()
@@ -91,8 +91,7 @@ class AppDockView(Gtk.Box):
             for monitor in self.__hypr.monitors:
                 monitor: HyprlandMonitor
                 monitor.connect("notify::active-workspace-id", self.__on_workspaces_changed)
-        if user_options and user_options.appdock:
-            self.__dock_options = user_options.appdock
+        if self.__dock_options:
             connect_option(self.__dock_options, "auto_conceal", self.__on_auto_conceal_changed)
             connect_option(self.__dock_options, "monitor_only", self.__on_options_changed)
             connect_option(self.__dock_options, "workspace_only", self.__on_options_changed)

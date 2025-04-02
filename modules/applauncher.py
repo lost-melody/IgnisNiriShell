@@ -6,8 +6,8 @@ from ignis.services.applications import Application, ApplicationAction, Applicat
 from .backdrop import overlay_window
 from .constants import WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
-from .useroptions import user_options, UserOptions
-from .utils import Pool, b64enc, connect_window, gproperty, set_on_click
+from .useroptions import user_options
+from .utils import Pool, b64enc, connect_window, set_on_click
 
 
 app = IgnisApp.get_default()
@@ -112,9 +112,7 @@ class AppLauncherView(Gtk.Box):
         self.__service.connect("notify::apps", self.__on_apps_changed)
         connect_window(self, "notify::visible", self.__on_window_visible_change)
 
-        self.__app_options: UserOptions.AppLauncher | None = None
-        if user_options and user_options.applauncher:
-            self.__app_options = user_options.applauncher
+        self.__app_options = user_options and user_options.applauncher
 
     def __on_apps_changed(self, *_):
         for item in self.list_store:

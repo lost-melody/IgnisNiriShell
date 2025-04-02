@@ -6,7 +6,7 @@ from ignis.services.audio import AudioService, Stream
 from ignis.services.network import Ethernet, EthernetDevice, NetworkService
 from ignis.services.notifications import Notification, NotificationAction, NotificationService
 from ignis.services.recorder import RecorderService
-from ignis.options import options, Options
+from ignis.options import options
 from ignis.utils.thread import run_in_thread
 from .backdrop import overlay_window
 from .constants import AudioStreamType, WindowName
@@ -443,7 +443,7 @@ class DndSwitch(Gtk.Box):
     __gtype_name__ = "DndSwitch"
 
     def __init__(self):
-        self.__group: Options.Notifications | None = None
+        self.__group = options and options.notifications
         super().__init__()
 
         self.__pill = ControlSwitchPill()
@@ -452,8 +452,7 @@ class DndSwitch(Gtk.Box):
         self.set_tooltip_text("Click to toggle")
 
         set_on_click(self, left=self.__on_clicked)
-        if options and options.notifications:
-            self.__group = options.notifications
+        if self.__group:
             connect_option(self.__group, "dnd", self.__on_option_changed)
             self.__on_option_changed()
 
