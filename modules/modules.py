@@ -9,16 +9,19 @@ from ignis.services.hyprland import HyprlandService, HyprlandWindow, HyprlandWor
 from ignis.services.mpris import MprisPlayer, MprisService
 from ignis.services.network import Ethernet, NetworkService, Wifi
 from ignis.services.niri import NiriService, NiriWindow, NiriWorkspace
+from ignis.services.recorder import RecorderService
 from ignis.services.system_tray import SystemTrayItem, SystemTrayService
 from ignis.services.upower import UPowerDevice, UPowerService
 from ignis.dbus_menu import DBusMenu
+from ignis.options import options
 from ignis.utils import Utils
 from ignis.utils.icon import get_app_icon_name
 from .constants import WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
-from .useroptions import user_options, UserOptions
+from .useroptions import user_options
 from .utils import (
     Pool,
+    connect_option,
     format_time_duration,
     get_widget_monitor_id,
     get_widget_monitor,
@@ -46,9 +49,7 @@ class ActiveWindow(Gtk.CenterBox):
         self.__hypr = HyprlandService.get_default()
         super().__init__()
 
-        self.__options: UserOptions.ActiveWindow | None = None
-        if user_options and user_options.activewindow:
-            self.__options = user_options.activewindow
+        self.__options = user_options and user_options.activewindow
 
         set_on_click(
             self,
@@ -367,6 +368,75 @@ class Tray(Gtk.FlowBox):
                 if item.get_parent():
                     item.unparent()
                 self.__pool.release(item)
+
+
+class DndIndicator(Widget.Box):
+    __gtype_name__ = "IgnisDndIndicator"
+
+    def __init__(self):
+        self.__options = options and options.notifications
+        super().__init__(
+            css_classes=["hover", "px-2", "rounded", "warning"],
+            tooltip_text="Do Not Disturb enabled",
+            child=[Widget.Icon(image="notifications-disabled-symbolic")],
+        )
+
+        if self.__options:
+            connect_option(self.__options, "dnd", self.__on_changed)
+            set_on_click(self, left=self.__on_clicked, right=self.__on_right_clicked)
+        self.__on_changed()
+
+    def __on_changed(self, *_):
+        self.set_visible(self.__options and self.__options.dnd or False)
+
+    def __on_clicked(self, *_):
+        if self.__options:
+            self.__options.dnd = not self.__options.dnd
+
+    def __on_right_clicked(self, *_):
+        app.toggle_window(WindowName.control_center.value)
+
+
+class RecorderIndicator(Widget.Box):
+    __gtype_name__ = "IgnisRecorderIndicator"
+
+    def __init__(self):
+        self.__service = RecorderService.get_default()
+        self.__icon = Widget.Icon()
+        super().__init__(css_classes=["hover", "px-2", "rounded", "warning"], child=[self.__icon])
+
+        self.__service.connect("notify::active", self.__on_status_changed)
+        self.__service.connect("notify::is-paused", self.__on_status_changed)
+        set_on_click(self, left=self.__on_clicked, right=self.__on_right_clicked)
+        self.__on_status_changed()
+
+    def __on_status_changed(self, *_):
+        if self.__service.active:
+            self.set_visible(True)
+            if self.__service.is_paused:
+                self.set_tooltip_text("Screen Recorder Paused")
+                self.__icon.set_image("media-playback-pause-symbolic")
+            else:
+                self.set_tooltip_text("Screen Recording")
+                self.__icon.set_image("camera-video-symbolic")
+        else:
+            self.set_visible(False)
+
+    def __on_clicked(self, *_):
+        if self.__service.active:
+            if self.__service.is_paused:
+                self.__service.continue_recording()
+            else:
+                self.__service.stop_recording()
+        else:
+            self.__service.start_recording()
+
+    def __on_right_clicked(self, *_):
+        if self.__service.active:
+            if self.__service.is_paused:
+                self.__service.continue_recording()
+            else:
+                self.__service.pause_recording()
 
 
 class Audio(Widget.Box):
