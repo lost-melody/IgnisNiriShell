@@ -275,12 +275,14 @@ class CommandPill(Gtk.Button):
 class Tray(Gtk.FlowBox):
     __gtype_name__ = "IgnisTray"
 
-    class TrayItem(Widget.Box):
+    class TrayItem(Gtk.FlowBoxChild):
         __gtype_name__ = "IgnisTrayItem"
 
         def __init__(self):
             self.__icon = Widget.Icon()
-            super().__init__(child=[self.__icon])
+            self.__box = Gtk.Box()
+            self.__box.append(self.__icon)
+            super().__init__(child=self.__box)
             set_on_click(self, left=self.__on_clicked, middle=self.__on_middlet_clicked, right=self.__on_right_clicked)
             set_on_scroll(self, self.__on_scroll)
             self.__tooltip_id: int = 0
@@ -299,7 +301,7 @@ class Tray(Gtk.FlowBox):
                 self.__item.disconnect(self.__tooltip_id)
                 self.__item.disconnect(self.__icon_id)
             if self.__menu:
-                self.remove(self.__menu)
+                self.__box.remove(self.__menu)
 
             self.__item = item
             self.__menu = item.get_menu()
@@ -307,7 +309,7 @@ class Tray(Gtk.FlowBox):
             self.__icon_id = item.connect("notify::icon", self.__on_changed)
             if self.__menu:
                 self.__menu = self.__menu.copy()
-                self.append(self.__menu)
+                self.__box.append(self.__menu)
 
             self.__on_changed()
 
@@ -365,8 +367,6 @@ class Tray(Gtk.FlowBox):
             item = self.__list_store.get_item(pos)
             self.__list_store.remove(pos)
             if isinstance(item, Tray.TrayItem):
-                if item.get_parent():
-                    item.unparent()
                 self.__pool.release(item)
 
 

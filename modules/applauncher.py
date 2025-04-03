@@ -212,6 +212,9 @@ class AppLauncherView(Gtk.Box):
             }
             self.__filter.set_filter_func(self.__apps_filter, search_result)
             self.__sorter.set_sort_func(self.__apps_sorter, search_result)
+
+            if not self.search_bar.get_search_mode():
+                self.search_bar.set_search_mode(True)
         else:
             self.__filter.set_filter_func(None)
             self.__sorter.set_sort_func(None)

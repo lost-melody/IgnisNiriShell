@@ -1,10 +1,14 @@
 from gi.repository import Adw, Gio, GLib, GObject, Gtk
+from ignis.app import IgnisApp
 from ignis.widgets import Widget
 from ignis.options import options
 from .constants import WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options
 from .utils import bind_option
+
+
+app = IgnisApp.get_default()
 
 
 class Preferences(Widget.RegularWindow):
@@ -126,3 +130,5 @@ class Preferences(Widget.RegularWindow):
 
         self.__view = self.View()
         self.set_child(self.__view)
+        self.set_title("Ignis Preferences")
+        self.set_application(app)
