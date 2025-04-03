@@ -23,8 +23,29 @@ Requirements:
   - `NotificationCenter` can be removed from `ControlCenter`'s blueprint file.
 - _Wallpaper_ service is also initialized there, and can be commented out if other wallpaper services are used.
 
-## Tweak
+## Integrations
 
+- As is stated, this project works under _niri_ and _Hyprland_, and synchronizes windows and workspaces in addition to their focus states. These functions are designed as three widgets: a workspaces pill, a focused window indicator, and a dock.
+- Recommended keybindings (which should be configured in _niri_ or _Hyprland_):
+  - Toggle _App Launcher_: `ignis toggle ignis-applauncher`.
+    - It is recommended to also have a fallback launcher, since we are unstable now.
+  - Toggle _Control Center_: `ignis toggle ignis-controlcenter`.
+  - Start/stop _Screen Recorder_: `ignis run-file /path/to/scripts/togglerecorder.py`.
+  - Toggle _Dock Auto Hide_: `ignis run-file /path/to/scripts/toggledock.py`.
+- Layer window rules:
+  - Under _niri_, `layer-rule` can match `namespace` with `ignis-applauncher`, `ignis-controlcenter`, `ignis-topbar` and `ignis-appdock`.
+  - Under _Hyprland_, `layerrule` is used instead.
+  - _Hyprland_ should disable window enter animations for _App Launcher_ and _Control Center_, as they already have a _Revealer_ transition inside.
+  - Window shadow often cares the border radius, which is defined as `var(--window-border-radius)`, which is provided by _libadwaita_.
+
+## Usage and Tweaks
+
+- Shortcuts in _App Launcher_:
+  - Toggle search bar: `Control-f`.
+  - Close launcher window: `Esc`, or `Control-[`.
+  - Select next: `Down`, `Control-j`, or `Control-n`.
+  - Select previous: `Up`, `Control-k`, or `Control-p`.
+  - Page Up/Down: `PageUp`, `PageDown`.
 - Styles:
   - CSS variables and classes from _libadwaita_ can be used in `.blp` files.
   - Some css classes are also generated in _TailWindCSS_ style to be used in `.blp` designs, e.g. `px-2`, `m-1`.
