@@ -18,21 +18,19 @@ class AppDockView(Gtk.Box):
     revealer: Gtk.Revealer = gtk_template_child()
     flow_box: Gtk.FlowBox = gtk_template_child()
 
-    class Item(Gtk.Box):
+    @gtk_template("appdock-item")
+    class Item(Gtk.FlowBoxChild):
         __gtype_name__ = "IgnisAppDockItem"
+
+        icon: Gtk.Image = gtk_template_child()
 
         def __init__(self):
             self.__hypr = HyprlandService.get_default()
             self.__niri_win: NiriWindow | None = None
             self.__hypr_win: HyprlandWindow | None = None
             super().__init__()
-            self.add_css_class("hover")
-            self.add_css_class("p-1")
-            self.add_css_class("rounded")
 
-            self.__icon = Gtk.Image(pixel_size=48)
-            self.append(self.__icon)
-            set_on_click(self, left=self.__on_clicked)
+            set_on_click(self.icon, left=self.__on_clicked)
 
         @property
         def niri_window(self) -> NiriWindow | None:
@@ -41,7 +39,7 @@ class AppDockView(Gtk.Box):
         @niri_window.setter
         def niri_window(self, win: NiriWindow):
             self.__niri_win = win
-            self.__icon.set_from_icon_name(get_app_icon_name(win.app_id))
+            self.icon.set_from_icon_name(get_app_icon_name(win.app_id))
             self.set_tooltip_text(win.title)
 
         @property
@@ -51,7 +49,7 @@ class AppDockView(Gtk.Box):
         @hypr_window.setter
         def hypr_window(self, win: HyprlandWindow):
             self.__hypr_win = win
-            self.__icon.set_from_icon_name(get_app_icon_name(win.class_name))
+            self.icon.set_from_icon_name(get_app_icon_name(win.class_name))
             self.set_tooltip_text(win.title)
 
         def __on_clicked(self, *_):

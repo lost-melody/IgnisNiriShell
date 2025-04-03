@@ -1,0 +1,15 @@
+using Gtk 4.0;
+
+template $IgnisAppDockItem: FlowBoxChild {
+    Overlay {
+        Image icon {
+            pixel-size: 48;
+
+            styles [
+                "hover",
+                "p-1",
+                "rounded",
+            ]
+        }
+    }
+}
