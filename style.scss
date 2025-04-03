@@ -4,8 +4,7 @@
   @extend .bg-25;
 }
 
-.tray,
-.audio {
+.tray {
   > * {
     @extend .px-1;
   }

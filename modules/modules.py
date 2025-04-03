@@ -447,7 +447,7 @@ class Audio(Widget.Box):
 
         def __init__(self, stream: Stream):
             super().__init__(
-                css_classes=["audio-item"],
+                css_classes=["px-1"],
                 tooltip_text=stream.bind("description"),
                 child=[Widget.Icon(image=stream.bind("icon_name"))],
             )
@@ -460,7 +460,7 @@ class Audio(Widget.Box):
     def __init__(self):
         self.__service = AudioService.get_default()
         super().__init__(
-            css_classes=["audio", "hover", "hpadding", "rounded"],
+            css_classes=["hover", "hpadding", "rounded"],
             child=[self.AudioItem(stream) for stream in [self.__service.speaker, self.__service.microphone] if stream],
         )
 

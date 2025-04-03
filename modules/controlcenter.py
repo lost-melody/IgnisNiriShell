@@ -724,7 +724,6 @@ class NotificationPopups(Widget.RevealerWindow):
             visible=False,
             margin_top=8,
             margin_right=8,
-            css_classes=["notification-popups"],
             revealer=Widget.Revealer(),
         )
 
