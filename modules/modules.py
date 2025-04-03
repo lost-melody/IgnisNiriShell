@@ -16,6 +16,7 @@ from ignis.dbus_menu import DBusMenu
 from ignis.options import options
 from ignis.utils import Utils
 from .constants import WindowName
+from .variables import caffeine_state
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options
 from .utils import (
@@ -368,6 +369,42 @@ class Tray(Gtk.FlowBox):
             self.__list_store.remove(pos)
             if isinstance(item, Tray.TrayItem):
                 self.__pool.release(item)
+
+
+class CaffeineIndicator(Widget.Box):
+    __gtype_name__ = "IgnisCaffeineIndicator"
+
+    def __init__(self):
+        self.__state = caffeine_state
+        self.__cookie: int = 0
+        super().__init__(
+            css_classes=["hover", "px-2", "rounded"],
+            tooltip_text="Caffeine enabled",
+            visible=False,
+            child=[Widget.Icon(image="my-caffeine-on-symbolic")],
+        )
+        self.__state.connect("notify::value", self.__on_changed)
+        set_on_click(self, left=self.__on_clicked, right=self.__on_right_clicked)
+
+    def __on_changed(self, *_):
+        enabled = self.__state.value == True
+        self.set_visible(enabled)
+
+        if enabled:
+            window = self.get_ancestor(Widget.Window)
+            if isinstance(window, Widget.Window):
+                self.__cookie = app.inhibit(
+                    window=window, flags=Gtk.ApplicationInhibitFlags.IDLE, reason="Caffeine Mode Enabled"
+                )
+        else:
+            if self.__cookie != 0:
+                app.uninhibit(self.__cookie)
+
+    def __on_clicked(self, *_):
+        self.__state.value = not self.__state.value
+
+    def __on_right_clicked(self, *_):
+        app.toggle_window(WindowName.control_center.value)
 
 
 class DndIndicator(Widget.Box):

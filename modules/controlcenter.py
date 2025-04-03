@@ -10,6 +10,7 @@ from ignis.options import options
 from ignis.utils.thread import run_in_thread
 from .backdrop import overlay_window
 from .constants import AudioStreamType, WindowName
+from .variables import caffeine_state
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .utils import Pool, connect_window, connect_option, gproperty, niri_action, run_cmd_async, set_on_click
 
@@ -476,8 +477,7 @@ class CaffeineSwitch(Gtk.Box):
     __gtype_name__ = "CaffeineSwitch"
 
     def __init__(self):
-        self._enabled: bool = False
-        self.__cookie: int = 0
+        self.__state = caffeine_state
         super().__init__()
 
         self.__pill = ControlSwitchPill()
@@ -487,25 +487,21 @@ class CaffeineSwitch(Gtk.Box):
         self.__pill.set_icon("my-caffeine-off-symbolic")
         self.set_tooltip_text("Click to toggle")
 
+        self.__state.connect("notify::value", self.__on_changed)
         set_on_click(self, left=self.__on_clicked)
 
-    def __on_clicked(self, *_):
-        self._enabled = not self._enabled
-        self.__pill.set_subtitle("enabled" if self._enabled else "disabled")
-
-        if self._enabled:
-            window = self.get_ancestor(Widget.Window)
-            if isinstance(window, Widget.Window):
-                self.__cookie = app.inhibit(
-                    window=window, flags=Gtk.ApplicationInhibitFlags.IDLE, reason="Caffeine Mode Enabled"
-                )
+    def __on_changed(self, *_):
+        enabled = self.__state.value == True
+        self.__pill.set_subtitle("enabled" if enabled else "disabled")
+        if enabled:
             self.__pill.set_icon("my-caffeine-on-symbolic")
             self.__pill.pill.add_css_class("accent")
         else:
-            if self.__cookie != 0:
-                app.uninhibit(self.__cookie)
             self.__pill.set_icon("my-caffeine-off-symbolic")
             self.__pill.pill.remove_css_class("accent")
+
+    def __on_clicked(self, *_):
+        self.__state.value = not self.__state.value
 
 
 class EthernetStatus(Gtk.Box):
