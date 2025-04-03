@@ -5,14 +5,15 @@ from gi.repository import Gdk, Gio, GObject, Gtk
 from ignis.widgets import Widget
 from ignis.services.niri import NiriService
 from ignis.options_manager import OptionsGroup
+from ignis.utils.icon import get_app_icon_name as ignis_get_app_icon_name
 from ignis.utils.shell import exec_sh_async
 from ignis.utils.monitor import get_monitor
 
 
 ScrollFlags = Gtk.EventControllerScrollFlags
-
-
 gproperty: Callable[..., type[property]] = GObject.Property  # type: ignore
+
+app_icon_overrides: dict[str, str] = {}
 
 
 class Pool[T]():
@@ -36,6 +37,14 @@ def b64enc(input: str) -> str:
 
 def get_app_info(app_id: str) -> Gio.DesktopAppInfo | None:
     return Gio.DesktopAppInfo.new(app_id + ".desktop")
+
+
+def get_app_icon_name(app_id: str) -> str | None:
+    icon = app_icon_overrides.get(app_id)
+    if icon:
+        return icon
+    icon = ignis_get_app_icon_name(app_id)
+    return icon
 
 
 def niri_action(action: str, args: Any = {}):

@@ -15,7 +15,6 @@ from ignis.services.upower import UPowerDevice, UPowerService
 from ignis.dbus_menu import DBusMenu
 from ignis.options import options
 from ignis.utils import Utils
-from ignis.utils.icon import get_app_icon_name
 from .constants import WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options
@@ -23,6 +22,7 @@ from .utils import (
     Pool,
     connect_option,
     format_time_duration,
+    get_app_icon_name,
     get_widget_monitor_id,
     get_widget_monitor,
     gproperty,

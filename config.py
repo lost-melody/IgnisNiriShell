@@ -1,5 +1,6 @@
 import os
 import modules.adw as _
+import modules.overrides as _
 from ignis.app import IgnisApp
 from ignis.services.wallpaper import WallpaperService
 from ignis.utils.monitor import get_n_monitors

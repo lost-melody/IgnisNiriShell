@@ -3,12 +3,11 @@ from ignis.widgets import Widget
 from ignis.services.applications import ApplicationsService
 from ignis.services.hyprland import HyprlandMonitor, HyprlandWindow, HyprlandWorkspace, HyprlandService
 from ignis.services.niri import NiriWindow, NiriWorkspace, NiriService
-from ignis.utils.icon import get_app_icon_name
 from ignis.utils.timeout import Timeout
 from .constants import WindowName
 from .template import gtk_template, gtk_template_child
 from .useroptions import user_options
-from .utils import Pool, connect_option, get_widget_monitor, set_on_click, set_on_motion
+from .utils import Pool, connect_option, get_app_icon_name, get_widget_monitor, set_on_click, set_on_motion
 
 
 @gtk_template("appdock")
