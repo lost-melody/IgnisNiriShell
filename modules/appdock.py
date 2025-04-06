@@ -114,6 +114,7 @@ class AppDockView(Gtk.Box):
 
         @hypr_windows.setter
         def hypr_windows(self, wins: list[HyprlandWindow] | None):
+            self.__dots_store.remove_all()
             if wins:
                 self.__hypr_wins = sorted(wins, key=lambda w: w.address)
                 idx = 0
