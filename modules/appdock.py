@@ -58,7 +58,7 @@ class AppDockView(Gtk.Box):
 
         def __init__(self):
             self.__hypr = HyprlandService.get_default()
-            self.__app_options = user_options and user_options.AppLauncher
+            self.__app_options = user_options and user_options.applauncher
             self.__app_id: str = ""
             self.__app_info: Application | None = None
             self.__niri_wins: list[NiriWindow] | None = None
