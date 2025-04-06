@@ -78,6 +78,7 @@ class AppLauncherGridItem(Gtk.Box):
 
         app_id_b64 = b64enc(app.get_id())
         self.__add_menu_item("Launch", f"app_grid.{app_id_b64}")
+        self.__add_menu_item("Toggle Pin", f"app_grid.{app_id_b64}.PIN")
         actions: list[ApplicationAction] = app.get_actions()
         for act in actions:
             app_act_b64 = b64enc(act.action)
@@ -131,6 +132,7 @@ class AppLauncherView(Gtk.Box):
 
             app_id_b64 = b64enc(app.get_id())
             self.__add_action(app_id_b64, lambda app=app: self.__launch_app(app))
+            self.__add_action(f"{app_id_b64}.PIN", lambda app=app: self.__pin_app(app))
             actions: list[ApplicationAction] = app.get_actions()
             for act in actions:
                 app_act_b64 = b64enc(act.action)
@@ -143,6 +145,12 @@ class AppLauncherView(Gtk.Box):
             command_format = self.__app_options.command_format
             terminal_format = self.__app_options.terminal_format
         app.launch(command_format=command_format, terminal_format=terminal_format)
+
+    def __pin_app(self, app: Application):
+        if app.is_pinned:
+            app.unpin()
+        else:
+            app.pin()
 
     def __add_action(self, name: str, callback: Callable[[], Any]):
         def do_action(*_):

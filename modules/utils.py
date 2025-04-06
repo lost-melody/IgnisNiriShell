@@ -14,6 +14,7 @@ ScrollFlags = Gtk.EventControllerScrollFlags
 gproperty: Callable[..., type[property]] = GObject.Property  # type: ignore
 
 app_icon_overrides: dict[str, str] = {}
+app_id_overrides: dict[str, str] = {}
 
 
 class Pool[T]():
@@ -35,15 +36,22 @@ def b64enc(input: str) -> str:
     return base64.b64encode(input.encode()).decode().rstrip("=")
 
 
-def get_app_info(app_id: str) -> Gio.DesktopAppInfo | None:
-    return Gio.DesktopAppInfo.new(app_id + ".desktop")
+def get_app_id(app_id: str) -> str:
+    if app_id.lower().endswith(".desktop"):
+        app_id = app_id[:-8]
+    override = app_id_overrides.get(app_id)
+    if override:
+        app_id = override
+    return app_id
 
 
-def get_app_icon_name(app_id: str) -> str | None:
-    icon = app_icon_overrides.get(app_id)
-    if icon:
-        return icon
+def get_app_icon_name(app_id: str) -> str:
+    app_id = get_app_id(app_id)
     icon = ignis_get_app_icon_name(app_id)
+    if not icon:
+        icon = app_icon_overrides.get(app_id)
+    if not icon:
+        icon = "image-missing-symbolic"
     return icon
 
 

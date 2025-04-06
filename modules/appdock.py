@@ -1,13 +1,22 @@
 from gi.repository import Gio, Gtk
 from ignis.widgets import Widget
-from ignis.services.applications import ApplicationsService
+from ignis.services.applications import Application, ApplicationsService
 from ignis.services.hyprland import HyprlandMonitor, HyprlandWindow, HyprlandWorkspace, HyprlandService
 from ignis.services.niri import NiriWindow, NiriWorkspace, NiriService
 from ignis.utils.timeout import Timeout
 from .constants import WindowName
 from .template import gtk_template, gtk_template_child
 from .useroptions import user_options
-from .utils import Pool, connect_option, get_app_icon_name, get_widget_monitor, set_on_click, set_on_motion
+from .utils import (
+    Pool,
+    connect_option,
+    get_app_id,
+    get_app_icon_name,
+    get_widget_monitor,
+    set_on_click,
+    set_on_scroll,
+    set_on_motion,
+)
 
 
 @gtk_template("appdock")
@@ -22,41 +31,173 @@ class AppDockView(Gtk.Box):
     class Item(Gtk.FlowBoxChild):
         __gtype_name__ = "IgnisAppDockItem"
 
+        class Dot(Gtk.FlowBoxChild):
+            __gtype_name__ = "IgnisAppDockItemDot"
+
+            def __init__(self):
+                self.__icon = Gtk.Image(icon_name="pager-checked-symbolic", pixel_size=8)
+                self.__revealer = Gtk.Revealer(reveal_child=True, child=self.__icon)
+                super().__init__(child=self.__revealer)
+                self.__icon.add_css_class("dimmed")
+
+            def set_focused(self, focused: bool):
+                if focused:
+                    self.__icon.remove_css_class("dimmed")
+                else:
+                    self.__icon.add_css_class("dimmed")
+
+            def set_reveal(self, reveal: bool, direction: str | None = None):
+                types = Gtk.RevealerTransitionType
+                transition = (
+                    types.SLIDE_RIGHT
+                    if direction == "left"
+                    else types.SLIDE_LEFT if direction == "right" else types.CROSSFADE
+                )
+                self.__revealer.set_transition_type(transition)
+                self.__revealer.set_reveal_child(reveal)
+
         icon: Gtk.Image = gtk_template_child()
+        dots: Gtk.FlowBox = gtk_template_child()
 
         def __init__(self):
             self.__hypr = HyprlandService.get_default()
-            self.__niri_win: NiriWindow | None = None
-            self.__hypr_win: HyprlandWindow | None = None
+            self.__app_options = user_options and user_options.AppLauncher
+            self.__app_id: str = ""
+            self.__app_info: Application | None = None
+            self.__niri_wins: list[NiriWindow] | None = None
+            self.__hypr_wins: list[HyprlandWindow] | None = None
             super().__init__()
 
-            set_on_click(self.icon, left=self.__on_clicked)
+            self.__dots_store = Gio.ListStore()
+            self.dots.bind_model(self.__dots_store, lambda i: i)
+            set_on_click(self.icon, left=self.__on_clicked, right=self.__on_right_clicked)
+            set_on_scroll(self.icon, self.__on_scrolled)
 
         @property
-        def niri_window(self) -> NiriWindow | None:
-            return self.__niri_win
+        def app_id(self) -> str:
+            return self.__app_id
 
-        @niri_window.setter
-        def niri_window(self, win: NiriWindow):
-            self.__niri_win = win
-            self.icon.set_from_icon_name(get_app_icon_name(win.app_id))
-            self.set_tooltip_text(win.title)
+        @app_id.setter
+        def app_id(self, app_id: str):
+            self.__app_id = app_id
+            self.__on_changed()
 
         @property
-        def hypr_window(self) -> HyprlandWindow | None:
-            return self.__hypr_win
+        def app_info(self) -> Application | None:
+            return self.__app_info
 
-        @hypr_window.setter
-        def hypr_window(self, win: HyprlandWindow):
-            self.__hypr_win = win
-            self.icon.set_from_icon_name(get_app_icon_name(win.class_name))
-            self.set_tooltip_text(win.title)
+        @app_info.setter
+        def app_info(self, app_info: Application | None):
+            self.__app_info = app_info
+            self.__on_changed()
+
+        @property
+        def niri_windows(self) -> list[NiriWindow] | None:
+            return self.__niri_wins
+
+        @niri_windows.setter
+        def niri_windows(self, wins: list[NiriWindow] | None):
+            self.__dots_store.remove_all()
+            if wins:
+                self.__niri_wins = sorted(wins, key=lambda w: w.id)
+                idx = 0
+                for i in range(len(wins)):
+                    if wins[i].is_focused:
+                        idx = i
+                        break
+                self.set_tooltip_text(wins[idx].title)
+                self.__update_dots(idx, len(wins))
+            else:
+                self.__niri_wins = None
+                self.set_tooltip_text(self.app_id)
+
+        @property
+        def hypr_windows(self) -> list[HyprlandWindow] | None:
+            return self.__hypr_wins
+
+        @hypr_windows.setter
+        def hypr_windows(self, wins: list[HyprlandWindow] | None):
+            if wins:
+                self.__hypr_wins = sorted(wins, key=lambda w: w.address)
+                idx = 0
+                latest = 0
+                for i in range(len(wins)):
+                    if latest == 0 or wins[i].focus_history_id < latest:
+                        idx = i
+                        latest = wins[i].focus_history_id
+                self.set_tooltip_text(wins[idx].title)
+                self.__update_dots(idx, len(wins))
+            else:
+                self.__hypr_wins = None
+                self.set_tooltip_text(self.app_id)
+
+        def __update_dots(self, index: int, length: int):
+            if index <= 2:
+                left, right = index, min(length - 1, 4) - index
+            elif length - 1 - index <= 2:
+                left, right = index - (length - 5), length - 1 - index
+            else:
+                left, right = 2, 2
+            for focused in [False] * left + [True] + [False] * right:
+                dot = self.Dot()
+                dot.set_focused(focused)
+                self.__dots_store.append(dot)
+
+        def __launch_app(self, app: Application):
+            command_format: str | None = None
+            terminal_format: str | None = None
+            if self.__app_options:
+                command_format = self.__app_options.command_format
+                terminal_format = self.__app_options.terminal_format
+            app.launch(command_format=command_format, terminal_format=terminal_format)
+
+        def __on_changed(self, *_):
+            self.icon.set_from_icon_name(get_app_icon_name(self.app_id))
 
         def __on_clicked(self, *_):
-            if self.__niri_win:
-                self.__niri_win.focus()
-            if self.__hypr_win:
-                self.__hypr.send_command(f"dispatch focuswindow pid:{self.__hypr_win.pid}")
+            if self.niri_windows:
+                # first window
+                self.niri_windows[0].focus()
+            elif self.hypr_windows:
+                # most recently focus window
+                pid: int = sorted(self.hypr_windows, key=lambda w: w.focus_history_id)[0].pid
+                self.__hypr.send_command(f"dispatch focuswindow pid:{pid}")
+                self.__hypr.send_command("dispatch alterzorder top")
+            elif self.app_info:
+                self.__launch_app(self.app_info)
+
+        def __on_right_clicked(self, *_):
+            if self.niri_windows:
+                pass
+            elif self.hypr_windows:
+                pass
+            elif self.app_info:
+                pass
+
+        def __on_scrolled(self, _, dx: float, dy: float):
+            delta = 1 if dx + dy > 0 else -1
+            if self.niri_windows:
+                idx = 0
+                for i in range(len(self.niri_windows)):
+                    if self.niri_windows[i].is_focused:
+                        # next to the focused window
+                        idx = (i + delta) % len(self.niri_windows)
+                        break
+                        # else: the first window
+                self.niri_windows[idx].focus()
+            elif self.hypr_windows:
+                idx = 0
+                latest_focus_hist = 0
+                for i in range(len(self.hypr_windows)):
+                    if latest_focus_hist == 0 or self.hypr_windows[idx].focus_history_id < latest_focus_hist:
+                        idx = i
+                        latest_focus_hist = self.hypr_windows[idx].focus_history_id
+                if latest_focus_hist == 1:
+                    # next to the focused window
+                    idx = (idx + delta) % len(self.hypr_windows)
+                    # else: the first window
+                pid = self.hypr_windows[idx].pid
+                self.__hypr.send_command(f"dispatch focuswindow pid:{pid}")
                 self.__hypr.send_command("dispatch alterzorder top")
 
     def __init__(self):
@@ -66,8 +207,13 @@ class AppDockView(Gtk.Box):
         self.__hypr = HyprlandService.get_default()
         self.__niri_wins: list[NiriWindow] = []
         self.__hypr_wins: list[HyprlandWindow] = []
+        # dict[app_id, DockItem]
+        self.__items: dict[str, AppDockView.Item] = {}
+        # workspaces in the current monitor
         self.__monitor_ws: list[int] = []
+        # focused workspace in the current monitor
         self.__active_ws: list[int] = []
+        # current monitor connector/name
         self.__connector: str | None = None
         super().__init__()
 
@@ -120,14 +266,6 @@ class AppDockView(Gtk.Box):
         self.conceal.set_reveal_child(True)
         self.revealer.set_reveal_child(False)
 
-    def __new_item(self, niri_win: NiriWindow | None = None, hypr_win: HyprlandWindow | None = None):
-        item = self.__pool.acquire()
-        if niri_win:
-            item.niri_window = niri_win
-        if hypr_win:
-            item.hypr_window = hypr_win
-        return item
-
     def __on_auto_conceal_changed(self, *_):
         if not self.__dock_options:
             return
@@ -141,7 +279,7 @@ class AppDockView(Gtk.Box):
         self.__on_workspaces_changed()
 
     def __on_pinned_changed(self, *_):
-        pass
+        self.__refresh()
 
     def __on_workspaces_changed(self, *_):
         if self.__niri.is_available:
@@ -174,17 +312,50 @@ class AppDockView(Gtk.Box):
         self.__refresh()
 
     def __refresh(self):
-        for item in self.__list_store:
-            if isinstance(item, self.Item):
-                self.__pool.release(item)
         self.__list_store.remove_all()
 
+        pinned_set: set[str] = {get_app_id(app.id) for app in self.__apps.pinned if app.id}
+        # all the items to display: pinned apps and open windows
+        app_id_set = pinned_set
         if self.__niri.is_available:
-            for win in self.__niri_wins:
-                self.__list_store.append(self.__new_item(niri_win=win))
+            app_id_set = app_id_set | ({get_app_id(win.app_id) for win in self.__niri_wins})
         if self.__hypr.is_available:
+            app_id_set = app_id_set | ({get_app_id(win.class_name) for win in self.__hypr_wins})
+
+        # sync items to display
+        app_dict: dict[str, Application] = {get_app_id(app.id): app for app in self.__apps.apps if app.id}
+        for app_id in [app_id for app_id in self.__items if app_id not in app_id_set]:
+            self.__pool.release(self.__items.pop(app_id))
+        for app_id in app_id_set:
+            if app_id not in self.__items:
+                dock_item = self.__pool.acquire()
+                dock_item.app_id = app_id
+                dock_item.app_info = app_dict.get(app_id)
+                self.__items[app_id] = dock_item
+
+        # sync open windows to items
+        if self.__niri.is_available:
+            niri_map: dict[str, list[NiriWindow]] = {}
+            for win in self.__niri_wins:
+                app_id = get_app_id(win.app_id)
+                if app_id not in niri_map:
+                    niri_map[app_id] = []
+                niri_map[app_id].append(win)
+            for app_id, item in self.__items.items():
+                item.niri_windows = niri_map.get(app_id)
+        if self.__hypr.is_available:
+            hypr_map: dict[str, list[HyprlandWindow]] = {}
             for win in self.__hypr_wins:
-                self.__list_store.append(self.__new_item(hypr_win=win))
+                app_id = get_app_id(win.class_name)
+                if app_id not in hypr_map:
+                    hypr_map[app_id] = []
+                hypr_map[app_id].append(win)
+            for app_id, item in self.__items.items():
+                item.hypr_windows = hypr_map.get(app_id)
+
+        # rebuild list_store
+        for item in sorted(self.__items.values(), key=lambda i: (i.app_id not in pinned_set, i.app_id)):
+            self.__list_store.append(item)
 
 
 class AppDock(Widget.Window):
@@ -197,10 +368,8 @@ class AppDock(Widget.Window):
             layer="overlay",
             anchor=["bottom"],
             exclusivity="ignore",
+            css_classes=["rounded-tl", "rounded-tr", "transparent"],
         )
-        self.add_css_class("rounded-tl")
-        self.add_css_class("rounded-tr")
-        self.add_css_class("transparent")
 
         self.__view = AppDockView()
         self.set_child(self.__view)

@@ -258,9 +258,6 @@ class CommandPill(Gtk.Button):
         self.connect("clicked", self.__on_clicked)
 
     def __on_clicked(self, *_):
-        self.set_sensitive(False)
-        Utils.Timeout(ms=1000, target=lambda: self.set_sensitive(True))
-
         if self._click_cmd != "":
             run_cmd_async(self._click_cmd)
 
