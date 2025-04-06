@@ -7,7 +7,7 @@ from .backdrop import overlay_window
 from .constants import WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options
-from .utils import Pool, b64enc, connect_window, launch_application, set_on_click
+from .utils import Pool, b64enc, connect_window, get_app_icon_name, launch_application, set_on_click
 
 
 app = IgnisApp.get_default()
@@ -69,7 +69,7 @@ class AppLauncherGridItem(Gtk.Box):
         if app is None:
             return
 
-        self.icon.set_from_icon_name(app.get_icon())
+        self.icon.set_from_icon_name(get_app_icon_name(app_info=app))
         self.label.set_text(app.get_name())
         self.set_tooltip_text(app.get_description())
 

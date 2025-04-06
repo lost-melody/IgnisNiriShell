@@ -47,9 +47,12 @@ def get_app_id(app_id: str) -> str:
     return app_id
 
 
-def get_app_icon_name(app_id: str) -> str:
+def get_app_icon_name(app_id: str | None = None, app_info: Application | None = None) -> str:
+    app_id = app_id or app_info and app_info.id or ""
     app_id = get_app_id(app_id)
-    icon = ignis_get_app_icon_name(app_id)
+    icon = app_info and app_info.icon
+    if not icon:
+        icon = ignis_get_app_icon_name(app_id)
     if not icon:
         icon = app_icon_overrides.get(app_id)
     if not icon:
