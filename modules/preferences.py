@@ -1,4 +1,5 @@
-from gi.repository import Adw, Gio, GLib, GObject, Gtk
+import os.path
+from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk
 from ignis.app import IgnisApp
 from ignis.widgets import Widget
 from ignis.options import options
@@ -44,6 +45,10 @@ class Preferences(Widget.RegularWindow):
 
             self.__bind_ignis_options()
             self.__bind_user_options()
+
+            wallpaper_drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.COPY)
+            wallpaper_drop_target.connect("drop", self.__on_wallpaper_drop_target)
+            self.wallpaper_path.add_controller(wallpaper_drop_target)
 
         def __bind_ignis_options(self):
             if not options:
@@ -118,6 +123,11 @@ class Preferences(Widget.RegularWindow):
                 window = self.get_ancestor(Gtk.Window)
                 if isinstance(window, Gtk.Window):
                     self.__file_chooser.open(parent=window, callback=on_file_open)
+
+        def __on_wallpaper_drop_target(self, controller: Gtk.DropTarget, value: str, x: float, y: float):
+            files = value.split("\n")
+            if files and os.path.exists(files[0]) and options and options.wallpaper:
+                options.wallpaper.wallpaper_path = files[0]
 
     def __init__(self):
         super().__init__(
