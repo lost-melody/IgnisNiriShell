@@ -46,7 +46,7 @@ class Preferences(Widget.RegularWindow):
             self.__bind_ignis_options()
             self.__bind_user_options()
 
-            wallpaper_drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.COPY)
+            wallpaper_drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.COPY | Gdk.DragAction.MOVE)
             wallpaper_drop_target.connect("drop", self.__on_wallpaper_drop_target)
             self.wallpaper_path.add_controller(wallpaper_drop_target)
 

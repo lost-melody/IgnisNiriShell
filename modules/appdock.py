@@ -71,7 +71,7 @@ class AppDockView(Gtk.Box):
             set_on_click(self.icon, left=self.__on_clicked, right=self.__on_right_clicked)
             set_on_scroll(self.icon, self.__on_scrolled)
 
-            drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.COPY)
+            drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.COPY | Gdk.DragAction.MOVE)
             drop_target.connect("drop", self.__on_drop_target)
             self.add_controller(drop_target)
 
@@ -236,7 +236,7 @@ class AppDockView(Gtk.Box):
         self.connect("realize", self.__on_realized)
         set_on_motion(self, enter=self.__on_mouse_enter, leave=self.__on_mouse_leave)
 
-        drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.COPY)
+        drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.COPY | Gdk.DragAction.MOVE)
         drop_target.connect("enter", lambda *_: self.__on_mouse_enter() or 0)
         drop_target.connect("leave", self.__on_mouse_leave)
         self.add_controller(drop_target)
