@@ -1,4 +1,4 @@
-from gi.repository import Gio, Gtk
+from gi.repository import Gdk, Gio, Gtk
 from ignis.widgets import Widget
 from ignis.services.applications import Application, ApplicationsService
 from ignis.services.hyprland import HyprlandMonitor, HyprlandWindow, HyprlandWorkspace, HyprlandService
@@ -13,6 +13,7 @@ from .utils import (
     get_app_id,
     get_app_icon_name,
     get_widget_monitor,
+    launch_application,
     set_on_click,
     set_on_scroll,
     set_on_motion,
@@ -69,6 +70,10 @@ class AppDockView(Gtk.Box):
             self.dots.bind_model(self.__dots_store, lambda i: i)
             set_on_click(self.icon, left=self.__on_clicked, right=self.__on_right_clicked)
             set_on_scroll(self.icon, self.__on_scrolled)
+
+            drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.COPY)
+            drop_target.connect("drop", self.__on_drop_target)
+            self.add_controller(drop_target)
 
         @property
         def app_id(self) -> str:
@@ -141,13 +146,16 @@ class AppDockView(Gtk.Box):
                 dot.set_focused(focused)
                 self.__dots_store.append(dot)
 
-        def __launch_app(self, app: Application):
-            command_format: str | None = None
-            terminal_format: str | None = None
-            if self.__app_options:
-                command_format = self.__app_options.command_format
-                terminal_format = self.__app_options.terminal_format
-            app.launch(command_format=command_format, terminal_format=terminal_format)
+        def __launch_app(self, files: list[str] | None = None):
+            if not self.app_info:
+                return
+
+            command_format = self.__app_options and self.__app_options.command_format
+            terminal_format = self.__app_options and self.__app_options.terminal_format
+
+            launch_application(
+                self.app_info, files=files, command_format=command_format, terminal_format=terminal_format
+            )
 
         def __on_clicked(self, *_):
             if self.niri_windows:
@@ -159,7 +167,7 @@ class AppDockView(Gtk.Box):
                 self.__hypr.send_command(f"dispatch focuswindow pid:{pid}")
                 self.__hypr.send_command("dispatch alterzorder top")
             elif self.app_info:
-                self.__launch_app(self.app_info)
+                self.__launch_app()
 
         def __on_right_clicked(self, *_):
             if self.niri_windows:
@@ -195,6 +203,11 @@ class AppDockView(Gtk.Box):
                 self.__hypr.send_command(f"dispatch focuswindow pid:{pid}")
                 self.__hypr.send_command("dispatch alterzorder top")
 
+        def __on_drop_target(self, controller: Gtk.DropTarget, value: str, x: float, y: float):
+            files = value.split("\n")
+            if self.app_info and files:
+                self.__launch_app(files)
+
     conceal: Gtk.Revealer = gtk_template_child()
     revealer: Gtk.Revealer = gtk_template_child()
     flow_box: Gtk.FlowBox = gtk_template_child()
@@ -222,6 +235,11 @@ class AppDockView(Gtk.Box):
         self.__defer_conceal: Timeout | None = None
         self.connect("realize", self.__on_realized)
         set_on_motion(self, enter=self.__on_mouse_enter, leave=self.__on_mouse_leave)
+
+        drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.COPY)
+        drop_target.connect("enter", lambda *_: self.__on_mouse_enter() or 0)
+        drop_target.connect("leave", self.__on_mouse_leave)
+        self.add_controller(drop_target)
 
         self.__apps.connect("notify::pinned", self.__on_pinned_changed)
         if self.__niri.is_available:

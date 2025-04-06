@@ -7,7 +7,7 @@ from .backdrop import overlay_window
 from .constants import WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options
-from .utils import Pool, b64enc, connect_window, set_on_click
+from .utils import Pool, b64enc, connect_window, launch_application, set_on_click
 
 
 app = IgnisApp.get_default()
@@ -139,12 +139,9 @@ class AppLauncherView(Gtk.Box):
                 self.__add_action(f"{app_id_b64}.{app_act_b64}", act.launch)
 
     def __launch_app(self, app: Application):
-        command_format: str | None = None
-        terminal_format: str | None = None
-        if self.__app_options:
-            command_format = self.__app_options.command_format
-            terminal_format = self.__app_options.terminal_format
-        app.launch(command_format=command_format, terminal_format=terminal_format)
+        command_format = self.__app_options and self.__app_options.command_format
+        terminal_format = self.__app_options and self.__app_options.terminal_format
+        launch_application(app, command_format=command_format, terminal_format=terminal_format)
 
     def __pin_app(self, app: Application):
         if app.is_pinned:
