@@ -23,10 +23,6 @@ from .utils import (
 class AppDockView(Gtk.Box):
     __gtype_name__ = "IgnisAppDockView"
 
-    conceal: Gtk.Revealer = gtk_template_child()
-    revealer: Gtk.Revealer = gtk_template_child()
-    flow_box: Gtk.FlowBox = gtk_template_child()
-
     @gtk_template("appdock-item")
     class Item(Gtk.FlowBoxChild):
         __gtype_name__ = "IgnisAppDockItem"
@@ -57,6 +53,7 @@ class AppDockView(Gtk.Box):
                 self.__revealer.set_reveal_child(reveal)
 
         icon: Gtk.Image = gtk_template_child()
+        pin_icon: Gtk.Image = gtk_template_child()
         dots: Gtk.FlowBox = gtk_template_child()
 
         def __init__(self):
@@ -80,7 +77,7 @@ class AppDockView(Gtk.Box):
         @app_id.setter
         def app_id(self, app_id: str):
             self.__app_id = app_id
-            self.__on_changed()
+            self.icon.set_from_icon_name(get_app_icon_name(self.app_id))
 
         @property
         def app_info(self) -> Application | None:
@@ -89,7 +86,7 @@ class AppDockView(Gtk.Box):
         @app_info.setter
         def app_info(self, app_info: Application | None):
             self.__app_info = app_info
-            self.__on_changed()
+            self.pin_icon.set_visible(True if app_info and app_info.is_pinned else False)
 
         @property
         def niri_windows(self) -> list[NiriWindow] | None:
@@ -151,9 +148,6 @@ class AppDockView(Gtk.Box):
                 terminal_format = self.__app_options.terminal_format
             app.launch(command_format=command_format, terminal_format=terminal_format)
 
-        def __on_changed(self, *_):
-            self.icon.set_from_icon_name(get_app_icon_name(self.app_id))
-
         def __on_clicked(self, *_):
             if self.niri_windows:
                 # first window
@@ -199,6 +193,10 @@ class AppDockView(Gtk.Box):
                 pid = self.hypr_windows[idx].pid
                 self.__hypr.send_command(f"dispatch focuswindow pid:{pid}")
                 self.__hypr.send_command("dispatch alterzorder top")
+
+    conceal: Gtk.Revealer = gtk_template_child()
+    revealer: Gtk.Revealer = gtk_template_child()
+    flow_box: Gtk.FlowBox = gtk_template_child()
 
     def __init__(self):
         self.__dock_options = user_options and user_options.appdock
