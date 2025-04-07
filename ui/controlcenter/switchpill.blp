@@ -16,14 +16,17 @@ template $ControlSwitchPill: Box {
         ]
 
         Image icon {
+            valign: center;
             icon-name: "media-eq-symbolic";
 
             styles [
-                "p-2",
+                "m-1",
+                "p-1",
             ]
         }
 
         Box {
+            valign: center;
             orientation: vertical;
             hexpand: true;
 
@@ -50,11 +53,12 @@ template $ControlSwitchPill: Box {
         }
 
         Button action {
+            valign: center;
             icon-name: "system-settings-symbolic";
             visible: false;
 
             styles [
-                "p-2",
+                "rounded",
             ]
         }
     }
