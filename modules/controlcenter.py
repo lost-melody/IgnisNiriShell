@@ -419,7 +419,7 @@ class IgnisRecorder(Gtk.Box):
         else:
             self.__pill.pill.remove_css_class("accent")
             self.__pill.pill.remove_css_class("warning")
-            self.__pill.icon.set_from_icon_name("media-record-symbolic")
+            self.__pill.icon.set_from_icon_name("screencast-recorded-symbolic")
 
     @run_in_thread
     def __on_clicked(self, *_):
