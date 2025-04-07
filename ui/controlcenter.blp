@@ -69,9 +69,23 @@ template $ControlCenterView: Box {
                     }
                 }
 
-                $CaffeineSwitch {
+                $WifiStatus {
                     layout {
                         row: 3;
+                        column: 1;
+                    }
+                }
+
+                $BluetoothStatus {
+                    layout {
+                        row: 3;
+                        column: 2;
+                    }
+                }
+
+                $CaffeineSwitch {
+                    layout {
+                        row: 4;
                         column: 1;
                     }
                 }
@@ -84,7 +98,7 @@ template $ControlCenterView: Box {
                     disable-cmd: "pkill wlsunset";
 
                     layout {
-                        row: 3;
+                        row: 4;
                         column: 2;
                     }
                 }

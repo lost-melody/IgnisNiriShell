@@ -3,7 +3,8 @@ from gi.repository import Adw, Gio, GLib, Gtk
 from ignis.app import IgnisApp
 from ignis.widgets import Widget
 from ignis.services.audio import AudioService, Stream
-from ignis.services.network import Ethernet, EthernetDevice, NetworkService
+from ignis.services.bluetooth import BluetoothDevice, BluetoothService
+from ignis.services.network import Ethernet, EthernetDevice, NetworkService, Wifi, WifiDevice
 from ignis.services.notifications import Notification, NotificationAction, NotificationService
 from ignis.services.recorder import RecorderService
 from ignis.options import options
@@ -550,8 +551,10 @@ class EthernetStatus(Gtk.Box):
         self.__pill.icon.set_from_icon_name(self.__ethernet.get_icon_name())
         if not self.__ethernet.get_is_connected():
             self.__pill.set_subtitle("disconnected")
+            self.__pill.pill.remove_css_class("accent")
             return
 
+        self.__pill.pill.add_css_class("accent")
         devices: list[EthernetDevice] = self.__ethernet.get_devices()
         match len(devices):
             case 0:
@@ -562,6 +565,90 @@ class EthernetStatus(Gtk.Box):
                 self.set_tooltip_text(device_name)
             case _:
                 self.__pill.set_subtitle(f"{len(devices)} devices")
+
+
+class WifiStatus(Gtk.Box):
+    __gtype_name__ = "WifiStatus"
+
+    def __init__(self):
+        self.__service = NetworkService.get_default()
+        self.__wifi: Wifi = self.__service.get_wifi()
+        super().__init__()
+
+        self.__pill = ControlSwitchPill()
+        self.append(self.__pill)
+        self.__pill.set_title("Wifi")
+
+        self.__wifi.connect("notify::icon-name", self.__on_status_changed)
+        self.__wifi.connect("notify::devices", self.__on_status_changed)
+        set_on_click(self, left=self.__on_clicked)
+
+    def __on_status_changed(self, *_):
+        self.__pill.icon.set_from_icon_name(self.__wifi.get_icon_name())
+        if not self.__wifi.enabled:
+            self.__pill.set_subtitle("disabled")
+            self.__pill.pill.remove_css_class("accent")
+            return
+
+        self.__pill.pill.add_css_class("accent")
+        if not self.__wifi.is_connected:
+            self.__pill.set_subtitle("disconnected")
+            return
+
+        devices: list[WifiDevice] = self.__wifi.get_devices()
+        match len(devices):
+            case 0:
+                self.__pill.set_subtitle("no device")
+            case 1:
+                ssid = devices[0].ap.ssid
+                if isinstance(ssid, str):
+                    self.__pill.set_subtitle(ssid)
+                    self.set_tooltip_text(ssid)
+            case _:
+                self.__pill.set_subtitle(f"{len(devices)} devices")
+
+    def __on_clicked(self, *_):
+        self.__wifi.enabled = not self.__wifi.enabled
+
+
+class BluetoothStatus(Gtk.Box):
+    __gtype_name__ = "BluetoothStatus"
+
+    def __init__(self):
+        self.__service = BluetoothService.get_default()
+        super().__init__()
+
+        self.__pill = ControlSwitchPill()
+        self.append(self.__pill)
+        self.__pill.set_title("Bluetooth")
+
+        self.__service.connect("notify::state", self.__on_status_changed)
+        self.__service.connect("notify::devices", self.__on_status_changed)
+        set_on_click(self, left=self.__on_clicked)
+
+    def __on_status_changed(self, *_):
+        if not self.__service.powered:
+            self.__pill.set_subtitle("disabled")
+            self.__pill.icon.set_from_icon_name("bluetooth-disabled-symbolic")
+            self.__pill.pill.remove_css_class("accent")
+            return
+
+        self.__pill.pill.add_css_class("accent")
+        devices: list[BluetoothDevice] = [device for device in self.__service.get_devices() if device.connected]
+        match len(devices):
+            case 0:
+                self.__pill.set_subtitle("disconnected")
+                self.__pill.icon.set_from_icon_name("bluetooth-disconnected-symbolic")
+            case 1:
+                alias = devices[0].alias
+                self.__pill.set_subtitle(alias)
+                self.__pill.icon.set_from_icon_name(devices[0].icon_name)
+                self.set_tooltip_text(alias)
+            case _:
+                self.__pill.set_subtitle(f"{len(devices)} devices")
+
+    def __on_clicked(self, *_):
+        self.__service.powered = not self.__service.powered
 
 
 @gtk_template("controlcenter/notification-item")
