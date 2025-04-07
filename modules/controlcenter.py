@@ -691,6 +691,8 @@ class NotificationItem(Gtk.ListBoxRow):
             if icon.startswith("file://"):
                 icon = urllib.parse.unquote(icon).removeprefix("file://")
             self.icon.set_image(icon)
+        else:
+            self.icon.set_image("info-symbolic")
 
         self.actions.set_visible(len(notify.get_actions()) != 0)
 
