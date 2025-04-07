@@ -235,6 +235,7 @@ class ControlSwitchPill(Gtk.Box):
     icon: Gtk.Image = gtk_template_child()
     title: Gtk.Inscription = gtk_template_child()
     subtitle: Gtk.Inscription = gtk_template_child()
+    action: Gtk.Button = gtk_template_child()
 
     def __init__(self):
         super().__init__()
@@ -257,6 +258,8 @@ class ControlSwitchCmd(Gtk.Box):
         self._status_cmd: str = ""
         self._enable_cmd: str = ""
         self._disable_cmd: str = ""
+        self._action_icon: str = ""
+        self._action_cmd: str = ""
         super().__init__()
 
         self.__pill = ControlSwitchPill()
@@ -311,6 +314,29 @@ class ControlSwitchCmd(Gtk.Box):
     @disable_cmd.setter
     def disable_cmd(self, cmd: str):
         self._disable_cmd = cmd
+
+    @gproperty(type=str)
+    def action_icon(self) -> str:
+        return self._action_icon
+
+    @action_icon.setter
+    def action_icon(self, icon: str):
+        self._action_icon = icon
+        if icon:
+            self.__pill.action.set_visible(True)
+            self.__pill.action.set_icon_name(icon)
+        else:
+            self.__pill.action.set_visible(False)
+
+    @gproperty(type=str)
+    def action_cmd(self) -> str:
+        return self._action_cmd
+
+    @action_cmd.setter
+    def action_cmd(self, cmd: str):
+        self._action_cmd = cmd
+        if cmd:
+            self.__pill.action.connect("clicked", lambda *_: run_cmd_async(cmd))
 
     def __on_clicked(self, *_):
         self._enabled = not self._enabled
