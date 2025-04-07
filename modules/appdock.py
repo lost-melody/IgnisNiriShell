@@ -81,6 +81,9 @@ class AppDockView(Gtk.Box):
 
         @app_id.setter
         def app_id(self, app_id: str):
+            if self.__app_id == app_id:
+                return
+
             self.__app_id = app_id
             self.icon.set_from_icon_name(get_app_icon_name(self.app_id))
 
@@ -107,11 +110,14 @@ class AppDockView(Gtk.Box):
                     if wins[i].is_focused:
                         idx = i
                         break
-                self.set_tooltip_text(wins[idx].title)
+                self.set_tooltip_text(f"{wins[idx].app_id} - {wins[idx].title}")
                 self.__update_dots(idx, len(wins))
             else:
                 self.__niri_wins = None
-                self.set_tooltip_text(self.app_id)
+                if self.app_info:
+                    self.set_tooltip_text(f"{self.app_id} - {self.app_info.name}\n{self.app_info.description}")
+                else:
+                    self.set_tooltip_text(self.app_id)
 
         @property
         def hypr_windows(self) -> list[HyprlandWindow] | None:
@@ -128,11 +134,14 @@ class AppDockView(Gtk.Box):
                     if latest == 0 or wins[i].focus_history_id < latest:
                         idx = i
                         latest = wins[i].focus_history_id
-                self.set_tooltip_text(wins[idx].title)
+                self.set_tooltip_text(f"{wins[idx].class_name} - {wins[idx].title}")
                 self.__update_dots(idx, len(wins))
             else:
                 self.__hypr_wins = None
-                self.set_tooltip_text(self.app_id)
+                if self.app_info:
+                    self.set_tooltip_text(f"{self.app_id} - {self.app_info.name}\n{self.app_info.description}")
+                else:
+                    self.set_tooltip_text(self.app_id)
 
         def __update_dots(self, index: int, length: int):
             if index <= 2:
@@ -344,11 +353,12 @@ class AppDockView(Gtk.Box):
         for app_id in [app_id for app_id in self.__items if app_id not in app_id_set]:
             self.__pool.release(self.__items.pop(app_id))
         for app_id in app_id_set:
-            if app_id not in self.__items:
+            dock_item = self.__items.get(app_id)
+            if not dock_item:
                 dock_item = self.__pool.acquire()
-                dock_item.app_id = app_id
-                dock_item.app_info = app_dict.get(app_id)
                 self.__items[app_id] = dock_item
+            dock_item.app_id = app_id
+            dock_item.app_info = app_dict.get(app_id)
 
         # sync open windows to items
         if self.__niri.is_available:
