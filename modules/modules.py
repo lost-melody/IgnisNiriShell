@@ -375,7 +375,7 @@ class CaffeineIndicator(Widget.Box):
         self.__state = caffeine_state
         self.__cookie: int = 0
         super().__init__(
-            css_classes=["hover", "px-2", "rounded"],
+            css_classes=["hover", "px-1", "rounded"],
             tooltip_text="Caffeine enabled",
             visible=False,
             child=[Widget.Icon(image="my-caffeine-on-symbolic")],
@@ -410,7 +410,7 @@ class DndIndicator(Widget.Box):
     def __init__(self):
         self.__options = options and options.notifications
         super().__init__(
-            css_classes=["hover", "px-2", "rounded", "warning"],
+            css_classes=["hover", "px-1", "rounded", "warning"],
             tooltip_text="Do Not Disturb enabled",
             child=[Widget.Icon(image="notifications-disabled-symbolic")],
         )
@@ -437,7 +437,7 @@ class RecorderIndicator(Widget.Box):
     def __init__(self):
         self.__service = RecorderService.get_default()
         self.__icon = Widget.Icon()
-        super().__init__(css_classes=["hover", "px-2", "rounded", "warning"], child=[self.__icon])
+        super().__init__(css_classes=["hover", "px-1", "rounded", "warning"], child=[self.__icon])
 
         self.__service.connect("notify::active", self.__on_status_changed)
         self.__service.connect("notify::is-paused", self.__on_status_changed)
