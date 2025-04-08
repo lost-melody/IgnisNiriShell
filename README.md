@@ -15,10 +15,9 @@ Requirements:
 <details>
 <summary>Screenshots (light theme)</summary>
 
-![ignis-shell-overview.png](https://i.postimg.cc/9MFJqgNK/ignis-shell-overview.png)
+![ignis-shell-appdock.png](https://i.postimg.cc/FH2n6QH4/ignis-shell-appdock.png)
 ![ignis-shell-applauncher.png](https://i.postimg.cc/15CHLKXr/ignis-shell-applauncher.png)
 ![ignis-shell-controlcenter.png](https://i.postimg.cc/TYL0vDb8/ignis-shell-controlcenter.png)
-![ignis-shell-appdock.png](https://i.postimg.cc/mrMy1fwm/ignis-shell-appdock.png)
 ![ignis-shell-preferences.png](https://i.postimg.cc/mDpW55zW/ignis-shell-preferences.png)
 
 </details>
