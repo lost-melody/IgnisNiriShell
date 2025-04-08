@@ -39,6 +39,15 @@ class CpuTimes:
         self.__times = self.read_cpu_times()
 
     @classmethod
+    def read_cpu_count(cls):
+        with open("/proc/cpuinfo") as cpuinfo:
+            count = 0
+            for line in cpuinfo.readlines():
+                if line.startswith("processor"):
+                    count += 1
+            return count
+
+    @classmethod
     def read_cpu_times(cls):
         with open("/proc/stat") as stat:
             line = stat.readline().split()[1:]

@@ -279,6 +279,7 @@ class CpuUsagePill(CommandPill):
         self._label: Gtk.Label | None = None
         super().__init__()
         self.__times = CpuTimes()
+        self.__processors = self.__times.read_cpu_count()
         self.__poll = Utils.Poll(timeout=self.interval, callback=self.__on_updated)
 
     @gproperty(type=str)
@@ -300,11 +301,11 @@ class CpuUsagePill(CommandPill):
 
     def __on_updated(self, *_):
         idle, total = self.__times.get_delta()
-        if total:
-            percent = (total - idle) / total * 100
-        else:
-            percent = 0
+        # this means how many percent of computing resources of a single processor are used
+        # e.g. 234% means 2.34 processors are used; 1600% (with 16 processors) means all processors are used
+        percent = (total - idle) / total * 100 * self.__processors if total else 0
         label = f"{round(percent)}"
+        self.set_tooltip_text(f"CPU Usage: {round(percent)}% / {self.__processors * 100}%")
         if self.labeler:
             self.labeler.set_label(label)
         else:
