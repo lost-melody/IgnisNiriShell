@@ -549,6 +549,8 @@ class EthernetStatus(Gtk.Box):
 
     def __on_status_changed(self, *_):
         self.__pill.icon.set_from_icon_name(self.__ethernet.get_icon_name())
+        self.set_tooltip_text()
+
         if not self.__ethernet.get_is_connected():
             self.__pill.set_subtitle("disconnected")
             self.__pill.pill.remove_css_class("accent")
@@ -585,6 +587,8 @@ class WifiStatus(Gtk.Box):
 
     def __on_status_changed(self, *_):
         self.__pill.icon.set_from_icon_name(self.__wifi.get_icon_name())
+        self.set_tooltip_text()
+
         if not self.__wifi.enabled:
             self.__pill.set_subtitle("disabled")
             self.__pill.pill.remove_css_class("accent")
