@@ -34,6 +34,28 @@ class Pool[T]():
         self.__pool.append(value)
 
 
+class CpuTimes:
+    def __init__(self):
+        self.__times = self.read_cpu_times()
+
+    @classmethod
+    def read_cpu_times(cls):
+        with open("/proc/stat") as stat:
+            line = stat.readline().split()[1:]
+            return list(map(int, line[: min(7, len(line))]))
+
+    def get_delta(self):
+        """
+        returns (idle, total) since last called
+        """
+        times = self.read_cpu_times()
+        deltas = [times[i] - self.__times[i] for i in range(len(times))]
+        total = sum(deltas)
+        idle = deltas[3]
+        self.__times = times
+        return idle, total
+
+
 def b64enc(input: str) -> str:
     return base64.b64encode(input.encode()).decode().rstrip("=")
 

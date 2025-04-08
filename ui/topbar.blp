@@ -11,14 +11,13 @@ template $TopbarView: CenterBox {
 
         $CommandPill {
             icon-name: "view-grid-symbolic";
-            click_command: "ignis toggle ignis-applauncher";
+            click-command: "ignis toggle ignis-applauncher";
 
             styles [
-                "rounded-tr",
-                "rounded-br",
                 "hover",
                 "px-2",
-                "transparent",
+                "rounded-tr",
+                "rounded-br",
                 "unset",
             ]
         }
@@ -45,6 +44,36 @@ template $TopbarView: CenterBox {
         ]
 
         $IgnisTray {}
+
+        $CpuUsagePill {
+            tooltip-text: "CPU Usage";
+            labeler: cpu_label;
+
+            styles [
+                "hover",
+                "rounded",
+                "px-1",
+                "unset",
+            ]
+
+            Box {
+                Image {
+                    icon-name: "application-x-firmware-symbolic";
+
+                    styles [
+                        "px-1",
+                    ]
+                }
+
+                Label cpu_label {
+                    label: "0";
+
+                    styles [
+                        "px-1",
+                    ]
+                }
+            }
+        }
 
         $IgnisCaffeineIndicator {}
 

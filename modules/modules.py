@@ -20,6 +20,7 @@ from .variables import caffeine_state
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options
 from .utils import (
+    CpuTimes,
     Pool,
     connect_option,
     format_time_duration,
@@ -268,6 +269,46 @@ class CommandPill(Gtk.Button):
     @click_command.setter
     def click_command(self, cmd: str):
         self._click_cmd = cmd
+
+
+class CpuUsagePill(CommandPill):
+    __gtype_name__ = "CpuUsagePill"
+
+    def __init__(self):
+        self._interval: int = 3000
+        self._label: Gtk.Label | None = None
+        super().__init__()
+        self.__times = CpuTimes()
+        self.__poll = Utils.Poll(timeout=self.interval, callback=self.__on_updated)
+
+    @gproperty(type=str)
+    def interval(self) -> int:
+        return self._interval
+
+    @interval.setter
+    def interval(self, interval: int):
+        self._interval = interval
+        self.__poll.timeout = interval
+
+    @gproperty(type=Gtk.Label)
+    def labeler(self) -> Gtk.Label | None:
+        return self._label
+
+    @labeler.setter
+    def labeler(self, label: Gtk.Label):
+        self._label = label
+
+    def __on_updated(self, *_):
+        idle, total = self.__times.get_delta()
+        if total:
+            percent = (total - idle) / total * 100
+        else:
+            percent = 0
+        label = f"{round(percent)}"
+        if self.labeler:
+            self.labeler.set_label(label)
+        else:
+            self.set_label(label)
 
 
 class Tray(Gtk.FlowBox):
