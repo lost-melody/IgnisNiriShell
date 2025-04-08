@@ -10,6 +10,18 @@ Requirements:
 - [Blueprint](https://jwestman.pages.gitlab.gnome.org/blueprint-compiler/), a markup language for _GTK_ user interfaces.
 - [libadwaita](https://gnome.pages.gitlab.gnome.org/libadwaita/), Building blocks for modern _GNOME_ applications.
 
+## Screenshots
+
+<details>
+<summary>Screenshots (light theme)</summary>
+
+![ignis-shell-overview.png](https://i.postimg.cc/9MFJqgNK/ignis-shell-overview.png)
+![ignis-shell-applauncher.png](https://i.postimg.cc/15CHLKXr/ignis-shell-applauncher.png)
+![ignis-shell-controlcenter.png](https://i.postimg.cc/mgKSr2Qc/ignis-shell-controlcenter.png)
+![ignis-shell-appdock.png](https://i.postimg.cc/mrMy1fwm/ignis-shell-appdock.png)
+
+</details>
+
 ## About the project
 
 - _Adw_ is initialized in `config.py` and is required for ui styles, light/dark color schemes, and is used in some widgets.
