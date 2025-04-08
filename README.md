@@ -17,7 +17,7 @@ Requirements:
 
 ![ignis-shell-overview.png](https://i.postimg.cc/9MFJqgNK/ignis-shell-overview.png)
 ![ignis-shell-applauncher.png](https://i.postimg.cc/15CHLKXr/ignis-shell-applauncher.png)
-![ignis-shell-controlcenter.png](https://i.postimg.cc/mgKSr2Qc/ignis-shell-controlcenter.png)
+![ignis-shell-controlcenter.png](https://i.postimg.cc/TYL0vDb8/ignis-shell-controlcenter.png)
 ![ignis-shell-appdock.png](https://i.postimg.cc/mrMy1fwm/ignis-shell-appdock.png)
 
 </details>
