@@ -680,6 +680,10 @@ class NotificationItem(Gtk.ListBoxRow):
         return self.notification.id if self.notification else 0
 
     @property
+    def notify_ts(self) -> float:
+        return self.notification.time if self.notification else 0
+
+    @property
     def notification(self) -> Notification | None:
         return self._notification
 
@@ -785,7 +789,9 @@ class NotificationCenter(Gtk.Box):
             self.stack.set_visible_child_name("no-notifications")
 
     def __find_notify(self, notify: Notification):
-        return self._notifications.find_with_equal_func(notify, lambda i, n: i.notify_id == n.id)
+        return self._notifications.find_with_equal_func(
+            notify, lambda i, n: i.notify_id == n.id and i.notify_ts == n.time
+        )
 
     def __on_notified(self, _, notify: Notification):
         item = self.__pool.acquire()
@@ -861,7 +867,7 @@ class NotificationPopups(Widget.RevealerWindow):
             self.set_visible(False)
 
     def __find_popup(self, popup: Notification):
-        return self._popups.find_with_equal_func(popup, lambda i, p: i.notify_id == p.id)
+        return self._popups.find_with_equal_func(popup, lambda i, p: i.notify_id == p.id and i.notify_ts == p.time)
 
     def __on_new_popup(self, _, popup: Notification):
         item = self.__pool.acquire()
