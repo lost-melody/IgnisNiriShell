@@ -16,6 +16,16 @@ template $NotificationItem: ListBoxRow {
                     icon-name: "info-symbolic";
                     icon-size: large;
                 }
+
+                [suffix]
+                Label time {
+                    justify: center;
+
+                    styles [
+                        "caption",
+                        "dimmed",
+                    ]
+                }
             }
 
             Box actions {

@@ -2,7 +2,7 @@ import base64
 import shlex
 from asyncio import create_task
 from typing import Any, Callable
-from gi.repository import Gdk, Gio, GObject, Gtk
+from gi.repository import Gdk, Gio, GLib, GObject, Gtk, Pango
 from ignis.widgets import Widget
 from ignis.services.applications import Application
 from ignis.services.niri import NiriService
@@ -156,6 +156,18 @@ def format_time_duration(seconds: int, minutes: int = 0, hours: int = 0) -> str:
         return "%d:%02d:%02d" % (hours, minutes, seconds)
     else:
         return "%d:%02d" % (minutes, seconds)
+
+
+def escape_pango_markup(text: str) -> str:
+    return GLib.markup_escape_text(text)
+
+
+def verify_pango_markup(markup: str) -> bool:
+    try:
+        valid, _, _, _ = Pango.parse_markup(markup, -1, "\0")
+        return valid
+    except GLib.Error:
+        return False
 
 
 def connect_window(widget: Gtk.Widget, signal: str, callback: Callable[..., Any]):

@@ -1,4 +1,5 @@
 import urllib.parse
+from datetime import datetime
 from gi.repository import Adw, Gio, GLib, Gtk
 from ignis.app import IgnisApp
 from ignis.widgets import Widget
@@ -13,7 +14,17 @@ from .backdrop import overlay_window
 from .constants import AudioStreamType, WindowName
 from .variables import caffeine_state
 from .template import gtk_template, gtk_template_callback, gtk_template_child
-from .utils import Pool, connect_window, connect_option, gproperty, niri_action, run_cmd_async, set_on_click
+from .utils import (
+    Pool,
+    connect_window,
+    connect_option,
+    escape_pango_markup,
+    gproperty,
+    niri_action,
+    run_cmd_async,
+    set_on_click,
+    verify_pango_markup,
+)
 
 
 app = IgnisApp.get_default()
@@ -662,6 +673,7 @@ class NotificationItem(Gtk.ListBoxRow):
     revealer: Gtk.Revealer = gtk_template_child()
     action_row: Adw.ActionRow = gtk_template_child()
     icon: Widget.Icon = gtk_template_child()
+    time: Gtk.Label = gtk_template_child()
     actions: Gtk.Box = gtk_template_child()
 
     def __init__(self):
@@ -691,8 +703,16 @@ class NotificationItem(Gtk.ListBoxRow):
     def notification(self, notify: Notification):
         self._notification = notify
 
-        self.action_row.set_title(notify.get_summary())
-        self.action_row.set_subtitle(notify.get_body())
+        summary, body = notify.summary, notify.body
+        valid_markup = verify_pango_markup(summary) and verify_pango_markup(body)
+        if not valid_markup:
+            summary = escape_pango_markup(summary)
+            body = escape_pango_markup(body)
+        self.action_row.set_title(summary)
+        self.action_row.set_subtitle(body)
+
+        notified_at = datetime.fromtimestamp(notify.time)
+        self.time.set_label(notified_at.strftime("%H:%M:%S\n%Y-%m-%d"))
 
         if notify.get_icon():
             icon = notify.get_icon()
