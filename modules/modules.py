@@ -552,10 +552,14 @@ class Network(Widget.Box):
             super().__init__(css_classes=["px-1"], child=[Widget.Icon(image=ethernet.bind("icon_name"))])
             ethernet.connect("notify::is-connected", self.__on_change)
             self.__on_change()
+            set_on_click(self, left=self.__on_clicked, right=self.__on_clicked)
 
         def __on_change(self, *_):
             connected: bool = self.__ethernet.is_connected
             self.set_tooltip_text("Connected" if connected else "Disconnected")
+
+        def __on_clicked(self, *_):
+            app.toggle_window(WindowName.control_center.value)
 
     class NetworkWifi(Widget.Box):
         __gtype_name__ = "IgnisNetworkWifi"
@@ -566,11 +570,17 @@ class Network(Widget.Box):
             wifi.connect("notify::enabled", self.__on_change)
             wifi.connect("notify::is-connected", self.__on_change)
             self.__on_change()
+            set_on_click(
+                self, left=self.__on_clicked, right=lambda _: app.toggle_window(WindowName.control_center.value)
+            )
 
         def __on_change(self, *_):
             enabled: bool = self.__wifi.enabled
             connected: bool = self.__wifi.is_connected
             self.set_tooltip_text("Disabled" if not enabled else "Connected" if connected else "Disconnected")
+
+        def __on_clicked(self, *_):
+            self.__wifi.enabled = not self.__wifi.enabled
 
     def __init__(self):
         self.__service = NetworkService.get_default()
@@ -578,7 +588,6 @@ class Network(Widget.Box):
             css_classes=["hover", "hpadding", "rounded"],
             child=[self.NetworkEthernet(self.__service.ethernet), self.NetworkWifi(self.__service.wifi)],
         )
-        set_on_click(self, left=lambda _: app.toggle_window(WindowName.control_center.value))
 
 
 class Mpris(Widget.Box):
