@@ -129,9 +129,9 @@ class AppDockView(Gtk.Box):
             if wins:
                 self.__hypr_wins = sorted(wins, key=lambda w: w.address)
                 idx = 0
-                latest = 0
+                latest = -1
                 for i in range(len(wins)):
-                    if latest == 0 or wins[i].focus_history_id < latest:
+                    if latest == -1 or wins[i].focus_history_id < latest:
                         idx = i
                         latest = wins[i].focus_history_id
                 self.set_tooltip_text(f"{wins[idx].class_name} - {wins[idx].title}")
@@ -199,12 +199,12 @@ class AppDockView(Gtk.Box):
                 self.niri_windows[idx].focus()
             elif self.hypr_windows:
                 idx = 0
-                latest_focus_hist = 0
+                latest_focus_hist = -1
                 for i in range(len(self.hypr_windows)):
-                    if latest_focus_hist == 0 or self.hypr_windows[idx].focus_history_id < latest_focus_hist:
+                    if latest_focus_hist == -1 or self.hypr_windows[idx].focus_history_id < latest_focus_hist:
                         idx = i
                         latest_focus_hist = self.hypr_windows[idx].focus_history_id
-                if latest_focus_hist == 1:
+                if latest_focus_hist == 0:
                     # next to the focused window
                     idx = (idx + delta) % len(self.hypr_windows)
                     # else: the first window
