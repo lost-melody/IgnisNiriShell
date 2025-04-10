@@ -20,6 +20,68 @@ from .utils import (
 )
 
 
+class WindowFocusHistory:
+    initialized: bool = False
+    increment: int = 0
+    focused_window_id: int = 0
+    # dict[win_id, hist_id]
+    focus_hist: dict[int, int] = {}
+
+    @classmethod
+    def get_focus_hist(cls, window_id: int):
+        return cls.focus_hist.get(window_id, 0)
+
+    @classmethod
+    def focus_window(cls, window_id: int):
+        if cls.focused_window_id == window_id:
+            return
+
+        cls.increment += 1
+        cls.focus_hist[window_id] = cls.increment
+
+    @classmethod
+    def find_latest_index(
+        cls, niri_windows: list[NiriWindow] | None = None, hypr_windows: list[HyprlandWindow] | None = None
+    ):
+        i = 0
+        idx = -1
+        latest = 0
+        for win in niri_windows or hypr_windows or []:
+            id = win.id if isinstance(win, NiriWindow) else win.pid
+            hist = cls.get_focus_hist(id)
+            if hist > latest:
+                idx = i
+                latest = hist
+            i += 1
+        return idx
+
+    @classmethod
+    def sync_windows(
+        cls, niri_windows: list[NiriWindow] | None = None, hypr_windows: list[HyprlandWindow] | None = None
+    ):
+        if not niri_windows and not hypr_windows:
+            cls.initialized = True
+            return
+
+        if cls.initialized:
+            id_set = None
+            if niri_windows and len(niri_windows) != len(cls.focus_hist):
+                id_set = set(w.id for w in niri_windows)
+            elif hypr_windows and len(hypr_windows) != len(cls.focus_hist):
+                id_set = set(w.pid for w in hypr_windows)
+            if id_set:
+                for id in id_set:
+                    cls.focus_hist.pop(id, None)
+        else:
+            cls.initialized = True
+            if niri_windows:
+                for id in [w.id for w in sorted(niri_windows, key=lambda w: w.id)]:
+                    cls.focus_window(id)
+            elif hypr_windows:
+                for pid in [w.pid for w in sorted(hypr_windows, key=lambda w: -w.focus_history_id)]:
+                    cls.focus_window(pid)
+
+
 @gtk_template("appdock")
 class AppDockView(Gtk.Box):
     __gtype_name__ = "IgnisAppDockView"
@@ -104,12 +166,11 @@ class AppDockView(Gtk.Box):
         def niri_windows(self, wins: list[NiriWindow] | None):
             self.__dots_store.remove_all()
             if wins:
-                self.__niri_wins = sorted(wins, key=lambda w: w.id)
-                idx = 0
-                for i in range(len(wins)):
-                    if wins[i].is_focused:
-                        idx = i
-                        break
+                wins = sorted(wins, key=lambda w: w.id)
+                self.__niri_wins = wins
+                idx = WindowFocusHistory.find_latest_index(niri_windows=wins)
+                if idx < 0:
+                    idx = 0
                 self.set_tooltip_text(f"{wins[idx].app_id} - {wins[idx].title}")
                 self.__update_dots(idx, len(wins))
             else:
@@ -127,13 +188,11 @@ class AppDockView(Gtk.Box):
         def hypr_windows(self, wins: list[HyprlandWindow] | None):
             self.__dots_store.remove_all()
             if wins:
-                self.__hypr_wins = sorted(wins, key=lambda w: w.address)
-                idx = 0
-                latest = -1
-                for i in range(len(wins)):
-                    if latest == -1 or wins[i].focus_history_id < latest:
-                        idx = i
-                        latest = wins[i].focus_history_id
+                wins = sorted(wins, key=lambda w: w.pid)
+                self.__hypr_wins = wins
+                idx = WindowFocusHistory.find_latest_index(hypr_windows=wins)
+                if idx < 0:
+                    idx = 0
                 self.set_tooltip_text(f"{wins[idx].class_name} - {wins[idx].title}")
                 self.__update_dots(idx, len(wins))
             else:
@@ -189,25 +248,18 @@ class AppDockView(Gtk.Box):
         def __on_scrolled(self, _, dx: float, dy: float):
             delta = 1 if dx + dy > 0 else -1
             if self.niri_windows:
-                idx = 0
-                for i in range(len(self.niri_windows)):
-                    if self.niri_windows[i].is_focused:
-                        # next to the focused window
-                        idx = (i + delta) % len(self.niri_windows)
-                        break
-                        # else: the first window
+                idx = WindowFocusHistory.find_latest_index(niri_windows=self.niri_windows)
+                if idx >= 0:
+                    idx = (idx + delta) % len(self.niri_windows)
+                else:
+                    idx = 0
                 self.niri_windows[idx].focus()
             elif self.hypr_windows:
-                idx = 0
-                latest_focus_hist = -1
-                for i in range(len(self.hypr_windows)):
-                    if latest_focus_hist == -1 or self.hypr_windows[idx].focus_history_id < latest_focus_hist:
-                        idx = i
-                        latest_focus_hist = self.hypr_windows[idx].focus_history_id
-                if latest_focus_hist == 0:
-                    # next to the focused window
+                idx = WindowFocusHistory.find_latest_index(hypr_windows=self.hypr_windows)
+                if idx >= 0:
                     idx = (idx + delta) % len(self.hypr_windows)
-                    # else: the first window
+                else:
+                    idx = 0
                 pid = self.hypr_windows[idx].pid
                 self.__hypr.send_command(f"dispatch focuswindow pid:{pid}")
                 self.__hypr.send_command("dispatch alterzorder top")
@@ -252,11 +304,21 @@ class AppDockView(Gtk.Box):
 
         self.__apps.connect("notify::pinned", self.__on_pinned_changed)
         if self.__niri.is_available:
+            WindowFocusHistory.sync_windows(niri_windows=self.__niri.windows)
             self.__niri.connect("notify::workspaces", self.__on_workspaces_changed)
             self.__niri.connect("notify::windows", self.__on_windows_changed)
+            self.__niri.connect(
+                "notify::active-window", lambda *_: WindowFocusHistory.focus_window(self.__niri.active_window.id)
+            )
+            self.__niri.connect("notify::active-window", self.__on_windows_changed)
         if self.__hypr.is_available:
+            WindowFocusHistory.sync_windows(hypr_windows=self.__hypr.windows)
             self.__hypr.connect("notify::workspaces", self.__on_workspaces_changed)
             self.__hypr.connect("notify::windows", self.__on_windows_changed)
+            self.__hypr.connect(
+                "notify::active-window", lambda *_: WindowFocusHistory.focus_window(self.__hypr.active_window.pid)
+            )
+            self.__hypr.connect("notify::active-window", self.__on_windows_changed)
             for monitor in self.__hypr.monitors:
                 monitor: HyprlandMonitor
                 monitor.connect("notify::active-workspace-id", self.__on_workspaces_changed)
