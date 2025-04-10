@@ -6,10 +6,10 @@ from ignis.widgets import Widget
 from ignis.services.audio import AudioService, Stream
 from ignis.services.bluetooth import BluetoothDevice, BluetoothService
 from ignis.services.network import Ethernet, EthernetDevice, NetworkService, Wifi, WifiDevice
+from ignis.services.niri import NiriService
 from ignis.services.notifications import Notification, NotificationAction, NotificationService
 from ignis.services.recorder import RecorderService
 from ignis.options import options
-from ignis.utils.thread import run_in_thread
 from .backdrop import overlay_window
 from .constants import AudioStreamType, WindowName
 from .variables import caffeine_state
@@ -431,6 +431,7 @@ class IgnisRecorder(Gtk.Box):
     __gtype_name__ = "IgnisRecorder"
 
     def __init__(self):
+        self.__niri = NiriService.get_default()
         self.__service = RecorderService.get_default()
         super().__init__()
 
@@ -459,8 +460,11 @@ class IgnisRecorder(Gtk.Box):
             self.__pill.pill.remove_css_class("warning")
             self.__pill.icon.set_from_icon_name("screencast-recorded-symbolic")
 
-    @run_in_thread
     def __on_clicked(self, *_):
+        if self.__niri.is_available:
+            self.__pill.set_subtitle("unavailable for niri")
+            return
+
         if self.__service.get_active():
             if self.__service.get_is_paused():
                 self.__service.continue_recording()
