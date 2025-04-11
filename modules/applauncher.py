@@ -1,6 +1,7 @@
 from typing import Any, Callable
 from gi.repository import GLib, Gio, GObject, Gtk
 from ignis.app import IgnisApp
+from ignis.gobject import IgnisProperty
 from ignis.widgets import Widget
 from ignis.services.applications import Application, ApplicationAction, ApplicationsService
 from .backdrop import overlay_window
@@ -268,7 +269,18 @@ class AppLauncher(Widget.RevealerWindow):
         self.__add_shortcut("<Control>k", self.__view.on_search_previous)
 
         self.__view.connect("search-stop", self.__on_search_stop)
-        self.connect("notify::visible", self.__on_visible_changed)
+
+    @IgnisProperty
+    def visible(self) -> bool:  # type: ignore
+        return super().get_visible()
+
+    @visible.setter
+    def visible(self, visible: bool) -> None:
+        if visible:
+            overlay_window.set_window(self.namespace)
+        else:
+            overlay_window.unset_window(self.namespace)
+        super().set_visible(visible)
 
     def __add_shortcut(self, trigger: str, callback: Callable[[], Any]):
         def cb(*_) -> bool:
@@ -289,9 +301,3 @@ class AppLauncher(Widget.RevealerWindow):
 
     def __on_search_stop(self, *_):
         self.set_visible(False)
-
-    def __on_visible_changed(self, *_):
-        if self.get_visible():
-            overlay_window.set_window(self.get_namespace())
-        else:
-            overlay_window.unset_window(self.get_namespace())

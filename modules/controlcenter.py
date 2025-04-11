@@ -2,6 +2,7 @@ import urllib.parse
 from datetime import datetime
 from gi.repository import Adw, Gio, GLib, Gtk
 from ignis.app import IgnisApp
+from ignis.gobject import IgnisProperty
 from ignis.widgets import Widget
 from ignis.services.audio import AudioService, Stream
 from ignis.services.bluetooth import BluetoothDevice, BluetoothService
@@ -956,10 +957,15 @@ class ControlCenter(Widget.RevealerWindow):
         self.__view = self.View()
         self.set_child(self.__view)
         self.set_revealer(self.__view.revealer)
-        self.connect("notify::visible", self.__on_visible_changed)
 
-    def __on_visible_changed(self, *_):
-        if self.get_visible():
-            overlay_window.set_window(self.get_namespace())
+    @IgnisProperty
+    def visible(self) -> bool:  # type: ignore
+        return super().get_visible()
+
+    @visible.setter
+    def visible(self, visible: bool) -> None:
+        if visible:
+            overlay_window.set_window(self.namespace)
         else:
-            overlay_window.unset_window(self.get_namespace())
+            overlay_window.unset_window(self.namespace)
+        super().set_visible(visible)

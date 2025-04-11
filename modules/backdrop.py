@@ -47,6 +47,7 @@ class OverlayBackdrop(Widget.RevealerWindow):
             monitor=monitor,
             exclusivity="ignore",
             anchor=["top", "right", "bottom", "left"],
+            layer="overlay",
             visible=False,
             css_classes=["transparent"],
             child=self.__view,
