@@ -454,7 +454,6 @@ class AppDock(Widget.Window):
         super().__init__(
             namespace=f"{WindowName.app_dock.value}-{monitor}",
             monitor=monitor,
-            layer="overlay",
             anchor=["bottom"],
             exclusivity="ignore",
             css_classes=["rounded-tl", "rounded-tr", "transparent"],
