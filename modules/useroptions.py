@@ -10,8 +10,8 @@ class UserOptions(OptionsManager):
             pass
 
     class AppLauncher(OptionsGroup):
-        command_format: str = "niri msg action spawn -- %command%"
-        terminal_format: str = "niri msg action spawn -- foot %command%"
+        command_format: str = "%command%"
+        terminal_format: str = "foot %command%"
 
     class ActiveWindow(OptionsGroup):
         on_click: str = "niri msg action center-column"

@@ -106,27 +106,30 @@ def launch_application(
     if not app.exec_string:
         return
 
-    command = "%command%"
-    # set key "Path" as cwd
-    app_info: Gio.DesktopAppInfo = app.get_app()
-    cwd = app_info.get_string("Path")
-    if cwd:
-        # cd xxx; %command%
-        command = f"cd {shlex.quote(cwd)}; " + command
-
-    format = terminal_format if app.is_terminal else command_format
-    if format:
-        # cd xxx; niri msg action spawn -- %command%
-        command = command.replace("%command%", format)
+    command: str = app.exec_string
 
     # pass file paths as arguments
-    if files:
-        files = [shlex.quote(file) for file in files]
-        exec_string: str = app.exec_string
-        for k, v in {"%f": files[0], "%F": " ".join(files), "%u": files[0], "%U": " ".join(files)}.items():
-            exec_string = exec_string.replace(k, v)
-        # cd xxx; niri msg action spawn -- nautilus --new-window filepath1 filepath2 ...
-        command = command.replace("%command%", exec_string)
+    files = [shlex.quote(file) for file in files or []]
+    file = files[0] if files else ""
+    for k, v in {"%f": file, "%F": " ".join(files), "%u": file, "%U": " ".join(files)}.items():
+        # nautilus --new-window file1 file2
+        command = command.replace(k, v)
+
+    # set key "Path" as cwd
+    app_info: Gio.DesktopAppInfo = app.app
+    cwd = app_info.get_string("Path")
+    if cwd:
+        # cd xxx; nautilus --new-window file1 file2
+        command = f"cd {shlex.quote(cwd)}; {command}"
+
+    # sh -c "cd xxx; nautilus --new-window file1 file2"
+    command = f"sh -c {shlex.quote(command)}"
+
+    # apply customized launch command
+    format = terminal_format if app.is_terminal else command_format
+    if format:
+        # niri msg action spawn -- foot sh -c "cd xxx; yazi file"
+        command = format.replace("%command%", command)
 
     app.launch(command_format=command, terminal_format=command)
 
