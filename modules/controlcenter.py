@@ -1,8 +1,8 @@
 import urllib.parse
 from datetime import datetime
+from typing import Any
 from gi.repository import Adw, Gio, GLib, Gtk
 from ignis.app import IgnisApp
-from ignis.gobject import IgnisProperty
 from ignis.widgets import Widget
 from ignis.services.audio import AudioService, Stream
 from ignis.services.bluetooth import BluetoothDevice, BluetoothService
@@ -26,6 +26,7 @@ from .utils import (
     set_on_click,
     verify_pango_markup,
 )
+from .widgets import RevealerWindow
 
 
 app = IgnisApp.get_default()
@@ -852,18 +853,20 @@ class NotificationCenter(Gtk.Box):
         self.__service.clear_all()
 
 
-class NotificationPopups(Widget.RevealerWindow):
+class NotificationPopups(RevealerWindow):
     __gtype_name__ = "IgnisNotificationPopups"
 
     @gtk_template("notificationpopups")
     class View(Gtk.Box):
         __gtype_name__ = "NotificationPopupsView"
 
-        revealer: Widget.Revealer = gtk_template_child()
+        revealer: Gtk.Revealer = gtk_template_child()
         list_box: Gtk.ListBox = gtk_template_child()
 
     def __init__(self):
         self.__service = NotificationService.get_default()
+        self.__view = self.View()
+
         super().__init__(
             namespace=WindowName.notification_popups.value,
             anchor=["top", "right"],
@@ -871,12 +874,10 @@ class NotificationPopups(Widget.RevealerWindow):
             margin_top=8,
             margin_right=8,
             css_classes=["transparent"],
-            revealer=Widget.Revealer(),
+            revealer=self.__view.revealer,
         )
 
-        self.__view = self.View()
         self.set_child(self.__view)
-        self.set_revealer(self.__view.revealer)
 
         self._popups = Gio.ListStore()
         self.__view.list_box.bind_model(model=self._popups, create_widget_func=lambda i: i)
@@ -924,14 +925,14 @@ class NotificationPopups(Widget.RevealerWindow):
         item.revealer.connect("notify::child-revealed", on_child_folded)
 
 
-class ControlCenter(Widget.RevealerWindow):
+class ControlCenter(RevealerWindow):
     __gtype_name__ = "ControlCenter"
 
     @gtk_template("controlcenter")
     class View(Gtk.Box):
         __gtype_name__ = "ControlCenterView"
 
-        revealer: Widget.Revealer = gtk_template_child()
+        revealer: Gtk.Revealer = gtk_template_child()
         preferences_button: Gtk.Button = gtk_template_child()
 
         @gtk_template_callback
@@ -940,6 +941,8 @@ class ControlCenter(Widget.RevealerWindow):
             app.open_window(WindowName.preferences.value)
 
     def __init__(self):
+        self.__view = self.View()
+
         super().__init__(
             namespace=WindowName.control_center.value,
             kb_mode="exclusive",
@@ -950,22 +953,13 @@ class ControlCenter(Widget.RevealerWindow):
             layer="overlay",
             popup=True,
             visible=False,
-            revealer=Widget.Revealer(),
+            revealer=self.__view.revealer,
         )
         self.add_css_class("rounded")
 
-        self.__view = self.View()
         self.set_child(self.__view)
-        self.set_revealer(self.__view.revealer)
 
-    @IgnisProperty
-    def visible(self) -> bool:  # type: ignore
-        return super().get_visible()
-
-    @visible.setter
-    def visible(self, visible: bool) -> None:
-        if visible:
-            overlay_window.set_window(self.namespace)
-        else:
-            overlay_window.unset_window(self.namespace)
-        super().set_visible(visible)
+    def set_property(self, property_name: str, value: Any):
+        if property_name == "visible":
+            overlay_window.update_window_visible(self.namespace, value)
+        super().set_property(property_name, value)

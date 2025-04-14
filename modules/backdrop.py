@@ -3,6 +3,7 @@ from ignis.widgets import Widget
 from ignis.variable import Variable
 from .constants import WindowName
 from .utils import set_on_click
+from .widgets import RevealerWindow
 
 
 app = IgnisApp.get_default()
@@ -14,6 +15,12 @@ class OverlayWindow(Variable):
 
     def get_window(self) -> str | None:
         return self.get_value()
+
+    def update_window_visible(self, name: str, visible: bool):
+        if visible:
+            self.set_window(name)
+        else:
+            self.unset_window(name)
 
     def set_window(self, name: str):
         previous = self.get_value()
@@ -30,7 +37,7 @@ class OverlayWindow(Variable):
 overlay_window = OverlayWindow()
 
 
-class OverlayBackdrop(Widget.RevealerWindow):
+class OverlayBackdrop(RevealerWindow):
     __gtype_name__ = "IgnisBackdrop"
 
     def __init__(self, monitor: int):

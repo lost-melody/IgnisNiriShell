@@ -1,7 +1,6 @@
 from typing import Any, Callable
 from gi.repository import GLib, Gio, GObject, Gtk
 from ignis.app import IgnisApp
-from ignis.gobject import IgnisProperty
 from ignis.widgets import Widget
 from ignis.services.applications import Application, ApplicationAction, ApplicationsService
 from .backdrop import overlay_window
@@ -9,6 +8,7 @@ from .constants import WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options
 from .utils import Pool, b64enc, connect_window, get_app_icon_name, launch_application, set_on_click
+from .widgets import RevealerWindow
 
 
 app = IgnisApp.get_default()
@@ -90,7 +90,7 @@ class AppLauncherGridItem(Gtk.Box):
 class AppLauncherView(Gtk.Box):
     __gtype_name__ = "IgnisAppLauncherView"
 
-    revealer: Widget.Revealer = gtk_template_child()
+    revealer: Gtk.Revealer = gtk_template_child()
     search_bar: Gtk.SearchBar = gtk_template_child()
     search_entry: Gtk.SearchEntry = gtk_template_child()
     app_grid: Gtk.ListView = gtk_template_child()
@@ -242,23 +242,23 @@ class AppLauncherView(Gtk.Box):
         pass
 
 
-class AppLauncher(Widget.RevealerWindow):
+class AppLauncher(RevealerWindow):
     __gtype_name__ = "IgnisAppLauncher"
 
     def __init__(self):
+        self.__view = AppLauncherView()
+
         super().__init__(
             namespace=WindowName.app_launcher.value,
             kb_mode="exclusive",
             layer="overlay",
             popup=True,
             visible=False,
-            revealer=Widget.Revealer(),
+            revealer=self.__view.revealer,
         )
         self.add_css_class("rounded")
 
-        self.__view = AppLauncherView()
         self.set_child(self.__view)
-        self.set_revealer(self.__view.revealer)
 
         self.__view.search_bar.set_key_capture_widget(self)
         self.__add_shortcut("<Control>f", self.__toggle_search_mode)
@@ -270,17 +270,10 @@ class AppLauncher(Widget.RevealerWindow):
 
         self.__view.connect("search-stop", self.__on_search_stop)
 
-    @IgnisProperty
-    def visible(self) -> bool:  # type: ignore
-        return super().get_visible()
-
-    @visible.setter
-    def visible(self, visible: bool) -> None:
-        if visible:
-            overlay_window.set_window(self.namespace)
-        else:
-            overlay_window.unset_window(self.namespace)
-        super().set_visible(visible)
+    def set_property(self, property_name: str, value: Any):
+        if property_name == "visible":
+            overlay_window.update_window_visible(self.namespace, value)
+        super().set_property(property_name, value)
 
     def __add_shortcut(self, trigger: str, callback: Callable[[], Any]):
         def cb(*_) -> bool:
