@@ -1,0 +1,51 @@
+using Gtk 4.0;
+
+template $BacklightControlItem: ListBoxRow {
+    focusable: false;
+    selectable: false;
+
+    styles [
+        "card",
+        "p-1",
+        "m-1",
+        "rounded",
+    ]
+
+    Box {
+        Image {
+            icon-name: "display-brightness-symbolic";
+
+            styles [
+                "hover-bg-5",
+                "p-2",
+                "rounded",
+                "transition",
+            ]
+        }
+
+        Scale scale {
+            hexpand: true;
+            value-changed => $on_scale_value_changed();
+
+            adjustment: Adjustment {
+                lower: 0;
+                upper: 100;
+                step-increment: 5;
+                page-increment: 10;
+            };
+
+            styles [
+                "mx-1",
+            ]
+        }
+
+        Label label {
+            label: "0";
+            width-chars: 3;
+
+            styles [
+                "p-2",
+            ]
+        }
+    }
+}

@@ -1,10 +1,13 @@
+import math
 import urllib.parse
+from asyncio import create_task
 from datetime import datetime
 from typing import Any
 from gi.repository import Adw, Gio, GLib, Gtk
 from ignis.app import IgnisApp
 from ignis.widgets import Widget
 from ignis.services.audio import AudioService, Stream
+from ignis.services.backlight import BacklightDevice, BacklightService
 from ignis.services.bluetooth import BluetoothDevice, BluetoothService
 from ignis.services.network import Ethernet, EthernetDevice, NetworkService, Wifi, WifiDevice
 from ignis.services.niri import NiriService
@@ -239,6 +242,82 @@ class AudioControlGroupMicrophone(Gtk.Box):
     def __init__(self):
         super().__init__()
         self.append(AudioControlGroup(AudioStreamType.microphone))
+
+
+@gtk_template("controlcenter/backlight-group")
+class BacklightControlGroup(Gtk.ListBox):
+    __gtype_name__ = "BacklightControlGroup"
+
+    @gtk_template("controlcenter/backlight-item")
+    class Item(Gtk.ListBoxRow):
+        __gtype_name__ = "BacklightControlItem"
+
+        scale: Gtk.Scale = gtk_template_child()
+        label: Gtk.Label = gtk_template_child()
+
+        def __init__(self):
+            self._device: BacklightDevice | None = None
+            super().__init__()
+
+            self.__brightness_id: int = 0
+
+        @gproperty(type=BacklightDevice)
+        def device(self) -> BacklightDevice | None:
+            return self._device
+
+        @device.setter
+        def device(self, device: BacklightDevice | None):
+            if self._device:
+                self._device.disconnect(self.__brightness_id)
+
+            self._device = device
+
+            if device:
+                adjustment = self.scale.get_adjustment()
+                adjustment.set_upper(math.ceil(device.max_brightness))
+                self.__brightness_id = device.connect("notify::brightness", self.__on_brightness_changed)
+
+        @gtk_template_callback
+        def on_scale_value_changed(self, *_):
+            if not self._device:
+                return
+
+            name = self._device.device_name
+            value = round(self.scale.get_value())
+            upper = round(self.scale.get_adjustment().get_upper())
+            self.label.set_label(f"{value}")
+            self.set_tooltip_text(f"{name}\nbrightness: {value} / {upper}")
+            if value != self._device.brightness:
+                create_task(self._device.set_brightness_async(round(self.scale.get_value())))
+
+        def __on_brightness_changed(self, *_):
+            if self._device:
+                self.scale.set_value(self._device.brightness)
+
+    def __init__(self):
+        self.__service = BacklightService.get_default()
+        super().__init__()
+
+        self.__list = Gio.ListStore()
+        self.bind_model(self.__list, lambda i: i)
+
+        self.__pool = Pool(self.Item)
+        self.__service.connect("notify::devices", self.__on_devices_changed)
+        self.__on_devices_changed()
+
+    def __on_devices_changed(self, *_):
+        devices: list[BacklightDevice] = self.__service.get_devices()
+
+        for item in self.__list:
+            item: BacklightControlGroup.Item
+            item.device = None
+            self.__pool.release(item)
+        self.__list.remove_all()
+
+        for device in devices:
+            item = self.__pool.acquire()
+            item.device = device
+            self.__list.append(item)
 
 
 @gtk_template("controlcenter/switchpill")
