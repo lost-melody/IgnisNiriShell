@@ -64,8 +64,33 @@ template $PreferencesView: Box {
             }
 
             Adw.PreferencesGroup {
+                title: "Topbar";
+                description: "Options for the Topbar";
+
+                Adw.SwitchRow topbar_exclusive {
+                    title: "Exclusive Zone";
+                    subtitle: "Whether compositor should reserve extra space for topbar";
+                }
+
+                Adw.SwitchRow topbar_focusable {
+                    title: "Focusable";
+                    subtitle: "Whether topbar can get keyboard focus";
+                }
+            }
+
+            Adw.PreferencesGroup {
                 title: "App Dock";
                 description: "Options for the application dock";
+
+                Adw.SwitchRow dock_exclusive {
+                    title: "Exclusive Zone";
+                    subtitle: "Whether compositor should reserve extra space for the dock";
+                }
+
+                Adw.SwitchRow dock_focusable {
+                    title: "Focusable";
+                    subtitle: "Whether dock can get keyboard focus";
+                }
 
                 Adw.SwitchRow dock_auto_conceal {
                     title: "Audo Conceal";

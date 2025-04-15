@@ -23,14 +23,21 @@ class UserOptions(OptionsManager):
         on_scroll_right: str = "niri msg action focus-window-down-or-column-right"
 
     class AppDock(OptionsGroup):
+        exclusive: bool = False
+        focusable: bool = False
         auto_conceal: bool = True
         conceal_delay: int = 1000
         monitor_only: bool = True
         workspace_only: bool = True
 
+    class Topbar(OptionsGroup):
+        exclusive: bool = True
+        focusable: bool = False
+
     applauncher = AppLauncher()
     activewindow = ActiveWindow()
     appdock = AppDock()
+    topbar = Topbar()
 
 
 user_options = UserOptions()

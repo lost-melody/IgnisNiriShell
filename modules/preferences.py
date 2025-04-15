@@ -23,6 +23,8 @@ class Preferences(Widget.RegularWindow):
         popup_timeout: Adw.SpinRow = gtk_template_child()
         max_popups: Adw.SpinRow = gtk_template_child()
         bitrate: Adw.SpinRow = gtk_template_child()
+        topbar_exclusive: Adw.SwitchRow = gtk_template_child()
+        topbar_focusable: Adw.SwitchRow = gtk_template_child()
         recorder_filename: Adw.EntryRow = gtk_template_child()
         wallpaper_path: Adw.ActionRow = gtk_template_child()
         command_format: Adw.EntryRow = gtk_template_child()
@@ -34,6 +36,8 @@ class Preferences(Widget.RegularWindow):
         on_active_scroll_down: Adw.EntryRow = gtk_template_child()
         on_active_scroll_left: Adw.EntryRow = gtk_template_child()
         on_active_scroll_right: Adw.EntryRow = gtk_template_child()
+        dock_exclusive: Adw.SwitchRow = gtk_template_child()
+        dock_focusable: Adw.SwitchRow = gtk_template_child()
         dock_auto_conceal: Adw.SwitchRow = gtk_template_child()
         dock_monitor_only: Adw.SwitchRow = gtk_template_child()
         dock_workspace_only: Adw.SwitchRow = gtk_template_child()
@@ -102,10 +106,16 @@ class Preferences(Widget.RegularWindow):
                 bind_option(user_options.activewindow, "on_scroll_right", self.on_active_scroll_right, "text")
 
             if user_options.appdock:
+                bind_option(user_options.appdock, "exclusive", self.dock_exclusive, "active")
+                bind_option(user_options.appdock, "focusable", self.dock_focusable, "active")
                 bind_option(user_options.appdock, "auto_conceal", self.dock_auto_conceal, "active")
                 bind_option(user_options.appdock, "monitor_only", self.dock_monitor_only, "active")
                 bind_option(user_options.appdock, "workspace_only", self.dock_workspace_only, "active")
                 bind_option(user_options.appdock, "conceal_delay", self.dock_conceal_delay, "value")
+
+            if user_options.topbar:
+                bind_option(user_options.topbar, "exclusive", self.topbar_exclusive, "active")
+                bind_option(user_options.topbar, "focusable", self.topbar_focusable, "active")
 
         @gtk_template_callback
         def on_wallpaper_select_clicked(self, *_):
