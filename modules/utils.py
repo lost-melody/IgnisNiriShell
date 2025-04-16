@@ -70,6 +70,8 @@ def b64enc(input: str) -> str:
 
 
 def get_app_id(app_id: str) -> str:
+    if not app_id:
+        app_id = "unknown"
     if app_id.lower().endswith(".desktop"):
         app_id = app_id[:-8]
     override = app_id_overrides.get(app_id)
@@ -87,7 +89,7 @@ def get_app_icon_name(app_id: str | None = None, app_info: Application | None = 
     if not icon:
         icon = app_icon_overrides.get(app_id)
     if not icon:
-        icon = "image-missing-symbolic"
+        icon = "application-default-icon"
     return icon
 
 

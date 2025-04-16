@@ -171,7 +171,7 @@ class AppDockView(Gtk.Box):
                 idx = WindowFocusHistory.find_latest_index(niri_windows=wins)
                 if idx < 0:
                     idx = 0
-                self.set_tooltip_text(f"{wins[idx].app_id} - {wins[idx].title}")
+                self.set_tooltip_text(f"{self.app_id} - {wins[idx].title}")
                 self.__update_dots(idx, len(wins))
             else:
                 self.__niri_wins = None
@@ -193,7 +193,7 @@ class AppDockView(Gtk.Box):
                 idx = WindowFocusHistory.find_latest_index(hypr_windows=wins)
                 if idx < 0:
                     idx = 0
-                self.set_tooltip_text(f"{wins[idx].class_name} - {wins[idx].title}")
+                self.set_tooltip_text(f"{self.app_id} - {wins[idx].title}")
                 self.__update_dots(idx, len(wins))
             else:
                 self.__hypr_wins = None

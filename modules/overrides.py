@@ -3,7 +3,6 @@ from .utils import app_icon_overrides, app_id_overrides
 
 app_icons_mapper: dict[str, str] = {
     # map windows by app_id/class to icon names
-    "com.github.linkfrg.ignis": "window-symbolic",
 }
 
 app_id_mapper: dict[str, str] = {

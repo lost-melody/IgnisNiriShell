@@ -24,6 +24,7 @@ from .utils import (
     Pool,
     connect_option,
     format_time_duration,
+    get_app_id,
     get_app_icon_name,
     get_widget_monitor_id,
     get_widget_monitor,
@@ -85,7 +86,7 @@ class ActiveWindow(Gtk.CenterBox):
                 niri_win: NiriWindow = self.__niri.get_active_window()
                 icon = get_app_icon_name(niri_win.app_id)
                 label = niri_win.title
-                tooltip = f"{niri_win.app_id} - {niri_win.title}"
+                tooltip = f"{get_app_id(niri_win.app_id)} - {niri_win.title}"
             else:
                 label = "niri"
 
@@ -94,7 +95,7 @@ class ActiveWindow(Gtk.CenterBox):
                 hypr_win: HyprlandWindow = self.__hypr.get_active_window()
                 icon = get_app_icon_name(hypr_win.class_name)
                 label = hypr_win.title
-                tooltip = f"{hypr_win.class_name} - {hypr_win.title}"
+                tooltip = f"{get_app_id(hypr_win.class_name)} - {hypr_win.title}"
             else:
                 label = "Hyprland"
 
