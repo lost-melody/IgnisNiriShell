@@ -304,7 +304,7 @@ class CpuUsagePill(CommandPill):
         idle, total = self.__times.get_delta()
         # this means how many percent of computing resources of a single processor are used
         # e.g. 234% means 2.34 processors are used; 1600% (with 16 processors) means all processors are used
-        percent = (total - idle) / total * 100 * self.__processors if total else 0
+        percent = (total - idle) * 100 * self.__processors // total if total else 0
         label = f"{round(percent)}"
         self.set_tooltip_text(f"CPU Usage: {round(percent)}% / {self.__processors * 100}%")
         if self.labeler:
