@@ -30,13 +30,11 @@ template $IgnisAppLauncherView: Box {
                     }
                 }
 
-                Adw.Clamp {
-                    maximum-size: 768;
-                    tightening-threshold: 512;
-
-                    ScrolledWindow {
+                ScrolledWindow {
+                    Adw.ClampScrollable {
+                        maximum-size: 768;
+                        tightening-threshold: 512;
                         hexpand: true;
-                        vexpand: true;
 
                         ListView app_grid {
                             activate => $on_item_activate();
