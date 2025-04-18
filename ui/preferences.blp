@@ -121,6 +121,23 @@ template $PreferencesView: Box {
             }
 
             Adw.PreferencesGroup {
+                title: "Osd";
+                description: "Options for the onscreen display";
+
+                Adw.SpinRow osd_timeout {
+                    title: "Timeout";
+                    subtitle: "The timeout before the osd hidden, in milliseconds";
+
+                    adjustment: Adjustment {
+                        lower: 200;
+                        upper: 10000;
+                        page-increment: 1000;
+                        step-increment: 100;
+                    };
+                }
+            }
+
+            Adw.PreferencesGroup {
                 title: "Wallpaper";
                 description: "Options for the WallpaperService";
 

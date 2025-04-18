@@ -30,6 +30,9 @@ class UserOptions(OptionsManager):
         monitor_only: bool = True
         workspace_only: bool = True
 
+    class Osd(OptionsGroup):
+        timeout: int = 3000
+
     class Topbar(OptionsGroup):
         exclusive: bool = True
         focusable: bool = False
@@ -38,6 +41,7 @@ class UserOptions(OptionsManager):
     activewindow = ActiveWindow()
     appdock = AppDock()
     topbar = Topbar()
+    osd = Osd()
 
 
 user_options = UserOptions()

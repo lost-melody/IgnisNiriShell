@@ -9,6 +9,7 @@ from modules.appdock import AppDock
 from modules.applauncher import AppLauncher
 from modules.backdrop import OverlayBackdrop
 from modules.controlcenter import ControlCenter, NotificationPopups
+from modules.osd import OnscreenDisplay
 from modules.preferences import Preferences
 from modules.topbar import Topbar
 
@@ -23,6 +24,7 @@ if app._config_path is not None:
 AppLauncher()
 ControlCenter()
 NotificationPopups()
+OnscreenDisplay()
 Preferences()
 
 for idx in range(get_n_monitors()):

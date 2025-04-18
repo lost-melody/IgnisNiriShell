@@ -1,4 +1,5 @@
 import base64
+import os
 import shlex
 from asyncio import create_task
 from typing import Any, Callable
@@ -63,6 +64,56 @@ class CpuTimes:
         idle = deltas[3]
         self.__times = times
         return idle, total
+
+
+class CapsLockState:
+    Flags = Gio.FileMonitorFlags
+    Event = Gio.FileMonitorEvent
+
+    leds_path = "/sys/class/leds"
+
+    def __init__(self, callback: Callable[[bool], Any]):
+        self.__callback = callback
+        self.__monitors: list[tuple[Gio.File, Gio.FileMonitor, int]] = []
+
+        try:
+            file = Gio.File.new_for_path(self.leds_path)
+            file_monitor = file.monitor(self.Flags.NONE)
+            file_monitor.connect("changed", self.__on_leds_changed)
+            self.__on_leds_changed()
+        except GLib.Error:
+            pass
+
+    def __on_leds_changed(self, *_):
+        for file, monitor, id in self.__monitors:
+            monitor.disconnect(id)
+            monitor.cancel()
+        self.__monitors.clear()
+
+        for path in os.listdir(self.leds_path):
+            if not path.startswith("input") or not path.endswith("::capslock"):
+                continue
+
+            file = Gio.File.new_for_path(f"{self.leds_path}/{path}/brightness")
+            monitor = file.monitor(self.Flags.NONE)
+            id = monitor.connect("changed", self.__on_capslock_changed)
+            self.__monitors.append((file, monitor, id))
+
+    def __on_capslock_changed(self, *_):
+        enabled = False
+
+        for file, _, _ in self.__monitors:
+            path = file.get_path()
+            if not path:
+                continue
+
+            with open(path) as capslock:
+                state = int(capslock.read().strip())
+                if state != 0:
+                    enabled = True
+                    break
+
+        self.__callback(enabled)
 
 
 def b64enc(input: str) -> str:

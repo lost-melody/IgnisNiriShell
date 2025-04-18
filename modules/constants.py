@@ -9,6 +9,7 @@ class WindowName(Enum):
     notification_popups = "ignis-notificationpopups"
     preferences = "ignis-preferences"
     backdrop = "ignis-backdrop"
+    osd = "ignis-osd"
 
 
 class AudioStreamType(Enum):

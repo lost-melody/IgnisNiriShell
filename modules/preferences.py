@@ -26,6 +26,7 @@ class Preferences(Widget.RegularWindow):
         topbar_exclusive: Adw.SwitchRow = gtk_template_child()
         topbar_focusable: Adw.SwitchRow = gtk_template_child()
         recorder_filename: Adw.EntryRow = gtk_template_child()
+        osd_timeout: Adw.SpinRow = gtk_template_child()
         wallpaper_path: Adw.ActionRow = gtk_template_child()
         command_format: Adw.EntryRow = gtk_template_child()
         terminal_format: Adw.EntryRow = gtk_template_child()
@@ -112,6 +113,9 @@ class Preferences(Widget.RegularWindow):
                 bind_option(user_options.appdock, "monitor_only", self.dock_monitor_only, "active")
                 bind_option(user_options.appdock, "workspace_only", self.dock_workspace_only, "active")
                 bind_option(user_options.appdock, "conceal_delay", self.dock_conceal_delay, "value")
+
+            if user_options.osd:
+                bind_option(user_options.osd, "timeout", self.osd_timeout, "value")
 
             if user_options.topbar:
                 bind_option(user_options.topbar, "exclusive", self.topbar_exclusive, "active")

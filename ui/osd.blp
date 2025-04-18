@@ -1,0 +1,94 @@
+using Gtk 4.0;
+
+template $OnscreenDisplayView: Box {
+    Revealer revealer {
+        transition-type: crossfade;
+
+        Box {
+            orientation: vertical;
+
+            styles [
+                "osd",
+                "p-2",
+                "rounded",
+            ]
+
+            Label title {
+                label: "Volume - Device";
+                ellipsize: end;
+
+                styles [
+                    "caption",
+                    "p-1",
+                ]
+            }
+
+            Stack stack {
+                hhomogeneous: false;
+                vhomogeneous: false;
+                interpolate-size: true;
+                transition-type: crossfade;
+
+                StackPage {
+                    name: "indicator";
+
+                    child: Box {
+                        width-request: 64;
+                        height-request: 64;
+
+                        styles [
+                            "p-1",
+                        ]
+
+                        Image indicator {
+                            halign: center;
+                            valign: center;
+                            icon-name: "capslock-disabled-symbolic";
+                            pixel-size: 48;
+
+                            styles [
+                                "p-2",
+                            ]
+                        }
+                    };
+                }
+
+                StackPage {
+                    name: "progress";
+
+                    child: Box {
+                        width-request: 128;
+
+                        styles [
+                            "p-1",
+                        ]
+
+                        Image icon {
+                            icon-name: "audio-speakers-symbolic";
+                        }
+
+                        ProgressBar progress {
+                            hexpand: true;
+                            valign: center;
+                            fraction: 0;
+
+                            styles [
+                                "px-2",
+                            ]
+                        }
+
+                        Label label {
+                            halign: end;
+                            label: "0/100";
+                            width-chars: 5;
+
+                            styles [
+                                "caption",
+                            ]
+                        }
+                    };
+                }
+            }
+        }
+    }
+}
