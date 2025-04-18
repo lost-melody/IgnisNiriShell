@@ -33,7 +33,7 @@ Requirements:
 - _Notification_ service is required in `NotificationPopups` and `ControlCenter`.
   - `NotificationPopups` can be disabled by commenting it out in `config.py`.
   - `NotificationCenter` can be removed from `ControlCenter`'s blueprint file.
-- _Wallpaper_ service is also initialized there, and can be commented out if other wallpaper services are used.
+- _Wallpaper_ service is also initialized in `config.py`, and can be commented out if other wallpaper services are used.
 
 ## Integrations
 
@@ -86,18 +86,4 @@ skip-magic-trailing-comma = true
 # ignis is installed at venv "/path/to/venv/lib/ignis"
 venvPath = "/path/to/venv/lib"
 venv = "ignis"
-```
-
-It might help to soft link stubs from `gi-stubs` and `ignis/stubs` to project's `typeings/` directory:
-
-```
-typeings/
-  - gi-stubs/
-    - __init__.pyi
-    - repository/
-      - __init__.pyi
-      - Gtk.pyi
-      - Adw.pyi
-      - Gvc.pyi
-      - ...
 ```
