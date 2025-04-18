@@ -1,6 +1,7 @@
 import base64
 import os
 import shlex
+import threading
 from asyncio import create_task
 from typing import Any, Callable
 from gi.repository import Gdk, Gio, GLib, GObject, Gtk, Pango
@@ -11,6 +12,7 @@ from ignis.options_manager import OptionsGroup
 from ignis.utils.icon import get_app_icon_name as ignis_get_app_icon_name
 from ignis.utils.shell import exec_sh_async
 from ignis.utils.monitor import get_monitor
+from loguru import logger
 
 
 ScrollFlags = Gtk.EventControllerScrollFlags
@@ -70,49 +72,42 @@ class CapsLockState:
     Flags = Gio.FileMonitorFlags
     Event = Gio.FileMonitorEvent
 
-    leds_path = "/sys/class/leds"
+    dev_path = "/dev/input"
 
     def __init__(self, callback: Callable[[bool], Any]):
         self.__callback = callback
-        self.__monitors: list[tuple[Gio.File, Gio.FileMonitor, int]] = []
-
         try:
-            file = Gio.File.new_for_path(self.leds_path)
-            file_monitor = file.monitor(self.Flags.NONE)
-            file_monitor.connect("changed", self.__on_leds_changed)
-            self.__on_leds_changed()
-        except GLib.Error:
-            pass
+            import libevdev
+        except:
+            logger.warning("Install `libevdev` to display capslock state in OSD")
+            return
 
-    def __on_leds_changed(self, *_):
-        for file, monitor, id in self.__monitors:
-            monitor.disconnect(id)
-            monitor.cancel()
-        self.__monitors.clear()
-
-        for path in os.listdir(self.leds_path):
-            if not path.startswith("input") or not path.endswith("::capslock"):
+        for file in os.listdir(self.dev_path):
+            if not file.startswith("event"):
                 continue
 
-            file = Gio.File.new_for_path(f"{self.leds_path}/{path}/brightness")
-            monitor = file.monitor(self.Flags.NONE)
-            id = monitor.connect("changed", self.__on_capslock_changed)
-            self.__monitors.append((file, monitor, id))
+            fd = open(f"{self.dev_path}/{file}", "rb")
+            try:
+                device = libevdev.Device(fd)
+                if device.has(libevdev.EV_LED) and device.has(libevdev.EV_LED.LED_CAPSL):  # type: ignore
+                    threading.Thread(target=lambda: self.__listen_to_events(device)).start()
+            except:
+                logger.warning("User should be a member of the `input` group to display capslock state in OSD")
+                break
 
-    def __on_capslock_changed(self, *_):
-        enabled = False
+    def __listen_to_events(self, d: Any):
+        import libevdev
 
-        for file, _, _ in self.__monitors:
-            path = file.get_path()
-            if not path:
-                continue
+        device: libevdev.Device = d
+        while True:
+            for event in device.events():
+                if not event.type == libevdev.EV_LED or not event.code == libevdev.EV_LED.LED_CAPSL:  # type: ignore
+                    continue
 
-            with open(path) as capslock:
-                state = int(capslock.read().strip())
-                if state != 0:
-                    enabled = True
-                    break
+                GLib.idle_add(lambda s=event.value: self.__on_capslock_changed(s))
 
+    def __on_capslock_changed(self, state: int):
+        enabled = state != 0
         self.__callback(enabled)
 
 

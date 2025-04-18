@@ -33,21 +33,20 @@ template $OnscreenDisplayView: Box {
                     name: "indicator";
 
                     child: Box {
-                        width-request: 64;
-                        height-request: 64;
-
                         styles [
                             "p-1",
                         ]
 
                         Image indicator {
+                            hexpand: true;
                             halign: center;
                             valign: center;
                             icon-name: "capslock-disabled-symbolic";
                             pixel-size: 48;
 
                             styles [
-                                "p-2",
+                                "px-4",
+                                "py-2",
                             ]
                         }
                     };
@@ -57,8 +56,6 @@ template $OnscreenDisplayView: Box {
                     name: "progress";
 
                     child: Box {
-                        width-request: 128;
-
                         styles [
                             "p-1",
                         ]
