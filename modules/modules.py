@@ -17,10 +17,10 @@ from ignis.options import options
 from ignis.utils import Utils
 from .constants import WindowName
 from .variables import caffeine_state
+from .services import CpuLoadService
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options
 from .utils import (
-    CpuTimes,
     Pool,
     connect_option,
     format_time_duration,
@@ -276,21 +276,20 @@ class CpuUsagePill(CommandPill):
     __gtype_name__ = "CpuUsagePill"
 
     def __init__(self):
-        self._interval: int = 3000
         self._label: Gtk.Label | None = None
         super().__init__()
-        self.__times = CpuTimes()
-        self.__processors = self.__times.read_cpu_count()
-        self.__poll = Utils.Poll(timeout=self.interval, callback=self.__on_updated)
 
-    @gproperty(type=str)
+        self.__cpu = CpuLoadService.get_default()
+        self.__processors = self.__cpu.cpu_count
+        self.__cpu.connect("notify::total-time", self.__on_updated)
+
+    @gproperty(type=int)
     def interval(self) -> int:
-        return self._interval
+        return self.__cpu.interval
 
     @interval.setter
     def interval(self, interval: int):
-        self._interval = interval
-        self.__poll.timeout = interval
+        self.__cpu.interval = interval
 
     @gproperty(type=Gtk.Label)
     def labeler(self) -> Gtk.Label | None:
@@ -301,7 +300,7 @@ class CpuUsagePill(CommandPill):
         self._label = label
 
     def __on_updated(self, *_):
-        idle, total = self.__times.get_delta()
+        idle, total = self.__cpu.idle_time, self.__cpu.total_time
         # this means how many percent of computing resources of a single processor are used
         # e.g. 234% means 2.34 processors are used; 1600% (with 16 processors) means all processors are used
         percent = (total - idle) * 100 * self.__processors // total if total else 0

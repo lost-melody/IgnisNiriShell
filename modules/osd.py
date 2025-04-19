@@ -3,9 +3,9 @@ from ignis.services.audio import AudioService, Stream
 from ignis.services.backlight import BacklightDevice, BacklightService
 from ignis.utils.timeout import Timeout
 from .constants import WindowName
+from .services import KeyboardLedsService
 from .template import gtk_template, gtk_template_child
 from .useroptions import user_options
-from .utils import CapsLockState
 from .widgets import RevealerWindow
 
 
@@ -30,9 +30,8 @@ class OnscreenDisplay(RevealerWindow):
         def __init__(self):
             self.__audio = AudioService.get_default()
             self.__backlight = BacklightService.get_default()
+            self.__leds = KeyboardLedsService.get_default()
             super().__init__()
-
-            self.__capslock = CapsLockState(self.__on_capslock_changed)
 
             for stream in [self.__audio.speaker, self.__audio.microphone]:
                 stream.connect("notify::volume", self.__on_stream_changed)
@@ -42,12 +41,15 @@ class OnscreenDisplay(RevealerWindow):
             self.__backlight.connect("notify::devices", self.__on_backlight_devices_changed)
             self.__on_backlight_devices_changed()
 
+            self.__leds.connect("notify::capslock", self.__on_capslock_changed)
+
         def __display(self):
             window = self.get_ancestor(OnscreenDisplay)
             if isinstance(window, OnscreenDisplay):
                 window.display_osd()
 
-        def __on_capslock_changed(self, enabled: bool):
+        def __on_capslock_changed(self, *_):
+            enabled = self.__leds.capslock
             self.stack.set_visible_child_name(self.page_indicator)
             self.__display()
             self.title.set_label("Caps Lock")
