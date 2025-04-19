@@ -1,18 +1,18 @@
 import os, subprocess
 from typing import Any, Callable
 from gi.repository import Gtk
+from ignis import CACHE_DIR
 from ignis.app import IgnisApp
 
 
-TMPDIR = os.getenv("TMPDIR") or "/tmp"
 app = IgnisApp.get_default()
 
 if app._config_path is None:
     raise Exception("app._config_path is None")
 
 config_dir = os.path.dirname(app._config_path)
-ui_path = os.path.join(config_dir, "ui")
-tmp_path = os.path.join(TMPDIR, "ignis/ui")
+blp_ui_path = os.path.join(config_dir, "ui")
+cache_ui_path = os.path.join(CACHE_DIR, "ui")
 
 
 def build_blueprint(blp_filename: str, ui_filename: str):
@@ -25,8 +25,8 @@ def build_blueprint(blp_filename: str, ui_filename: str):
 
 
 def ensure_ui_file(filename: str) -> str:
-    blp_filename = os.path.join(ui_path, filename + ".blp")
-    ui_filename = os.path.join(tmp_path, filename + ".ui")
+    blp_filename = os.path.join(blp_ui_path, filename + ".blp")
+    ui_filename = os.path.join(cache_ui_path, filename + ".ui")
 
     blp_exist = os.path.exists(blp_filename)
     ui_exist = os.path.exists(ui_filename)
