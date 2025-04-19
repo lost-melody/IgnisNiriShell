@@ -74,6 +74,21 @@ $corner_names: top-left, top-right, bottom-right, bottom-left;
   }
 }
 
+$variants: accent, destructive, success, warning, error;
+
+@each $variant in $variants {
+  $fg: var(--#{$variant}-fg-color);
+  $bg: var(--#{$variant}-bg-color);
+  $bg: #{alpha }(#{$bg}, 0.85);
+  .#{$variant}-bg {
+    color: #{$fg};
+    background-color: #{$bg};
+  }
+  .#{$variant}-bg:hover {
+    background-color: #{mix }(#{$fg}, #{$bg}, 0.85);
+  }
+}
+
 @for $i from 0 through 360/15 {
   $deg: 15 * $i;
   .rotate-#{$deg} {

@@ -342,6 +342,18 @@ class ControlSwitchPill(Gtk.Box):
     def set_icon(self, icon_name: str | None = None):
         self.icon.set_from_icon_name(icon_name)
 
+    def set_style_accent(self, accent: bool):
+        if accent:
+            self.add_css_class("accent-bg")
+        else:
+            self.remove_css_class("accent-bg")
+
+    def set_style_warning(self, warning: bool):
+        if warning:
+            self.pill.add_css_class("warning-bg")
+        else:
+            self.pill.remove_css_class("warning-bg")
+
 
 class ControlSwitchCmd(Gtk.Box):
     __gtype_name__ = "ControlSwitchCmd"
@@ -443,10 +455,10 @@ class ControlSwitchCmd(Gtk.Box):
     def __on_status_changed(self):
         if self._enabled:
             self.__pill.set_subtitle("enabled")
-            self.__pill.pill.add_css_class("accent")
+            self.__pill.set_style_accent(True)
         else:
             self.__pill.set_subtitle("disabled")
-            self.__pill.pill.remove_css_class("accent")
+            self.__pill.set_style_accent(False)
 
 
 class ColorSchemeSwitcher(Gtk.Box):
@@ -494,9 +506,9 @@ class ColorSchemeSwitcher(Gtk.Box):
         self.__pill.set_subtitle(self.__color_scheme)
 
         if self.__color_scheme != "default":
-            self.__pill.pill.add_css_class("accent")
+            self.__pill.set_style_accent(True)
         else:
-            self.__pill.pill.remove_css_class("accent")
+            self.__pill.set_style_accent(False)
 
     def __switch_color_scheme(self, delta: int):
         if self.__desktop_settings is None:
@@ -529,16 +541,16 @@ class IgnisRecorder(Gtk.Box):
 
     def __on_status_changed(self, *_):
         if self.__service.get_active():
-            self.__pill.pill.add_css_class("accent")
+            self.__pill.set_style_accent(True)
             if self.__service.get_is_paused():
-                self.__pill.pill.add_css_class("warning")
+                self.__pill.set_style_warning(True)
                 self.__pill.icon.set_from_icon_name("media-playback-pause-symbolic")
             else:
-                self.__pill.pill.remove_css_class("warning")
+                self.__pill.set_style_warning(False)
                 self.__pill.icon.set_from_icon_name("media-playback-stop-symbolic")
         else:
-            self.__pill.pill.remove_css_class("accent")
-            self.__pill.pill.remove_css_class("warning")
+            self.__pill.set_style_accent(False)
+            self.__pill.set_style_warning(False)
             self.__pill.icon.set_from_icon_name("screencast-recorded-symbolic")
 
     def __on_clicked(self, *_):
@@ -584,11 +596,11 @@ class DndSwitch(Gtk.Box):
         if self.__group:
             if self.__group.dnd:
                 self.__pill.set_subtitle("disable popups")
-                self.__pill.pill.add_css_class("accent")
+                self.__pill.set_style_accent(True)
                 self.__pill.icon.set_from_icon_name("notifications-disabled-symbolic")
             else:
                 self.__pill.set_subtitle("default")
-                self.__pill.pill.remove_css_class("accent")
+                self.__pill.set_style_accent(False)
                 self.__pill.icon.set_from_icon_name("notifications-symbolic")
 
     def __on_clicked(self, *_):
@@ -618,10 +630,10 @@ class CaffeineSwitch(Gtk.Box):
         self.__pill.set_subtitle("enabled" if enabled else "disabled")
         if enabled:
             self.__pill.set_icon("my-caffeine-on-symbolic")
-            self.__pill.pill.add_css_class("accent")
+            self.__pill.set_style_accent(True)
         else:
             self.__pill.set_icon("my-caffeine-off-symbolic")
-            self.__pill.pill.remove_css_class("accent")
+            self.__pill.set_style_accent(False)
 
     def __on_clicked(self, *_):
         self.__state.value = not self.__state.value
@@ -649,10 +661,10 @@ class EthernetStatus(Gtk.Box):
 
         if not self.__ethernet.get_is_connected():
             self.__pill.set_subtitle("disconnected")
-            self.__pill.pill.remove_css_class("accent")
+            self.__pill.set_style_accent(False)
             return
 
-        self.__pill.pill.add_css_class("accent")
+        self.__pill.set_style_accent(True)
         devices: list[EthernetDevice] = self.__ethernet.get_devices()
         match len(devices):
             case 0:
@@ -687,10 +699,10 @@ class WifiStatus(Gtk.Box):
 
         if not self.__wifi.enabled:
             self.__pill.set_subtitle("disabled")
-            self.__pill.pill.remove_css_class("accent")
+            self.__pill.set_style_accent(False)
             return
 
-        self.__pill.pill.add_css_class("accent")
+        self.__pill.set_style_accent(True)
         if not self.__wifi.is_connected:
             self.__pill.set_subtitle("disconnected")
             return
@@ -730,10 +742,10 @@ class BluetoothStatus(Gtk.Box):
         if not self.__service.powered:
             self.__pill.set_subtitle("disabled")
             self.__pill.icon.set_from_icon_name("bluetooth-disabled-symbolic")
-            self.__pill.pill.remove_css_class("accent")
+            self.__pill.set_style_accent(False)
             return
 
-        self.__pill.pill.add_css_class("accent")
+        self.__pill.set_style_accent(True)
         devices: list[BluetoothDevice] = [device for device in self.__service.get_devices() if device.connected]
         match len(devices):
             case 0:
