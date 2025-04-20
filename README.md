@@ -26,7 +26,7 @@ Requirements:
 
 - _Adw_ is initialized in `config.py` and is required for ui styles, light/dark color schemes, and is used in some widgets.
 - _Blueprint_ is used in most views and widgets, so can be tweaked as wish. They are built during class declarations.
-  - An example is to use use grid layout in _AppLauncher_ by replacing `ListView` by `GridView` in its `.blp` file.
+  - An example is to use grid layout in _AppLauncher_ by replacing `ListView` by `GridView` in its `.blp` file. Some declarations in the `.py` file should also be replaced accordingly.
   - Don't forget to run `ignis reload` after editing blueprints.
 - _AppLauncher_ is initialized in `config.py` and can be disabled by commenting it out.
   - Don't forget to also edit the launcher command in topbar buttons.
