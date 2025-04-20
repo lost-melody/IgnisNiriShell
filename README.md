@@ -34,6 +34,11 @@ Requirements:
   - `NotificationPopups` can be disabled by commenting it out in `config.py`.
   - `NotificationCenter` can be removed from `ControlCenter`'s blueprint file.
 - _Wallpaper_ service is also initialized in `config.py`, and can be commented out if other wallpaper services are used.
+- _OSD_ displays changes of volumes, backlight, and optionally caps lock state.
+  - _libevdev_ is required for caps lock state detection, installed via system package manager and pip.
+    - Install _libevdev_: `pacman -S libevdev`.
+    - Install _Python_ bindings: `pacman -S python-libevdev` or `pip install libevdev`.
+  - User should also be a member of group `input` for _libevdev_ to work.
 
 ## Integrations
 
