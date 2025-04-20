@@ -1,13 +1,14 @@
 from typing import Any, Callable
 from gi.repository import GLib, Gio, GObject, Gtk
 from ignis.app import IgnisApp
+from ignis.menu_model import IgnisMenuItem, IgnisMenuModel, IgnisMenuSeparator, ItemsType
 from ignis.widgets import Widget
 from ignis.services.applications import Application, ApplicationAction, ApplicationsService
 from .backdrop import overlay_window
 from .constants import WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options
-from .utils import Pool, b64enc, connect_window, get_app_icon_name, launch_application, set_on_click
+from .utils import Pool, connect_window, get_app_icon_name, launch_application, set_on_click
 from .widgets import RevealerWindow
 
 
@@ -25,38 +26,70 @@ class AppLauncherGridItem(Gtk.Box):
     def __init__(self):
         super().__init__()
 
-        self._pos: int | None = None
         self._app: Application | None = None
-        self._menu = Gio.Menu()
-        self.menu.set_menu_model(self._menu)
+        self._menu = IgnisMenuModel()
+        self.__app_signals: list[tuple[GObject.Object, int]] = []
 
         set_on_click(self, left=self.__on_left_click, right=self.__on_right_click)
 
     def __on_left_click(self, *_):
-        if self._pos is not None:
-            pos = GLib.Variant.new_uint32(self._pos)
-            self.activate_action("list.activate-item", pos)
+        self.__launch_app()
 
     def __on_right_click(self, *_):
         self.menu.popup()
 
-    def __add_menu_item(self, label: str, action: str):
-        item = Gio.MenuItem.new(label=label, detailed_action=action)
-        self._menu.append_item(item)
+    def __launch_app(self):
+        if not self.application:
+            return
 
-    @property
-    def app_id(self) -> str:
-        if self.application:
-            return self.application.get_id() or ""
-        return ""
+        view = self.get_ancestor(AppLauncherView)
+        if isinstance(view, AppLauncherView):
+            view.launch_application(self.application)
+            view.on_search_stop()
 
-    @property
-    def position(self) -> int | None:
-        return self._pos
+    def __launch_action(self, action: ApplicationAction):
+        action.launch()
+        view = self.get_ancestor(AppLauncherView)
+        if isinstance(view, AppLauncherView):
+            view.on_search_stop()
 
-    @position.setter
-    def position(self, pos: int | None):
-        self._pos = pos
+    def __rebuild_menu(self):
+        self.menu.set_menu_model()
+        self._menu.clean_gmenu()
+
+        if not self.application:
+            return
+
+        app = self.application
+        items: ItemsType = []
+        items.append(IgnisMenuItem("Launch", True, lambda _: self.__launch_app()))
+        items.append(
+            IgnisMenuItem(
+                label="Unpin" if app.is_pinned else "Pin",
+                enabled=True,
+                on_activate=lambda _: app.unpin() if app.is_pinned else app.pin(),
+            )
+        )
+
+        if app.actions:
+            items.append(IgnisMenuSeparator())
+        for action in app.actions:
+            items.append(IgnisMenuItem(action.name, True, lambda _, act=action: self.__launch_action(act)))
+
+        self._menu.items = items
+        self.menu.set_menu_model(self._menu.gmenu)
+
+    def __connect_app_signals(self):
+        for obj, id in self.__app_signals:
+            obj.disconnect(id)
+        self.__app_signals.clear()
+
+        if not self.application:
+            return
+
+        app = self.application
+        id = app.connect("notify::is-pinned", lambda *_: self.__rebuild_menu())
+        self.__app_signals.append((app, id))
 
     @property
     def application(self) -> Application | None:
@@ -65,7 +98,8 @@ class AppLauncherGridItem(Gtk.Box):
     @application.setter
     def application(self, app: Application | None):
         self._app = app
-        self._menu.remove_all()
+        self.__rebuild_menu()
+        self.__connect_app_signals()
 
         if app is None:
             return
@@ -73,17 +107,6 @@ class AppLauncherGridItem(Gtk.Box):
         self.icon.set_from_icon_name(get_app_icon_name(app_info=app))
         self.label.set_text(app.get_name())
         self.set_tooltip_text(app.get_description())
-
-        if app.get_id() is None:
-            return
-
-        app_id_b64 = b64enc(app.get_id())
-        self.__add_menu_item("Launch", f"app_grid.{app_id_b64}")
-        self.__add_menu_item("Toggle Pin", f"app_grid.{app_id_b64}.PIN")
-        actions: list[ApplicationAction] = app.get_actions()
-        for act in actions:
-            app_act_b64 = b64enc(act.action)
-            self.__add_menu_item(act.get_name(), f"app_grid.{app_id_b64}.{app_act_b64}")
 
 
 @gtk_template(filename="applauncher")
@@ -99,65 +122,57 @@ class AppLauncherView(Gtk.Box):
     filter_list: Gtk.FilterListModel = gtk_template_child()
     list_store: Gio.ListStore = gtk_template_child()
 
+    class Factory(Gtk.SignalListItemFactory):
+        def __init__(self):
+            super().__init__()
+
+            self.__pool = Pool(AppLauncherGridItem)
+            # we don't connect to "setup" or "teardown" signals
+            # instead we acquire and release childs in "bind" and "unbind"
+            self.connect("bind", self.__item_bind)
+            self.connect("unbind", self.__item_unbind)
+
+        def __item_bind(self, _, item: Gtk.ListItem):
+            self.__item_unbind(_, item)
+
+            grid_item = self.__pool.acquire()
+            app = item.get_item()
+            if isinstance(app, Application):
+                grid_item.application = app
+                item.set_child(grid_item)
+
+        def __item_unbind(self, _, item: Gtk.ListItem):
+            grid_item = item.get_child()
+            if isinstance(grid_item, AppLauncherGridItem):
+                grid_item.application = None
+                self.__pool.release(grid_item)
+
     def __init__(self):
         self.__service = ApplicationsService.get_default()
         super().__init__()
-        self.__group = Gio.SimpleActionGroup()
-        self.insert_action_group(name="app_grid", group=self.__group)
 
         self.__filter = Gtk.CustomFilter()
         self.__sorter = Gtk.CustomSorter()
+        self.app_grid.set_factory(self.Factory())
         self.filter_list.set_filter(self.__filter)
         self.sort_list.set_sorter(self.__sorter)
 
-        self.__pool = Pool(AppLauncherGridItem)
         self.__service.connect("notify::apps", self.__on_apps_changed)
         connect_window(self, "notify::visible", self.__on_window_visible_change)
 
         self.__app_options = user_options and user_options.applauncher
 
     def __on_apps_changed(self, *_):
-        for item in self.list_store:
-            if isinstance(item, AppLauncherGridItem):
-                self.__pool.release(item)
         self.list_store.remove_all()
 
         apps: list[Application] = self.__service.get_apps()
         for app in apps:
-            item = self.__pool.acquire()
-            item.application = app
-            self.list_store.append(item)
+            self.list_store.append(app)
 
-            if app.get_id() is None:
-                continue
-
-            app_id_b64 = b64enc(app.get_id())
-            self.__add_action(app_id_b64, lambda app=app: self.__launch_app(app))
-            self.__add_action(f"{app_id_b64}.PIN", lambda app=app: self.__pin_app(app))
-            actions: list[ApplicationAction] = app.get_actions()
-            for act in actions:
-                app_act_b64 = b64enc(act.action)
-                self.__add_action(f"{app_id_b64}.{app_act_b64}", act.launch)
-
-    def __launch_app(self, app: Application):
+    def launch_application(self, app: Application):
         command_format = self.__app_options and self.__app_options.command_format
         terminal_format = self.__app_options and self.__app_options.terminal_format
         launch_application(app, command_format=command_format, terminal_format=terminal_format)
-
-    def __pin_app(self, app: Application):
-        if app.is_pinned:
-            app.unpin()
-        else:
-            app.pin()
-
-    def __add_action(self, name: str, callback: Callable[[], Any]):
-        def do_action(*_):
-            callback()
-            self.on_search_stop()
-
-        action = Gio.SimpleAction(name=name)
-        action.connect("activate", do_action)
-        self.__group.add_action(action)
 
     def __move_selection(self, delta: int):
         pos, count = self.selection.get_selected(), self.selection.get_n_items()
@@ -177,11 +192,11 @@ class AppLauncherView(Gtk.Box):
         if not window.get_visible():
             self.search_bar.set_search_mode(False)
 
-    def __apps_filter(self, app: AppLauncherGridItem, result: dict[str, int]) -> bool:
-        return app.app_id in result
+    def __apps_filter(self, app: Application, result: dict[str, int]) -> bool:
+        return app.id in result
 
-    def __apps_sorter(self, a: AppLauncherGridItem, b: Application, result: dict[str, int]) -> int:
-        pa, pb = result.get(a.app_id), result.get(b.app_id)
+    def __apps_sorter(self, a: Application, b: Application, result: dict[str, int]) -> int:
+        pa, pb = a.id and result.get(a.id), b.id and result.get(b.id)
         return (pa or 0) - (pb or 0)
 
     @gtk_template_callback
@@ -189,23 +204,18 @@ class AppLauncherView(Gtk.Box):
         self.selection.set_selected(0)
         self.__move_selection(0)
 
-        pos = 0
-        for item in self.selection:
-            if isinstance(item, AppLauncherGridItem):
-                item.position = pos
-            pos += 1
-
     @gtk_template_callback
     def on_item_activate(self, _: Gtk.ListView, pos: int):
         item = self.selection.get_item(pos)
-        if isinstance(item, AppLauncherGridItem) and item.application:
-            self.__launch_app(item.application)
+        if isinstance(item, Application):
+            self.launch_application(item)
         self.on_search_stop()
 
     @gtk_template_callback
     def on_search_activate(self, *_):
-        pos = GLib.Variant.new_uint32(self.selection.get_selected())
-        self.app_grid.activate_action("list.activate-item", pos)
+        self.on_item_activate(self.app_grid, self.selection.get_selected())
+        # pos = GLib.Variant.new_uint32(self.selection.get_selected())
+        # self.app_grid.activate_action("list.activate-item", pos)
 
     @gtk_template_callback
     def on_search_changed(self, *_):
