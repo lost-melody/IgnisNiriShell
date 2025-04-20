@@ -1,4 +1,5 @@
 from gi.repository import Gdk, Gio, Gtk
+from ignis.menu_model import IgnisMenuItem, IgnisMenuModel, IgnisMenuSeparator, ItemsType
 from ignis.widgets import Widget
 from ignis.services.applications import Application, ApplicationsService
 from ignis.services.hyprland import HyprlandMonitor, HyprlandWindow, HyprlandWorkspace, HyprlandService
@@ -14,9 +15,9 @@ from .utils import (
     get_app_icon_name,
     get_widget_monitor,
     launch_application,
+    niri_action,
     set_on_click,
     set_on_scroll,
-    set_on_motion,
 )
 
 
@@ -116,6 +117,7 @@ class AppDockView(Gtk.Box):
                 self.__revealer.set_reveal_child(reveal)
 
         icon: Gtk.Image = gtk_template_child()
+        menu: Gtk.PopoverMenu = gtk_template_child()
         pin_icon: Gtk.Image = gtk_template_child()
         dots: Gtk.FlowBox = gtk_template_child()
 
@@ -128,6 +130,8 @@ class AppDockView(Gtk.Box):
             self.__hypr_wins: list[HyprlandWindow] | None = None
             super().__init__()
 
+            self.__idx: int = 0
+            self.__menu = IgnisMenuModel()
             self.__dots_store = Gio.ListStore()
             self.dots.bind_model(self.__dots_store, lambda i: i)
             set_on_click(self.icon, left=self.__on_clicked, right=self.__on_right_clicked)
@@ -173,6 +177,7 @@ class AppDockView(Gtk.Box):
                     idx = 0
                 self.set_tooltip_text(f"{self.app_id} - {wins[idx].title}")
                 self.__update_dots(idx, len(wins))
+                self.__idx = idx
             else:
                 self.__niri_wins = None
                 if self.app_info:
@@ -195,6 +200,7 @@ class AppDockView(Gtk.Box):
                     idx = 0
                 self.set_tooltip_text(f"{self.app_id} - {wins[idx].title}")
                 self.__update_dots(idx, len(wins))
+                self.__idx = idx
             else:
                 self.__hypr_wins = None
                 if self.app_info:
@@ -214,6 +220,77 @@ class AppDockView(Gtk.Box):
                 dot.set_focused(focused)
                 self.__dots_store.append(dot)
 
+        def rebuild_menu(self):
+            self.menu.set_menu_model(None)
+            self.__menu.clean_gmenu()
+
+            items: ItemsType = []
+            # application menu
+            if self.app_info:
+                app = self.app_info
+                # application launch and pin/unpin
+                items.append(IgnisMenuItem("Application", False))
+                items.append(IgnisMenuItem("Launch", True, lambda _: self.__launch_app()))
+                items.append(
+                    IgnisMenuItem(
+                        label="Unpin" if app.is_pinned else "Pin",
+                        enabled=True,
+                        on_activate=lambda _: app.unpin() if app.is_pinned else app.pin(),
+                    )
+                )
+                # application actions
+                if app.actions:
+                    items.append(
+                        IgnisMenuModel(
+                            *[
+                                IgnisMenuItem(action.name, True, lambda _, act=action: act.launch())
+                                for action in app.actions
+                            ],
+                            label="Actions",
+                        )
+                    )
+
+            # active windows menu
+            windows = self.niri_windows or self.hypr_windows
+            if windows:
+                if items:
+                    items.append(IgnisMenuSeparator())
+                # windows actions
+                items.append(IgnisMenuItem("Active Windows", False))
+                for win in windows:
+                    title = win.title
+                    title = title if len(title) < 32 else title[:32] + "..."
+                    items.append(
+                        IgnisMenuModel(
+                            IgnisMenuItem("Focus", True, lambda _, win=win: self.__focus_window(win)),
+                            IgnisMenuItem("Close", True, lambda _, win=win: self.__close_window(win)),
+                            label=title,
+                        )
+                    )
+
+                # close all windows
+                def close_all_windows(wins: list[NiriWindow] | list[HyprlandWindow]):
+                    for win in wins:
+                        self.__close_window(win)
+
+                items.append(IgnisMenuItem("Close All Windows", True, lambda _: close_all_windows(windows)))
+
+            self.__menu.items = items
+            self.menu.set_menu_model(self.__menu.gmenu)
+
+        def __focus_window(self, window: NiriWindow | HyprlandWindow):
+            if isinstance(window, NiriWindow):
+                window.focus()
+            elif isinstance(window, HyprlandWindow):
+                self.__hypr.send_command(f"dispatch focuswindow pid:{window.pid}")
+                self.__hypr.send_command("dispatch alterzorder top")
+
+        def __close_window(self, window: NiriWindow | HyprlandWindow):
+            if isinstance(window, NiriWindow):
+                niri_action("CloseWindow", {"id": window.id})
+            elif isinstance(window, HyprlandWindow):
+                self.__hypr.send_command(f"dispatch closewindow pid:{window.pid}")
+
         def __launch_app(self, files: list[str] | None = None):
             if not self.app_info:
                 return
@@ -227,23 +304,14 @@ class AppDockView(Gtk.Box):
 
         def __on_clicked(self, *_):
             if self.niri_windows:
-                # first window
-                self.niri_windows[0].focus()
+                self.__focus_window(self.niri_windows[self.__idx])
             elif self.hypr_windows:
-                # most recently focus window
-                pid: int = sorted(self.hypr_windows, key=lambda w: w.focus_history_id)[0].pid
-                self.__hypr.send_command(f"dispatch focuswindow pid:{pid}")
-                self.__hypr.send_command("dispatch alterzorder top")
+                self.__focus_window(self.hypr_windows[self.__idx])
             elif self.app_info:
                 self.__launch_app()
 
         def __on_right_clicked(self, *_):
-            if self.niri_windows:
-                pass
-            elif self.hypr_windows:
-                pass
-            elif self.app_info:
-                pass
+            self.menu.popup()
 
         def __on_scrolled(self, _, dx: float, dy: float):
             delta = 1 if dx + dy > 0 else -1
@@ -295,7 +363,8 @@ class AppDockView(Gtk.Box):
         self.flow_box.bind_model(self.__list_store, create_widget_func=lambda item: item)
         self.__defer_conceal: Timeout | None = None
         self.connect("realize", self.__on_realized)
-        set_on_motion(self, enter=self.__on_mouse_enter, leave=self.__on_mouse_leave)
+        self.__prelight = False
+        self.connect("state-flags-changed", self.__on_state_flags_changed)
 
         drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.COPY | Gdk.DragAction.MOVE)
         drop_target.connect("enter", lambda *_: self.__on_mouse_enter() or 0)
@@ -326,6 +395,18 @@ class AppDockView(Gtk.Box):
             connect_option(self.__dock_options, "auto_conceal", self.__on_auto_conceal_changed)
             connect_option(self.__dock_options, "monitor_only", self.__on_options_changed)
             connect_option(self.__dock_options, "workspace_only", self.__on_options_changed)
+
+    def __on_state_flags_changed(self, *_):
+        flags = self.get_state_flags()
+        prelight = Gtk.StateFlags.PRELIGHT & flags != 0
+        if prelight == self.__prelight:
+            return
+
+        self.__prelight = prelight
+        if self.__prelight:
+            self.__on_mouse_enter()
+        else:
+            self.__on_mouse_leave()
 
     def __on_realized(self, *_):
         monitor = get_widget_monitor(self)
@@ -444,6 +525,7 @@ class AppDockView(Gtk.Box):
 
         # rebuild list_store
         for item in sorted(self.__items.values(), key=lambda i: (i.app_id not in pinned_set, i.app_id)):
+            item.rebuild_menu()
             self.__list_store.append(item)
 
 

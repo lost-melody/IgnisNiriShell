@@ -2,14 +2,21 @@ using Gtk 4.0;
 
 template $IgnisAppDockItem: FlowBoxChild {
     Overlay {
-        Image icon {
-            pixel-size: 48;
+        Box {
+            Image icon {
+                pixel-size: 48;
 
-            styles [
-                "hover",
-                "p-1",
-                "rounded",
-            ]
+                styles [
+                    "hover",
+                    "p-1",
+                    "rounded",
+                ]
+            }
+
+            PopoverMenu menu {
+                position: top;
+                flags: nested;
+            }
         }
 
         [overlay]
