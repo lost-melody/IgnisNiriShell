@@ -228,55 +228,64 @@ class AppDockView(Gtk.Box):
             # application menu
             if self.app_info:
                 app = self.app_info
-                # application launch and pin/unpin
-                items.append(IgnisMenuItem("Application", False))
-                items.append(IgnisMenuItem("Launch", True, lambda _: self.__launch_app()))
-                items.append(
-                    IgnisMenuItem(
-                        label="Unpin" if app.is_pinned else "Pin",
-                        enabled=True,
-                        on_activate=lambda _: app.unpin() if app.is_pinned else app.pin(),
-                    )
-                )
-                # application actions
-                if app.actions:
-                    items.append(
-                        IgnisMenuModel(
-                            *[
-                                IgnisMenuItem(action.name, True, lambda _, act=action: act.launch())
-                                for action in app.actions
-                            ],
-                            label="Actions",
-                        )
-                    )
+                self.__menu_application(items, app)
 
             # active windows menu
             windows = self.niri_windows or self.hypr_windows
             if windows:
                 if items:
                     items.append(IgnisMenuSeparator())
-                # windows actions
-                items.append(IgnisMenuItem("Active Windows", False))
-                for win in windows:
-                    title = win.title
-                    title = title if len(title) < 32 else title[:32] + "..."
-                    items.append(
-                        IgnisMenuModel(
-                            IgnisMenuItem("Focus", True, lambda _, win=win: self.__focus_window(win)),
-                            IgnisMenuItem("Close", True, lambda _, win=win: self.__close_window(win)),
-                            label=title,
-                        )
-                    )
-
-                # close all windows
-                def close_all_windows(wins: list[NiriWindow] | list[HyprlandWindow]):
-                    for win in wins:
-                        self.__close_window(win)
-
-                items.append(IgnisMenuItem("Close All Windows", True, lambda _: close_all_windows(windows)))
+                self.__menu_windows(items, windows)
 
             self.__menu.items = items
             self.menu.set_menu_model(self.__menu.gmenu)
+
+        def __menu_application(self, items: ItemsType, app: Application):
+            # application launch and pin/unpin
+            items.append(IgnisMenuItem("Application", False))
+            items.append(IgnisMenuItem("Launch", True, lambda _: self.__launch_app()))
+            items.append(
+                IgnisMenuItem(
+                    label="Unpin" if app.is_pinned else "Pin",
+                    enabled=True,
+                    on_activate=lambda _: app.unpin() if app.is_pinned else app.pin(),
+                )
+            )
+            # application actions
+            if app.actions:
+                items.append(
+                    IgnisMenuModel(
+                        *[
+                            IgnisMenuItem(action.name, True, lambda _, act=action: act.launch())
+                            for action in app.actions
+                        ],
+                        label="Actions",
+                    )
+                )
+
+        def __menu_windows(self, items: ItemsType, windows: list[NiriWindow] | list[HyprlandWindow]):
+            # windows actions
+            items.append(IgnisMenuItem("Active Windows", False))
+            for win in windows:
+                title = win.title
+                title = title if len(title) < 32 else title[:32] + "..."
+                items.append(
+                    IgnisMenuModel(
+                        IgnisMenuItem("Focus", True, lambda _, win=win: self.__focus_window(win)),
+                        IgnisMenuItem("Maximize", True, lambda _, win=win: self.__maximize_window(win)),
+                        IgnisMenuItem("Fullscreen", True, lambda _, win=win: self.__fullscreen_window(win)),
+                        IgnisMenuItem("Toggle Floating", True, lambda _, win=win: self.__toggle_floating_window(win)),
+                        IgnisMenuItem("Close", True, lambda _, win=win: self.__close_window(win)),
+                        label=title,
+                    )
+                )
+
+            # close all windows
+            def close_all_windows(wins: list[NiriWindow] | list[HyprlandWindow]):
+                for win in wins:
+                    self.__close_window(win)
+
+            items.append(IgnisMenuItem("Close All Windows", True, lambda _: close_all_windows(windows)))
 
         def __focus_window(self, window: NiriWindow | HyprlandWindow):
             if isinstance(window, NiriWindow):
@@ -284,6 +293,31 @@ class AppDockView(Gtk.Box):
             elif isinstance(window, HyprlandWindow):
                 self.__hypr.send_command(f"dispatch focuswindow pid:{window.pid}")
                 self.__hypr.send_command("dispatch alterzorder top")
+
+        def __maximize_window(self, window: NiriWindow | HyprlandWindow):
+            if isinstance(window, NiriWindow):
+                window.focus()
+                if not window.is_floating:
+                    niri_action("MaximizeColumn")
+            elif isinstance(window, HyprlandWindow):
+                self.__focus_window(window)
+                self.__hypr.send_command("dispatch fullscreen 1")
+
+        def __fullscreen_window(self, window: NiriWindow | HyprlandWindow):
+            if isinstance(window, NiriWindow):
+                window.focus()
+                niri_action("FullscreenWindow", {"id": window.id})
+            elif isinstance(window, HyprlandWindow):
+                self.__focus_window(window)
+                self.__hypr.send_command("dispatch fullscreen 0")
+
+        def __toggle_floating_window(self, window: NiriWindow | HyprlandWindow):
+            if isinstance(window, NiriWindow):
+                window.focus()
+                niri_action("ToggleWindowFloating", {"id": window.id})
+            elif isinstance(window, HyprlandWindow):
+                self.__focus_window(window)
+                self.__hypr.send_command(f"dispatch togglefloating pid:{window.pid}")
 
         def __close_window(self, window: NiriWindow | HyprlandWindow):
             if isinstance(window, NiriWindow):
