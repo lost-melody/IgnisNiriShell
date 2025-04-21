@@ -253,15 +253,9 @@ class AppDockView(Gtk.Box):
             )
             # application actions
             if app.actions:
-                items.append(
-                    IgnisMenuModel(
-                        *[
-                            IgnisMenuItem(action.name, True, lambda _, act=action: act.launch())
-                            for action in app.actions
-                        ],
-                        label="Actions",
-                    )
-                )
+                items.append(IgnisMenuSeparator())
+            for action in app.actions:
+                items.append(IgnisMenuItem(action.name, True, lambda _, act=action: act.launch()))
 
         def __menu_windows(self, items: ItemsType, windows: list[NiriWindow] | list[HyprlandWindow]):
             # windows actions
