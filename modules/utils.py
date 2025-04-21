@@ -1,4 +1,5 @@
 import base64
+import os
 import shlex
 from asyncio import create_task
 from typing import Any, Callable
@@ -107,6 +108,16 @@ def launch_application(
 
 def run_cmd_async(cmd: str):
     return create_task(exec_sh_async(cmd))
+
+
+def clear_dir(dirpath: str):
+    if not os.path.isdir(dirpath):
+        return
+
+    for filename in os.listdir(dirpath):
+        filepath = os.path.join(dirpath, filename)
+        if os.path.isfile(filepath):
+            os.remove(filepath)
 
 
 def get_widget_monitor_id(widget: Gtk.Widget) -> int | None:

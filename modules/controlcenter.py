@@ -11,7 +11,7 @@ from ignis.services.backlight import BacklightDevice, BacklightService
 from ignis.services.bluetooth import BluetoothDevice, BluetoothService
 from ignis.services.network import Ethernet, EthernetDevice, NetworkService, Wifi, WifiDevice
 from ignis.services.niri import NiriService
-from ignis.services.notifications import Notification, NotificationAction, NotificationService
+from ignis.services.notifications import NOTIFICATIONS_IMAGE_DATA, Notification, NotificationAction, NotificationService
 from ignis.services.recorder import RecorderService
 from ignis.options import options
 from .backdrop import overlay_window
@@ -20,6 +20,7 @@ from .variables import caffeine_state
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .utils import (
     Pool,
+    clear_dir,
     connect_window,
     connect_option,
     escape_pango_markup,
@@ -942,6 +943,7 @@ class NotificationCenter(Gtk.Box):
     @gtk_template_callback
     def on_clear_all_clicked(self, *_):
         self.__service.clear_all()
+        clear_dir(NOTIFICATIONS_IMAGE_DATA)
 
 
 class NotificationPopups(RevealerWindow):

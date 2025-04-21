@@ -6,7 +6,7 @@ from ignis.app import IgnisApp
 from ignis.widgets import Widget
 from ignis.services.audio import AudioService, Stream
 from ignis.services.hyprland import HyprlandService, HyprlandWindow, HyprlandWorkspace
-from ignis.services.mpris import MprisPlayer, MprisService
+from ignis.services.mpris import ART_URL_CACHE_DIR, MprisPlayer, MprisService
 from ignis.services.network import Ethernet, NetworkService, Wifi
 from ignis.services.niri import NiriService, NiriWindow, NiriWorkspace
 from ignis.services.recorder import RecorderService
@@ -22,6 +22,7 @@ from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options
 from .utils import (
     Pool,
+    clear_dir,
     connect_option,
     format_time_duration,
     get_app_id,
@@ -592,6 +593,9 @@ class Network(Widget.Box):
 
 class Mpris(Widget.Box):
     __gtype_name__ = "Mpris"
+
+    # clear mpris art images cache on startup
+    clear_dir(ART_URL_CACHE_DIR)
 
     @gtk_template("modules/mpris-item")
     class MprisItem(Gtk.Box):
