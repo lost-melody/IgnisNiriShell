@@ -19,6 +19,7 @@ app = IgnisApp.get_default()
 class AppLauncherGridItem(Gtk.Box):
     __gtype_name__ = "IgnisAppLauncherGridItem"
 
+    pinned: Gtk.Image = gtk_template_child()
     icon: Gtk.Image = gtk_template_child()
     label: Gtk.Label = gtk_template_child()
     menu: Gtk.PopoverMenu = gtk_template_child()
@@ -90,6 +91,8 @@ class AppLauncherGridItem(Gtk.Box):
         app = self.application
         id = app.connect("notify::is-pinned", lambda *_: self.__rebuild_menu())
         self.__app_signals.append((app, id))
+        id = app.connect("notify::is-pinned", lambda *_: self.pinned.set_visible(app.is_pinned))
+        self.__app_signals.append((app, id))
 
     @property
     def application(self) -> Application | None:
@@ -104,6 +107,7 @@ class AppLauncherGridItem(Gtk.Box):
         if app is None:
             return
 
+        self.pinned.set_visible(app.is_pinned)
         self.icon.set_from_icon_name(get_app_icon_name(app_info=app))
         self.label.set_text(app.name)
         self.set_tooltip_text(app.description)

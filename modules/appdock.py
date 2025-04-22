@@ -265,6 +265,7 @@ class AppDockView(Gtk.Box):
                 title = title if len(title) < 32 else title[:32] + "..."
                 items.append(
                     IgnisMenuModel(
+                        IgnisMenuItem(f"pid: {win.pid}", False),
                         IgnisMenuItem("Focus", True, lambda _, win=win: self.__focus_window(win)),
                         IgnisMenuItem("Maximize", True, lambda _, win=win: self.__maximize_window(win)),
                         IgnisMenuItem("Fullscreen", True, lambda _, win=win: self.__fullscreen_window(win)),

@@ -7,13 +7,27 @@ template $IgnisAppLauncherGridItem: Box {
         "mx-2",
     ]
 
-    Image icon {
-        pixel-size: 32;
+    Overlay {
+        Image icon {
+            pixel-size: 32;
 
-        styles [
-            "icon-dropshadow",
-            "p-1",
-        ]
+            styles [
+                "icon-dropshadow",
+                "p-1",
+            ]
+        }
+
+        [overlay]
+        Image pinned {
+            halign: end;
+            valign: start;
+            pixel-size: 8;
+            icon-name: "view-pin-symbolic";
+
+            styles [
+                "accent",
+            ]
+        }
     }
 
     Label label {
