@@ -14,7 +14,7 @@ class OverlayWindow(Variable):
         super().__init__(value)
 
     def get_window(self) -> str | None:
-        return self.get_value()
+        return self.value
 
     def update_window_visible(self, name: str, visible: bool):
         if visible:
@@ -23,15 +23,15 @@ class OverlayWindow(Variable):
             self.unset_window(name)
 
     def set_window(self, name: str):
-        previous = self.get_value()
+        previous = self.value
         if previous != name:
             if previous is not None:
                 app.close_window(previous)
-            self.set_value(name)
+            self.value = name
 
     def unset_window(self, name: str):
-        if self.get_value() == name:
-            self.set_value(None)
+        if self.value == name:
+            self.value = None
 
 
 overlay_window = OverlayWindow()

@@ -5,10 +5,10 @@ from gi.repository import Gio, GObject, Gtk
 from ignis.app import IgnisApp
 from ignis.widgets import Widget
 from ignis.services.audio import AudioService, Stream
-from ignis.services.hyprland import HyprlandService, HyprlandWindow, HyprlandWorkspace
+from ignis.services.hyprland import HyprlandService, HyprlandWorkspace
 from ignis.services.mpris import ART_URL_CACHE_DIR, MprisPlayer, MprisService
 from ignis.services.network import Ethernet, NetworkService, Wifi
-from ignis.services.niri import NiriService, NiriWindow, NiriWorkspace
+from ignis.services.niri import NiriService, NiriWorkspace
 from ignis.services.recorder import RecorderService
 from ignis.services.system_tray import SystemTrayItem, SystemTrayService
 from ignis.services.upower import UPowerDevice, UPowerService
@@ -84,7 +84,7 @@ class ActiveWindow(Gtk.CenterBox):
 
         if self.__niri.is_available:
             if self.has_active_window:
-                niri_win: NiriWindow = self.__niri.get_active_window()
+                niri_win = self.__niri.active_window
                 icon = get_app_icon_name(niri_win.app_id)
                 label = niri_win.title
                 tooltip = f"{get_app_id(niri_win.app_id)} - {niri_win.title}"
@@ -93,7 +93,7 @@ class ActiveWindow(Gtk.CenterBox):
 
         if self.__hypr.is_available:
             if self.has_active_window:
-                hypr_win: HyprlandWindow = self.__hypr.get_active_window()
+                hypr_win = self.__hypr.active_window
                 icon = get_app_icon_name(hypr_win.class_name)
                 label = hypr_win.title
                 tooltip = f"{get_app_id(hypr_win.class_name)} - {hypr_win.title}"
@@ -231,18 +231,17 @@ class Workspaces(Widget.Box):
             self.__connector = monitor.get_connector()
 
     def __on_change(self, *_):
-        children: list[Workspaces.WorkspaceItem] = self.get_child()
-        self.set_child([])
+        children = self.child
+        self.child = []
         for item in children:
-            self.__pool.release(item)
+            if isinstance(item, Workspaces.WorkspaceItem):
+                self.__pool.release(item)
         if self.__niri.is_available:
-            self.set_child(
-                [self.__new_item(niri_ws=ws) for ws in self.__niri.workspaces if ws.output == self.__connector]
-            )
+            self.child = [self.__new_item(niri_ws=ws) for ws in self.__niri.workspaces if ws.output == self.__connector]
         if self.__hypr.is_available:
-            self.set_child(
-                [self.__new_item(hypr_ws=ws) for ws in self.__hypr.workspaces if ws.monitor == self.__connector]
-            )
+            self.child = [
+                self.__new_item(hypr_ws=ws) for ws in self.__hypr.workspaces if ws.monitor == self.__connector
+            ]
 
     def __on_scroll(self, _, dx: float, dy: float):
         if self.__niri.is_available:
@@ -345,7 +344,7 @@ class Tray(Gtk.FlowBox):
                 self.__box.remove(self.__menu)
 
             self.__item = item
-            self.__menu = item.get_menu()
+            self.__menu = item.menu
             self.__tooltip_id = item.connect("notify::tooltip", self.__on_changed)
             self.__icon_id = item.connect("notify::icon", self.__on_changed)
             if self.__menu:
@@ -356,8 +355,8 @@ class Tray(Gtk.FlowBox):
 
         def __on_changed(self, *_):
             if self.__item:
-                self.__icon.set_image(self.__item.get_icon())
-                self.set_tooltip_text(self.__item.get_tooltip())
+                self.__icon.image = self.__item.icon or ""
+                self.set_tooltip_text(self.__item.tooltip)
 
         def __on_clicked(self, _):
             if self.__item:
@@ -492,10 +491,10 @@ class RecorderIndicator(Widget.Box):
             self.set_visible(True)
             if self.__service.is_paused:
                 self.set_tooltip_text("Screen Recorder Paused")
-                self.__icon.set_image("media-playback-pause-symbolic")
+                self.__icon.image = "media-playback-pause-symbolic"
             else:
                 self.set_tooltip_text("Screen Recording")
-                self.__icon.set_image("camera-video-symbolic")
+                self.__icon.image = "camera-video-symbolic"
         else:
             self.set_visible(False)
 
@@ -530,7 +529,7 @@ class Audio(Widget.Box):
             )
             set_on_click(
                 self,
-                left=lambda _: stream.set_is_muted(not stream.get_is_muted()),
+                left=lambda _: stream.set_is_muted(not stream.is_muted),
                 right=lambda _: app.toggle_window(WindowName.control_center.value),
             )
 
@@ -556,7 +555,7 @@ class Network(Widget.Box):
             set_on_click(self, left=self.__on_clicked, right=self.__on_clicked)
 
         def __on_change(self, *_):
-            connected: bool = self.__ethernet.is_connected
+            connected = self.__ethernet.is_connected
             self.set_tooltip_text("Connected" if connected else "Disconnected")
 
         def __on_clicked(self, *_):
@@ -576,8 +575,8 @@ class Network(Widget.Box):
             )
 
         def __on_change(self, *_):
-            enabled: bool = self.__wifi.enabled
-            connected: bool = self.__wifi.is_connected
+            enabled = self.__wifi.enabled
+            connected = self.__wifi.is_connected
             self.set_tooltip_text("Disabled" if not enabled else "Connected" if connected else "Disconnected")
 
         def __on_clicked(self, *_):
@@ -736,18 +735,18 @@ class Batteries(Gtk.Box):
             self.unparent()
 
         def __on_change(self, *_):
-            time_remaining: int = self.__battery.get_time_remaining() // 60
+            time_remaining = self.__battery.time_remaining // 60
             self.set_tooltip_text(f"{time_remaining} minutes" if time_remaining != 0 else "full")
 
             prev_percent = self.__percent
-            self.__percent = int(self.__battery.get_percent())
+            self.__percent = int(self.__battery.percent)
             for threshold in (10, 20, 30):
                 if self.__percent <= threshold < prev_percent:
                     self.__notify()
                     break
 
             self.label.set_label(f"{self.__percent}")
-            self.icon.set_from_icon_name(self.__battery.get_icon_name())
+            self.icon.set_from_icon_name(self.__battery.icon_name)
 
         def __notify(self):
             monitor_id = get_widget_monitor_id(self)
@@ -807,4 +806,4 @@ class Batteries(Gtk.Box):
         self.box.append(self.Item(battery))
 
     def __on_change(self, *_):
-        self.stack.set_visible_child_name("batteries" if len(self.__service.get_batteries()) != 0 else "no-batteries")
+        self.stack.set_visible_child_name("batteries" if len(self.__service.batteries) != 0 else "no-batteries")

@@ -76,7 +76,7 @@ class OnscreenDisplay(RevealerWindow):
                 device.disconnect(id)
             self.__backlight_ids.clear()
 
-            devices: list[BacklightDevice] = self.__backlight.devices
+            devices = self.__backlight.devices
             for device in devices:
                 id = device.connect("notify::brightness", self.__on_backlight_changed)
                 self.__backlight_ids.append((device, id))

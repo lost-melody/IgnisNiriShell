@@ -2,8 +2,8 @@ from gi.repository import Gdk, Gio, Gtk
 from ignis.menu_model import IgnisMenuItem, IgnisMenuModel, IgnisMenuSeparator, ItemsType
 from ignis.widgets import Widget
 from ignis.services.applications import Application, ApplicationsService
-from ignis.services.hyprland import HyprlandMonitor, HyprlandWindow, HyprlandWorkspace, HyprlandService
-from ignis.services.niri import NiriWindow, NiriWorkspace, NiriService
+from ignis.services.hyprland import HyprlandWindow, HyprlandService
+from ignis.services.niri import NiriWindow, NiriService
 from ignis.utils.timeout import Timeout
 from .constants import WindowName
 from .template import gtk_template, gtk_template_child
@@ -417,7 +417,6 @@ class AppDockView(Gtk.Box):
             )
             self.__hypr.connect("notify::active-window", self.__on_windows_changed)
             for monitor in self.__hypr.monitors:
-                monitor: HyprlandMonitor
                 monitor.connect("notify::active-workspace-id", self.__on_workspaces_changed)
         if self.__dock_options:
             connect_option(self.__dock_options, "auto_conceal", self.__on_auto_conceal_changed)
@@ -480,27 +479,27 @@ class AppDockView(Gtk.Box):
 
     def __on_workspaces_changed(self, *_):
         if self.__niri.is_available:
-            niri_ws: list[NiriWorkspace] = self.__niri.get_workspaces()
+            niri_ws = self.__niri.workspaces
             self.__monitor_ws = [ws.id for ws in niri_ws if ws.output == self.__connector]
             self.__active_ws = [ws.id for ws in niri_ws if ws.output == self.__connector and ws.is_active]
         if self.__hypr.is_available:
-            hypr_monitors: list[HyprlandMonitor] = self.__hypr.get_monitors()
-            ws_of_monitor: list[int] = [m.active_workspace_id for m in hypr_monitors if m.name == self.__connector]
-            hypr_ws: list[HyprlandWorkspace] = self.__hypr.get_workspaces()
+            hypr_monitors = self.__hypr.monitors
+            ws_of_monitor = [m.active_workspace_id for m in hypr_monitors if m.name == self.__connector]
+            hypr_ws = self.__hypr.workspaces
             self.__monitor_ws = [ws.id for ws in hypr_ws if ws.monitor == self.__connector]
             self.__active_ws = [ws.id for ws in hypr_ws if ws.monitor == self.__connector and ws.id in ws_of_monitor]
         self.__on_windows_changed()
 
     def __on_windows_changed(self, *_):
         if self.__niri.is_available:
-            self.__niri_wins = self.__niri.get_windows()
+            self.__niri_wins = self.__niri.windows
             if self.__dock_options:
                 if self.__dock_options.workspace_only:
                     self.__niri_wins = [win for win in self.__niri_wins if win.workspace_id in self.__active_ws]
                 elif self.__dock_options.monitor_only:
                     self.__niri_wins = [win for win in self.__niri_wins if win.workspace_id in self.__monitor_ws]
         if self.__hypr.is_available:
-            self.__hypr_wins = self.__hypr.get_windows()
+            self.__hypr_wins = self.__hypr.windows
             if self.__dock_options:
                 if self.__dock_options.workspace_only:
                     self.__hypr_wins = [win for win in self.__hypr_wins if win.workspace_id in self.__active_ws]
@@ -511,7 +510,7 @@ class AppDockView(Gtk.Box):
     def __refresh(self):
         self.__list_store.remove_all()
 
-        pinned_set: set[str] = {get_app_id(app.id) for app in self.__apps.pinned if app.id}
+        pinned_set = {get_app_id(app.id) for app in self.__apps.pinned if app.id}
         # all the items to display: pinned apps and open windows
         app_id_set = pinned_set
         if self.__niri.is_available:
@@ -520,7 +519,7 @@ class AppDockView(Gtk.Box):
             app_id_set = app_id_set | ({get_app_id(win.class_name) for win in self.__hypr_wins})
 
         # sync items to display
-        app_dict: dict[str, Application] = {get_app_id(app.id): app for app in self.__apps.apps if app.id}
+        app_dict = {get_app_id(app.id): app for app in self.__apps.apps if app.id}
         for app_id in [app_id for app_id in self.__items if app_id not in app_id_set]:
             self.__pool.release(self.__items.pop(app_id))
         for app_id in app_id_set:
@@ -581,10 +580,10 @@ class AppDock(Widget.Window):
         if not self.__options:
             return
 
-        self.set_exclusivity("exclusive" if self.__options.exclusive else "normal")
+        self.exclusivity = "exclusive" if self.__options.exclusive else "normal"
 
     def __on_focusable_changed(self, *_):
         if not self.__options:
             return
 
-        self.set_exclusivity("on_demand" if self.__options.focusable else "none")
+        self.exclusivity = "on_demand" if self.__options.focusable else "none"

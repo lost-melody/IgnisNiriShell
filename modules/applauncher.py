@@ -1,5 +1,5 @@
 from typing import Any, Callable
-from gi.repository import GLib, Gio, GObject, Gtk
+from gi.repository import Gio, GObject, Gtk
 from ignis.app import IgnisApp
 from ignis.menu_model import IgnisMenuItem, IgnisMenuModel, IgnisMenuSeparator, ItemsType
 from ignis.widgets import Widget
@@ -28,7 +28,7 @@ class AppLauncherGridItem(Gtk.Box):
 
         self._app: Application | None = None
         self._menu = IgnisMenuModel()
-        self.__app_signals: list[tuple[GObject.Object, int]] = []
+        self.__app_signals: list[tuple[Application, int]] = []
 
         set_on_click(self, left=self.__on_left_click, right=self.__on_right_click)
 
@@ -105,8 +105,8 @@ class AppLauncherGridItem(Gtk.Box):
             return
 
         self.icon.set_from_icon_name(get_app_icon_name(app_info=app))
-        self.label.set_text(app.get_name())
-        self.set_tooltip_text(app.get_description())
+        self.label.set_text(app.name)
+        self.set_tooltip_text(app.description)
 
 
 @gtk_template(filename="applauncher")
@@ -165,7 +165,7 @@ class AppLauncherView(Gtk.Box):
     def __on_apps_changed(self, *_):
         self.list_store.remove_all()
 
-        apps: list[Application] = self.__service.get_apps()
+        apps = self.__service.apps
         for app in apps:
             self.list_store.append(app)
 

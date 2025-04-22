@@ -9,7 +9,7 @@ from ignis.widgets import Widget
 from ignis.services.audio import AudioService, Stream
 from ignis.services.backlight import BacklightDevice, BacklightService
 from ignis.services.bluetooth import BluetoothDevice, BluetoothService
-from ignis.services.network import Ethernet, EthernetDevice, NetworkService, Wifi, WifiDevice
+from ignis.services.network import NetworkService
 from ignis.services.niri import NiriService
 from ignis.services.notifications import NOTIFICATIONS_IMAGE_DATA, Notification, NotificationAction, NotificationService
 from ignis.services.recorder import RecorderService
@@ -62,10 +62,8 @@ class AudioControlGroup(Gtk.Box):
             self._stream_type: AudioStreamType | None = None
             super().__init__()
 
-            self.__notify_name = 0
-            self.__notify_icon = 0
-            self.__notify_is_default = 0
-            self.__notify_default_id = 0
+            self.__stream_signals: list[tuple[Stream, int]] = []
+            self.__default_stream_signals: list[tuple[Stream, int]] = []
 
             set_on_click(self.icon, self.__on_mute_clicked)
             set_on_click(self, self.__on_clicked)
@@ -79,14 +77,17 @@ class AudioControlGroup(Gtk.Box):
 
         @stream.setter
         def stream(self, stream: Stream):
-            if self._stream:
-                self._stream.disconnect(self.__notify_name)
-                self._stream.disconnect(self.__notify_icon)
-                self._stream.disconnect(self.__notify_is_default)
+            for stream, id in self.__stream_signals:
+                stream.disconnect(id)
+            self.__stream_signals.clear()
+
             self._stream = stream
-            self.__notify_name = stream.connect("notify::name", self.__on_stream_changed)
-            self.__notify_icon = stream.connect("notify::icon-name", self.__on_stream_changed)
-            self.__notify_is_default = stream.connect("notify::is_default", self.__on_default_changed)
+            id = stream.connect("notify::name", self.__on_stream_changed)
+            self.__stream_signals.append((stream, id))
+            id = stream.connect("notify::icon-name", self.__on_stream_changed)
+            self.__stream_signals.append((stream, id))
+            id = stream.connect("notify::is_default", self.__on_default_changed)
+            self.__stream_signals.append((stream, id))
             self.__on_stream_changed()
 
         @property
@@ -95,24 +96,27 @@ class AudioControlGroup(Gtk.Box):
 
         @stream_type.setter
         def stream_type(self, stream_type: AudioStreamType):
-            if self._stream_type and self._default:
-                self._default.disconnect(self.__notify_default_id)
+            for stream, id in self.__default_stream_signals:
+                stream.disconnect(id)
+            self.__default_stream_signals.clear()
+
             self._stream_type = stream_type
             match stream_type:
                 case AudioStreamType.speaker:
-                    self._default = self.__service.get_speaker()
+                    self._default = self.__service.speaker
                 case AudioStreamType.microphone:
-                    self._default = self.__service.get_microphone()
+                    self._default = self.__service.microphone
             if self._default:
-                self.__notify_default_id = self._default.connect("notify::id", self.__on_default_changed)
+                id = self._default.connect("notify::id", self.__on_default_changed)
+                self.__default_stream_signals.append((self._default, id))
             self.__on_default_changed()
 
         def __on_stream_changed(self, *_):
             if not self._stream:
                 return
 
-            icon: str = self._stream.get_icon_name()
-            description: str = self._stream.get_description()
+            icon = self._stream.icon_name
+            description = self._stream.description
             self.icon.set_from_icon_name(icon)
             self.inscription.set_text(description)
             self.inscription.set_tooltip_text(description)
@@ -120,7 +124,7 @@ class AudioControlGroup(Gtk.Box):
         def __on_default_changed(self, *_):
             if not self._stream or not self._default:
                 return
-            if self._stream.get_id() == self._default.get_id():
+            if self._stream.id == self._default.id:
                 self.icon.add_css_class("accent")
             else:
                 self.icon.remove_css_class("accent")
@@ -128,14 +132,16 @@ class AudioControlGroup(Gtk.Box):
         def __on_mute_clicked(self, *_):
             if not self._stream:
                 return
-            self._stream.set_is_muted(not self._stream.get_is_muted())
+            self._stream.is_muted = not self._stream.is_muted
 
         def __on_clicked(self, *_):
+            if not self._stream:
+                return
             match self._stream_type:
                 case AudioStreamType.speaker:
-                    self.__service.set_speaker(self._stream)
+                    self.__service.speaker = self._stream
                 case AudioStreamType.microphone:
-                    self.__service.set_microphone(self._stream)
+                    self.__service.microphone = self._stream
 
     def __init__(self, stream_type: AudioStreamType):
         self.__service = AudioService.get_default()
@@ -153,10 +159,10 @@ class AudioControlGroup(Gtk.Box):
 
         match stream_type:
             case AudioStreamType.speaker:
-                self._default = self.__service.get_speaker()
+                self._default = self.__service.speaker
                 self.__service.connect("speaker_added", self.__on_stream_added)
             case AudioStreamType.microphone:
-                self._default = self.__service.get_microphone()
+                self._default = self.__service.microphone
                 self.__service.connect("microphone_added", self.__on_stream_added)
 
         if self._default is not None:
@@ -179,15 +185,15 @@ class AudioControlGroup(Gtk.Box):
         if self._default is None:
             return
 
-        description: str = self._default.get_description()
+        description = self._default.description
         if description != self.caption.get_tooltip_text():
             self.caption.set_tooltip_text(description)
 
-        icon_name: str = self._default.get_icon_name()
+        icon_name = self._default.icon_name
         if icon_name != self.icon.get_icon_name():
-            self.icon.set_from_icon_name(self._default.get_icon_name())
+            self.icon.set_from_icon_name(self._default.icon_name)
 
-        volume: int = round(self._default.get_volume())
+        volume = round(self._default.volume)
         if volume != round(self.scale.get_value()):
             self.scale.set_value(volume)
 
@@ -208,7 +214,7 @@ class AudioControlGroup(Gtk.Box):
         if self._default is None:
             return
 
-        self._default.set_is_muted(not self._default.get_is_muted())
+        self._default.is_muted = not self._default.is_muted
 
     def __on_caption_clicked(self, *_):
         revealed = not self.revealer.get_reveal_child()
@@ -225,8 +231,8 @@ class AudioControlGroup(Gtk.Box):
 
         volume = round(self.scale.get_value())
         self.label.set_label(f"{volume}")
-        if volume != round(self._default.get_volume()):
-            self._default.set_volume(volume)
+        if volume != round(self._default.volume):
+            self._default.volume = volume
 
 
 class AudioControlGroupSpeaker(Gtk.Box):
@@ -260,7 +266,7 @@ class BacklightControlGroup(Gtk.ListBox):
             self._device: BacklightDevice | None = None
             super().__init__()
 
-            self.__brightness_id: int = 0
+            self.__device_signals: list[tuple[BacklightDevice, int]] = []
 
         @gproperty(type=BacklightDevice)
         def device(self) -> BacklightDevice | None:
@@ -268,15 +274,17 @@ class BacklightControlGroup(Gtk.ListBox):
 
         @device.setter
         def device(self, device: BacklightDevice | None):
-            if self._device:
-                self._device.disconnect(self.__brightness_id)
+            for device, id in self.__device_signals:
+                device.disconnect(id)
+            self.__device_signals.clear()
 
             self._device = device
 
             if device:
                 adjustment = self.scale.get_adjustment()
                 adjustment.set_upper(math.ceil(device.max_brightness))
-                self.__brightness_id = device.connect("notify::brightness", self.__on_brightness_changed)
+                id = device.connect("notify::brightness", self.__on_brightness_changed)
+                self.__device_signals.append((device, id))
 
         @gtk_template_callback
         def on_scale_value_changed(self, *_):
@@ -307,10 +315,9 @@ class BacklightControlGroup(Gtk.ListBox):
         self.__on_devices_changed()
 
     def __on_devices_changed(self, *_):
-        devices: list[BacklightDevice] = self.__service.get_devices()
+        devices = self.__service.devices
 
         for item in self.__list:
-            item: BacklightControlGroup.Item
             item.device = None
             self.__pool.release(item)
         self.__list.remove_all()
@@ -482,7 +489,7 @@ class ColorSchemeSwitcher(Gtk.Box):
             self.__desktop_settings = gs
 
             schema: Gio.SettingsSchema = gs.get_property("settings-schema")
-            rng: GLib.Variant = schema.get_key("color-scheme").get_range()
+            rng = schema.get_key("color-scheme").get_range()
             assert rng.get_child_value(0).get_string() == "enum", "failed to get 'color-scheme' range"
             rng = rng.get_child_value(1).get_variant()
             self.__color_scheme_range = rng.get_strv()
@@ -541,9 +548,9 @@ class IgnisRecorder(Gtk.Box):
         self.__on_status_changed()
 
     def __on_status_changed(self, *_):
-        if self.__service.get_active():
+        if self.__service.active:
             self.__pill.set_style_accent(True)
-            if self.__service.get_is_paused():
+            if self.__service.is_paused:
                 self.__pill.set_style_warning(True)
                 self.__pill.icon.set_from_icon_name("media-playback-pause-symbolic")
             else:
@@ -559,8 +566,8 @@ class IgnisRecorder(Gtk.Box):
             self.__pill.set_subtitle("unavailable for niri")
             return
 
-        if self.__service.get_active():
-            if self.__service.get_is_paused():
+        if self.__service.active:
+            if self.__service.is_paused:
                 self.__service.continue_recording()
             else:
                 self.__service.stop_recording()
@@ -569,8 +576,8 @@ class IgnisRecorder(Gtk.Box):
             self.__service.start_recording()
 
     def __on_right_clicked(self, *_):
-        if self.__service.get_active():
-            if self.__service.get_is_paused():
+        if self.__service.active:
+            if self.__service.is_paused:
                 self.__service.continue_recording()
             else:
                 self.__service.pause_recording()
@@ -645,7 +652,7 @@ class EthernetStatus(Gtk.Box):
 
     def __init__(self):
         self.__service = NetworkService.get_default()
-        self.__ethernet: Ethernet = self.__service.get_ethernet()
+        self.__ethernet = self.__service.ethernet
         super().__init__()
 
         self.__pill = ControlSwitchPill()
@@ -657,21 +664,21 @@ class EthernetStatus(Gtk.Box):
         self.__on_status_changed()
 
     def __on_status_changed(self, *_):
-        self.__pill.icon.set_from_icon_name(self.__ethernet.get_icon_name())
+        self.__pill.icon.set_from_icon_name(self.__ethernet.icon_name)
         self.set_tooltip_text()
 
-        if not self.__ethernet.get_is_connected():
+        if not self.__ethernet.is_connected:
             self.__pill.set_subtitle("disconnected")
             self.__pill.set_style_accent(False)
             return
 
         self.__pill.set_style_accent(True)
-        devices: list[EthernetDevice] = self.__ethernet.get_devices()
+        devices = self.__ethernet.devices
         match len(devices):
             case 0:
                 self.__pill.set_subtitle("no device")
             case 1:
-                device_name: str | None = devices[0].get_name()
+                device_name = devices[0].name
                 self.__pill.set_subtitle(device_name)
                 self.set_tooltip_text(device_name)
             case _:
@@ -683,7 +690,7 @@ class WifiStatus(Gtk.Box):
 
     def __init__(self):
         self.__service = NetworkService.get_default()
-        self.__wifi: Wifi = self.__service.get_wifi()
+        self.__wifi = self.__service.wifi
         super().__init__()
 
         self.__pill = ControlSwitchPill()
@@ -695,7 +702,7 @@ class WifiStatus(Gtk.Box):
         set_on_click(self, left=self.__on_clicked)
 
     def __on_status_changed(self, *_):
-        self.__pill.icon.set_from_icon_name(self.__wifi.get_icon_name())
+        self.__pill.icon.set_from_icon_name(self.__wifi.icon_name)
         self.set_tooltip_text()
 
         if not self.__wifi.enabled:
@@ -708,7 +715,7 @@ class WifiStatus(Gtk.Box):
             self.__pill.set_subtitle("disconnected")
             return
 
-        devices: list[WifiDevice] = self.__wifi.get_devices()
+        devices = self.__wifi.devices
         match len(devices):
             case 0:
                 self.__pill.set_subtitle("no device")
@@ -757,7 +764,7 @@ class BluetoothStatus(Gtk.Box):
             return
 
         self.__pill.set_style_accent(True)
-        devices: list[BluetoothDevice] = [device for device in self.__service.devices if device.connected]
+        devices = [device for device in self.__service.devices if device.connected]
         match len(devices):
             case 0:
                 self.__pill.set_subtitle("disconnected")
@@ -790,7 +797,7 @@ class NotificationItem(Gtk.ListBoxRow):
         super().__init__()
 
         self.__pool = Pool(Gtk.Button)
-        self.__action_signals: list[int] = []
+        self.__action_signals: list[tuple[Gtk.Button, int]] = []
         self.revealer.connect("notify::child-revealed", self.__on_child_revealed)
         self.connect("map", lambda *_: self.revealer.set_reveal_child(True))
         set_on_click(self.action_row, left=self.__on_clicked, right=self.__on_right_clicked)
@@ -809,6 +816,10 @@ class NotificationItem(Gtk.ListBoxRow):
 
     @notification.setter
     def notification(self, notify: Notification):
+        for button, id in self.__action_signals:
+            button.disconnect(id)
+        self.__action_signals.clear()
+
         self._notification = notify
 
         summary, body = notify.summary, notify.body
@@ -822,28 +833,26 @@ class NotificationItem(Gtk.ListBoxRow):
         notified_at = datetime.fromtimestamp(notify.time)
         self.time.set_label(notified_at.strftime("%H:%M:%S\n%Y-%m-%d"))
 
-        if notify.get_icon():
-            icon = notify.get_icon()
+        if notify.icon:
+            icon = notify.icon
             if icon.startswith("file://"):
                 icon = urllib.parse.unquote(icon).removeprefix("file://")
-            self.icon.set_image(icon)
+            self.icon.image = icon
         else:
-            self.icon.set_image("info-symbolic")
+            self.icon.image = "info-symbolic"
 
-        self.actions.set_visible(len(notify.get_actions()) != 0)
+        self.actions.set_visible(len(notify.actions) != 0)
 
         children: list[Gtk.Button] = list(self.actions.observe_children())
-        for idx, child in enumerate(children):
+        for child in children:
             self.actions.remove(child)
-            child.disconnect(self.__action_signals[idx])
             self.__pool.release(child)
-        self.__action_signals.clear()
 
-        for action in notify.get_actions():
-            action: NotificationAction
+        for action in notify.actions:
             button = self.__pool.acquire()
-            button.set_label(action.get_label())
-            self.__action_signals.append(button.connect("clicked", self.__on_action(action)))
+            button.set_label(action.label)
+            id = button.connect("clicked", self.__on_action(action))
+            self.__action_signals.append((button, id))
             self.actions.append(button)
 
     @property
@@ -904,7 +913,7 @@ class NotificationCenter(Gtk.Box):
         self._notifications.connect("notify::n-items", self.__on_store_changed)
         self.__service.connect("notified", self.__on_notified)
 
-        for notify in self.__service.get_notifications():
+        for notify in self.__service.notifications:
             self.__on_notified(self.__service, notify)
         self.__on_store_changed()
 
