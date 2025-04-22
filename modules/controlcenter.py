@@ -736,8 +736,18 @@ class BluetoothStatus(Gtk.Box):
         self.__pill.set_title("Bluetooth")
 
         self.__service.connect("notify::state", self.__on_status_changed)
-        self.__service.connect("notify::devices", self.__on_status_changed)
+        self.__service.connect("notify::devices", self.__on_devices_changed)
+        self.__devices_signals: list[tuple[BluetoothDevice, int]] = []
         set_on_click(self, left=self.__on_clicked)
+
+    def __on_devices_changed(self, *_):
+        for device, id in self.__devices_signals:
+            device.disconnect(id)
+        self.__devices_signals.clear()
+
+        for device in self.__service.devices:
+            id = device.connect("notify::connected", self.__on_status_changed)
+            self.__devices_signals.append((device, id))
 
     def __on_status_changed(self, *_):
         if not self.__service.powered:
@@ -747,7 +757,7 @@ class BluetoothStatus(Gtk.Box):
             return
 
         self.__pill.set_style_accent(True)
-        devices: list[BluetoothDevice] = [device for device in self.__service.get_devices() if device.connected]
+        devices: list[BluetoothDevice] = [device for device in self.__service.devices if device.connected]
         match len(devices):
             case 0:
                 self.__pill.set_subtitle("disconnected")
