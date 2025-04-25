@@ -746,7 +746,10 @@ class Batteries(Gtk.Box):
                     break
 
             self.label.set_label(f"{self.__percent}")
-            self.icon.set_from_icon_name(self.__battery.icon_name)
+            level = round(self.__percent, -1)
+            charging = "-charging" if self.__battery.charging else ""
+            icon_name = f"battery-level-{level}{charging}-symbolic"
+            self.icon.set_from_icon_name(icon_name)
 
         def __notify(self):
             monitor_id = get_widget_monitor_id(self)
