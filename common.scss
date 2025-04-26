@@ -66,26 +66,33 @@ $corner_names: top-left, top-right, bottom-right, bottom-left;
 
 @for $i from 0 through 100/5 {
   $alpha: 5 * $i;
+  $bg: rgb(0 0 0 / #{calc(1% * $alpha)});
   .bg-#{$alpha} {
-    background-color: rgb(0 0 0 / #{calc(1% * $alpha)});
+    background-color: $bg;
   }
   .hover-bg-#{$alpha}:hover {
-    background-color: #{alpha }(currentColor, #{calc(0.01 * $alpha)});
+    background-image: image(#{alpha }(currentColor, 0.15));
+  }
+  .hover-bg-#{$alpha}:active {
+    background-image: image(#{alpha }(currentColor, 0.3));
   }
 }
 
-$variants: accent, destructive, success, warning, error;
+$variants: view, card, accent, destructive, success, warning, error;
 
 @each $variant in $variants {
   $fg: var(--#{$variant}-fg-color);
   $bg: var(--#{$variant}-bg-color);
-  $bg: #{alpha }(#{$bg}, 0.85);
   .#{$variant}-bg {
     color: #{$fg};
     background-color: #{$bg};
+    border-color: var(--border-color);
   }
   .#{$variant}-bg:hover {
-    background-color: #{mix }(#{$fg}, #{$bg}, 0.85);
+    background-image: image(#{alpha }(currentColor, 0.15));
+  }
+  .#{$variant}-bg:active {
+    background-image: image(#{alpha }(currentColor, 0.3));
   }
 }
 
