@@ -1045,12 +1045,6 @@ class ControlCenter(RevealerWindow):
         __gtype_name__ = "ControlCenterView"
 
         revealer: Gtk.Revealer = gtk_template_child()
-        preferences_button: Gtk.Button = gtk_template_child()
-
-        @gtk_template_callback
-        def on_preferences_button_clicked(self, *_):
-            app.close_window(WindowName.control_center.value)
-            app.open_window(WindowName.preferences.value)
 
     def __init__(self):
         self.__view = self.View()

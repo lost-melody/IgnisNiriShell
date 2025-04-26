@@ -24,13 +24,28 @@ template $ControlCenterView: Box {
                 }
 
                 [end]
-                Button preferences_button {
-                    icon-name: "preferences-desktop-symbolic";
-                    clicked => $on_preferences_button_clicked();
+                Box {
+                    $CommandPill {
+                        icon-name: "system-lock-screen-symbolic";
+                        tooltip-text: "Lock Session";
+                        click-command: "ignis close ignis-controlcenter; sleep .5; loginctl lock-session";
 
-                    styles [
-                        "rounded",
-                    ]
+                        styles [
+                            "mx-1",
+                            "circular",
+                        ]
+                    }
+
+                    $CommandPill {
+                        icon-name: "preferences-desktop-symbolic";
+                        tooltip-text: "Preferences";
+                        click-command: "ignis close ignis-controlcenter; ignis open ignis-preferences";
+
+                        styles [
+                            "mx-1",
+                            "circular",
+                        ]
+                    }
                 }
             }
 
