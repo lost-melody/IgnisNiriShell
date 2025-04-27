@@ -4,12 +4,6 @@
   @extend .bg-25;
 }
 
-.tray {
-  > * {
-    @extend .px-1;
-  }
-}
-
 .topbar {
   * {
     @extend .transition;

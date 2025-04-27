@@ -322,7 +322,7 @@ class Tray(Gtk.FlowBox):
             self.__icon = Widget.Icon()
             self.__box = Gtk.Box()
             self.__box.append(self.__icon)
-            super().__init__(child=self.__box)
+            super().__init__(css_classes=["px-1"], child=self.__box)
             set_on_click(self, left=self.__on_clicked, middle=self.__on_middlet_clicked, right=self.__on_right_clicked)
             set_on_scroll(self, self.__on_scroll)
             self.__tooltip_id: int = 0
@@ -381,7 +381,9 @@ class Tray(Gtk.FlowBox):
 
     def __init__(self):
         self.__service = SystemTrayService.get_default()
-        super().__init__(css_classes=["hover", "hpadding", "rounded", "tray"])
+        super().__init__()
+        self.add_css_class("hover")
+        self.add_css_class("rounded")
 
         self.__pool = Pool(self.TrayItem)
         self.__service.connect("added", self.__on_item_added)
@@ -536,7 +538,7 @@ class Audio(Widget.Box):
     def __init__(self):
         self.__service = AudioService.get_default()
         super().__init__(
-            css_classes=["hover", "hpadding", "rounded"],
+            css_classes=["hover", "rounded"],
             child=[self.AudioItem(stream) for stream in [self.__service.speaker, self.__service.microphone] if stream],
         )
 
@@ -585,7 +587,7 @@ class Network(Widget.Box):
     def __init__(self):
         self.__service = NetworkService.get_default()
         super().__init__(
-            css_classes=["hover", "hpadding", "rounded"],
+            css_classes=["hover", "rounded"],
             child=[self.NetworkEthernet(self.__service.ethernet), self.NetworkWifi(self.__service.wifi)],
         )
 
