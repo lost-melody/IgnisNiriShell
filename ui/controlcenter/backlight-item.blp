@@ -6,17 +6,24 @@ template $BacklightControlItem: ListBoxRow {
 
     styles [
         "card",
-        "p-1",
+        "p-0",
         "m-1",
         "rounded",
     ]
 
     Box {
+        styles [
+            "card-bg",
+            "p-1",
+            "rounded",
+            "transition",
+        ]
+
         Image {
             icon-name: "display-brightness-symbolic";
 
             styles [
-                "view-bg",
+                "card-bg",
                 "p-2",
                 "rounded",
                 "transition",
