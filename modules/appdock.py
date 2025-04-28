@@ -388,8 +388,8 @@ class AppDockView(Gtk.Box):
         super().__init__()
 
         self.__pool = Pool(self.Item)
-        self.__list_store = Gio.ListStore()
-        self.flow_box.bind_model(self.__list_store, create_widget_func=lambda item: item)
+        self.flow_box.set_sort_func(self.__dock_item_sorter)
+
         self.__defer_conceal: Timeout | None = None
         self.connect("realize", self.__on_realized)
         self.__prelight = False
@@ -472,6 +472,14 @@ class AppDockView(Gtk.Box):
         else:
             self.__on_mouse_enter()
 
+    def __dock_item_sorter(self, a: Item, b: Item) -> int:
+        def key(item: AppDockView.Item):
+            pinned = item.app_info and item.app_info.is_pinned or False
+            return (not pinned, item.app_id)
+
+        ka, kb = key(a), key(b)
+        return (ka > kb) - (ka < kb)
+
     def __on_options_changed(self, *_):
         self.__on_workspaces_changed()
 
@@ -509,8 +517,6 @@ class AppDockView(Gtk.Box):
         self.__refresh()
 
     def __refresh(self):
-        self.__list_store.remove_all()
-
         pinned_set = {get_app_id(app.id) for app in self.__apps.pinned if app.id}
         # all the items to display: pinned apps and open windows
         app_id_set = pinned_set
@@ -522,12 +528,14 @@ class AppDockView(Gtk.Box):
         # sync items to display
         app_dict = {get_app_id(app.id): app for app in self.__apps.apps if app.id}
         for app_id in [app_id for app_id in self.__items if app_id not in app_id_set]:
+            self.flow_box.remove(self.__items[app_id])
             self.__pool.release(self.__items.pop(app_id))
         for app_id in app_id_set:
             dock_item = self.__items.get(app_id)
             if not dock_item:
                 dock_item = self.__pool.acquire()
                 self.__items[app_id] = dock_item
+                self.flow_box.append(dock_item)
             dock_item.app_id = app_id
             dock_item.app_info = app_dict.get(app_id)
 
@@ -551,10 +559,10 @@ class AppDockView(Gtk.Box):
             for app_id, item in self.__items.items():
                 item.hypr_windows = hypr_map.get(app_id)
 
-        # rebuild list_store
-        for item in sorted(self.__items.values(), key=lambda i: (i.app_id not in pinned_set, i.app_id)):
+        # refresh flow_box
+        for item in self.__items.values():
             item.rebuild_menu()
-            self.__list_store.append(item)
+        self.flow_box.invalidate_sort()
 
 
 class AppDock(Widget.Window):
