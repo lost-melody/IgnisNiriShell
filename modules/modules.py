@@ -693,11 +693,7 @@ class Clock(Gtk.Box):
     def __init__(self):
         super().__init__()
 
-        set_on_click(
-            self,
-            left=lambda _: self.popover.popup(),
-            right=lambda _: app.toggle_window(WindowName.control_center.value),
-        )
+        set_on_click(self, left=self.__on_clicked, right=self.__on_right_clicked)
 
         Utils.Poll(timeout=1000, callback=self.__on_change)
 
@@ -708,6 +704,16 @@ class Clock(Gtk.Box):
         self.label.set_tooltip_text(now.strftime("%Y-%m-%d"))
 
         poll.set_timeout(60 * 1000 - math.floor(now.second * 1000 + now.microsecond / 1000))
+
+    def __on_clicked(self, *_):
+        now = datetime.datetime.now()
+        self.calendar.set_year(now.year)
+        self.calendar.set_month(now.month - 1)
+        self.calendar.set_day(now.day)
+        self.popover.popup()
+
+    def __on_right_clicked(self, *_):
+        app.toggle_window(WindowName.control_center.value)
 
 
 @gtk_template("modules/batteries")
