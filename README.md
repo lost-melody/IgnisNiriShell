@@ -8,7 +8,9 @@ Requirements:
 - [linkfrg/ignis](https://github.com/linkfrg/ignis), a widget framework for building desktop shells.
   - Currently the latest main branch should be installed.
 - [Blueprint](https://jwestman.pages.gitlab.gnome.org/blueprint-compiler/), a markup language for _GTK_ user interfaces.
-- [libadwaita](https://gnome.pages.gitlab.gnome.org/libadwaita/), Building blocks for modern _GNOME_ applications.
+- [libadwaita](https://gnome.pages.gitlab.gnome.org/libadwaita/), building blocks for modern _GNOME_ applications.
+- [Tela icon theme](https://github.com/vinceliuice/Tela-icon-theme), a flat colorful design icon theme.
+  - Without _tela_ installed, some icons might be missing.
 
 ## Screenshots
 
