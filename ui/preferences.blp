@@ -2,264 +2,264 @@ using Gtk 4.0;
 using Adw 1;
 
 template $PreferencesView: Box {
-    Adw.ToolbarView {
-        [top]
-        Adw.HeaderBar {}
+  Adw.ToolbarView {
+    [top]
+    Adw.HeaderBar {}
 
-        Adw.PreferencesPage {
-            Adw.PreferencesGroup {
-                title: "Notifications";
-                description: "Options for the NotificationService";
+    Adw.PreferencesPage {
+      Adw.PreferencesGroup {
+        title: "Notifications";
+        description: "Options for the NotificationService";
 
-                Adw.SwitchRow dnd {
-                    title: "Do Not Disturb";
-                    subtitle: "Disable notification popups";
-                }
-
-                Adw.SpinRow popup_timeout {
-                    title: "Popup Timeout";
-                    subtitle: "The timeout before a popup dismissed automatically, in milliseconds";
-
-                    adjustment: Adjustment {
-                        lower: 0;
-                        upper: 60000;
-                        page-increment: 5000;
-                        step-increment: 1000;
-                    };
-                }
-
-                Adw.SpinRow max_popups {
-                    title: "Max Popups Count";
-                    subtitle: "The maximum number of popups";
-
-                    adjustment: Adjustment {
-                        lower: 0;
-                        upper: 10;
-                        page-increment: 5;
-                        step-increment: 1;
-                    };
-                }
-            }
-
-            Adw.PreferencesGroup {
-                title: "Recorder";
-                description: "Options for the RecorderService";
-
-                Adw.SpinRow bitrate {
-                    title: "Bitrate";
-                    subtitle: "The bitrate of the recording";
-
-                    adjustment: Adjustment {
-                        lower: 0;
-                        upper: 100000;
-                        page-increment: 5000;
-                        step-increment: 1000;
-                    };
-                }
-
-                Adw.EntryRow recorder_filename {
-                    title: "Default Filename";
-                    tooltip-text: "The default filename for recordings";
-                }
-            }
-
-            Adw.PreferencesGroup {
-                title: "Topbar";
-                description: "Options for the Topbar";
-
-                Adw.SwitchRow topbar_exclusive {
-                    title: "Exclusive Zone";
-                    subtitle: "Whether compositor should reserve extra space for topbar";
-                }
-
-                Adw.SwitchRow topbar_focusable {
-                    title: "Focusable";
-                    subtitle: "Whether topbar can get keyboard focus";
-                }
-            }
-
-            Adw.PreferencesGroup {
-                title: "App Dock";
-                description: "Options for the application dock";
-
-                Adw.SwitchRow dock_exclusive {
-                    title: "Exclusive Zone";
-                    subtitle: "Whether compositor should reserve extra space for the dock";
-                }
-
-                Adw.SwitchRow dock_focusable {
-                    title: "Focusable";
-                    subtitle: "Whether dock can get keyboard focus";
-                }
-
-                Adw.SwitchRow dock_auto_conceal {
-                    title: "Audo Conceal";
-                    subtitle: "Auto conceal dock after a delay";
-                }
-
-                Adw.SwitchRow dock_monitor_only {
-                    title: "Monitor Only";
-                    subtitle: "Display windows of current monitors only";
-                }
-
-                Adw.SwitchRow dock_workspace_only {
-                    title: "Workspace Only";
-                    subtitle: "Display windows of current workspace only";
-                }
-
-                Adw.SpinRow dock_conceal_delay {
-                    title: "Conceal Delay";
-                    subtitle: "The timeout before the dock concealled automatically, in milliseconds";
-
-                    adjustment: Adjustment {
-                        lower: 0;
-                        upper: 10000;
-                        page-increment: 1000;
-                        step-increment: 100;
-                    };
-                }
-            }
-
-            Adw.PreferencesGroup {
-                title: "Osd";
-                description: "Options for the onscreen display";
-
-                Adw.SpinRow osd_timeout {
-                    title: "Timeout";
-                    subtitle: "The timeout before the osd hidden, in milliseconds";
-
-                    adjustment: Adjustment {
-                        lower: 200;
-                        upper: 10000;
-                        page-increment: 1000;
-                        step-increment: 100;
-                    };
-                }
-            }
-
-            Adw.PreferencesGroup {
-                title: "Wallpaper";
-                description: "Options for the WallpaperService";
-
-                Adw.ActionRow wallpaper_path {
-                    title: "Wallpaper path";
-
-                    styles [
-                        "property",
-                    ]
-
-                    [suffix]
-                    Button {
-                        valign: center;
-                        icon-name: "document-open-symbolic";
-                        tooltip-text: "Open File";
-                        clicked => $on_wallpaper_select_clicked();
-                    }
-                }
-
-                Adw.SpinRow wallpaper_blur_radius {
-                    title: "Wallpaper Blur Radius";
-                    subtitle: "The blur radius of wallpaper";
-
-                    adjustment: Adjustment {
-                        lower: 0;
-                        upper: 32;
-                        page-increment: 5;
-                        step-increment: 1;
-                    };
-                }
-
-                Adw.SpinRow wallpaper_bottom_margin {
-                    title: "Wallpaper Bottom Margin";
-                    subtitle: "The bottom margin of wallpaper, useful for baba-is-float (niri)";
-
-                    adjustment: Adjustment {
-                        lower: -64;
-                        upper: 64;
-                        page-increment: 5;
-                        step-increment: 1;
-                    };
-                }
-
-                Adw.SpinRow backdrop_blur_radius {
-                    title: "Backdrop Wallpaper Blur Radius";
-                    subtitle: "The blur radius of backdrop wallpaper (niri only)";
-
-                    adjustment: Adjustment {
-                        lower: 0;
-                        upper: 32;
-                        page-increment: 5;
-                        step-increment: 1;
-                    };
-                }
-
-                Adw.SpinRow backdrop_bottom_margin {
-                    title: "Backdrop Wallpaper Bottom Margin";
-                    subtitle: "The bottom margin of backdrop wallpaper, useful for baba-is-float (niri only)";
-
-                    adjustment: Adjustment {
-                        lower: -64;
-                        upper: 64;
-                        page-increment: 5;
-                        step-increment: 1;
-                    };
-                }
-            }
-
-            Adw.PreferencesGroup {
-                title: "App Launcher";
-                description: "Options for the application launcher";
-
-                Adw.EntryRow command_format {
-                    title: "Command Format";
-                    tooltip-text: "Command to run for launching applications";
-                }
-
-                Adw.EntryRow terminal_format {
-                    title: "Terminal Format";
-                    tooltip-text: "Command to run for launching terminal applications";
-                }
-            }
-
-            Adw.PreferencesGroup {
-                title: "Active Window";
-                description: "Options for the active window indicator";
-
-                Adw.EntryRow on_active_click {
-                    title: "Click";
-                    tooltip-text: "Command to run on clicked";
-                }
-
-                Adw.EntryRow on_active_right_click {
-                    title: "Right Click";
-                    tooltip-text: "Command to run on right clicked";
-                }
-
-                Adw.EntryRow on_active_middle_click {
-                    title: "Middle Click";
-                    tooltip-text: "Command to run on middle clicked";
-                }
-
-                Adw.EntryRow on_active_scroll_up {
-                    title: "Scroll Up";
-                    tooltip-text: "Command to run on scrolled up";
-                }
-
-                Adw.EntryRow on_active_scroll_down {
-                    title: "Scroll Down";
-                    tooltip-text: "Command to run on scrolled down";
-                }
-
-                Adw.EntryRow on_active_scroll_left {
-                    title: "Scroll Left";
-                    tooltip-text: "Command to run on scrolled left";
-                }
-
-                Adw.EntryRow on_active_scroll_right {
-                    title: "Scroll Right";
-                    tooltip-text: "Command to run on scrolled right";
-                }
-            }
+        Adw.SwitchRow dnd {
+          title: "Do Not Disturb";
+          subtitle: "Disable notification popups";
         }
+
+        Adw.SpinRow popup_timeout {
+          title: "Popup Timeout";
+          subtitle: "The timeout before a popup dismissed automatically, in milliseconds";
+
+          adjustment: Adjustment {
+            lower: 0;
+            upper: 60000;
+            page-increment: 5000;
+            step-increment: 1000;
+          };
+        }
+
+        Adw.SpinRow max_popups {
+          title: "Max Popups Count";
+          subtitle: "The maximum number of popups";
+
+          adjustment: Adjustment {
+            lower: 0;
+            upper: 10;
+            page-increment: 5;
+            step-increment: 1;
+          };
+        }
+      }
+
+      Adw.PreferencesGroup {
+        title: "Recorder";
+        description: "Options for the RecorderService";
+
+        Adw.SpinRow bitrate {
+          title: "Bitrate";
+          subtitle: "The bitrate of the recording";
+
+          adjustment: Adjustment {
+            lower: 0;
+            upper: 100000;
+            page-increment: 5000;
+            step-increment: 1000;
+          };
+        }
+
+        Adw.EntryRow recorder_filename {
+          title: "Default Filename";
+          tooltip-text: "The default filename for recordings";
+        }
+      }
+
+      Adw.PreferencesGroup {
+        title: "Topbar";
+        description: "Options for the Topbar";
+
+        Adw.SwitchRow topbar_exclusive {
+          title: "Exclusive Zone";
+          subtitle: "Whether compositor should reserve extra space for topbar";
+        }
+
+        Adw.SwitchRow topbar_focusable {
+          title: "Focusable";
+          subtitle: "Whether topbar can get keyboard focus";
+        }
+      }
+
+      Adw.PreferencesGroup {
+        title: "App Dock";
+        description: "Options for the application dock";
+
+        Adw.SwitchRow dock_exclusive {
+          title: "Exclusive Zone";
+          subtitle: "Whether compositor should reserve extra space for the dock";
+        }
+
+        Adw.SwitchRow dock_focusable {
+          title: "Focusable";
+          subtitle: "Whether dock can get keyboard focus";
+        }
+
+        Adw.SwitchRow dock_auto_conceal {
+          title: "Auto Conceal";
+          subtitle: "Auto conceal dock after a delay";
+        }
+
+        Adw.SwitchRow dock_monitor_only {
+          title: "Monitor Only";
+          subtitle: "Display windows of current monitors only";
+        }
+
+        Adw.SwitchRow dock_workspace_only {
+          title: "Workspace Only";
+          subtitle: "Display windows of current workspace only";
+        }
+
+        Adw.SpinRow dock_conceal_delay {
+          title: "Conceal Delay";
+          subtitle: "The timeout before the dock concealled automatically, in milliseconds";
+
+          adjustment: Adjustment {
+            lower: 0;
+            upper: 10000;
+            page-increment: 1000;
+            step-increment: 100;
+          };
+        }
+      }
+
+      Adw.PreferencesGroup {
+        title: "Osd";
+        description: "Options for the onscreen display";
+
+        Adw.SpinRow osd_timeout {
+          title: "Timeout";
+          subtitle: "The timeout before the osd hidden, in milliseconds";
+
+          adjustment: Adjustment {
+            lower: 200;
+            upper: 10000;
+            page-increment: 1000;
+            step-increment: 100;
+          };
+        }
+      }
+
+      Adw.PreferencesGroup {
+        title: "Wallpaper";
+        description: "Options for the WallpaperService";
+
+        Adw.ActionRow wallpaper_path {
+          title: "Wallpaper path";
+
+          styles [
+            "property",
+          ]
+
+          [suffix]
+          Button {
+            valign: center;
+            icon-name: "document-open-symbolic";
+            tooltip-text: "Open File";
+            clicked => $on_wallpaper_select_clicked();
+          }
+        }
+
+        Adw.SpinRow wallpaper_blur_radius {
+          title: "Wallpaper Blur Radius";
+          subtitle: "The blur radius of wallpaper";
+
+          adjustment: Adjustment {
+            lower: 0;
+            upper: 32;
+            page-increment: 5;
+            step-increment: 1;
+          };
+        }
+
+        Adw.SpinRow wallpaper_bottom_margin {
+          title: "Wallpaper Bottom Margin";
+          subtitle: "The bottom margin of wallpaper, useful for baba-is-float (niri)";
+
+          adjustment: Adjustment {
+            lower: -64;
+            upper: 64;
+            page-increment: 5;
+            step-increment: 1;
+          };
+        }
+
+        Adw.SpinRow backdrop_blur_radius {
+          title: "Backdrop Wallpaper Blur Radius";
+          subtitle: "The blur radius of backdrop wallpaper (niri only)";
+
+          adjustment: Adjustment {
+            lower: 0;
+            upper: 32;
+            page-increment: 5;
+            step-increment: 1;
+          };
+        }
+
+        Adw.SpinRow backdrop_bottom_margin {
+          title: "Backdrop Wallpaper Bottom Margin";
+          subtitle: "The bottom margin of backdrop wallpaper, useful for baba-is-float (niri only)";
+
+          adjustment: Adjustment {
+            lower: -64;
+            upper: 64;
+            page-increment: 5;
+            step-increment: 1;
+          };
+        }
+      }
+
+      Adw.PreferencesGroup {
+        title: "App Launcher";
+        description: "Options for the application launcher";
+
+        Adw.EntryRow command_format {
+          title: "Command Format";
+          tooltip-text: "Command to run for launching applications";
+        }
+
+        Adw.EntryRow terminal_format {
+          title: "Terminal Format";
+          tooltip-text: "Command to run for launching terminal applications";
+        }
+      }
+
+      Adw.PreferencesGroup {
+        title: "Active Window";
+        description: "Options for the active window indicator";
+
+        Adw.EntryRow on_active_click {
+          title: "Click";
+          tooltip-text: "Command to run on clicked";
+        }
+
+        Adw.EntryRow on_active_right_click {
+          title: "Right Click";
+          tooltip-text: "Command to run on right clicked";
+        }
+
+        Adw.EntryRow on_active_middle_click {
+          title: "Middle Click";
+          tooltip-text: "Command to run on middle clicked";
+        }
+
+        Adw.EntryRow on_active_scroll_up {
+          title: "Scroll Up";
+          tooltip-text: "Command to run on scrolled up";
+        }
+
+        Adw.EntryRow on_active_scroll_down {
+          title: "Scroll Down";
+          tooltip-text: "Command to run on scrolled down";
+        }
+
+        Adw.EntryRow on_active_scroll_left {
+          title: "Scroll Left";
+          tooltip-text: "Command to run on scrolled left";
+        }
+
+        Adw.EntryRow on_active_scroll_right {
+          title: "Scroll Right";
+          tooltip-text: "Command to run on scrolled right";
+        }
+      }
     }
+  }
 }
