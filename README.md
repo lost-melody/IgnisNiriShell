@@ -21,6 +21,7 @@ Requirements:
 ![ignis-shell-applauncher.png](https://i.postimg.cc/15CHLKXr/ignis-shell-applauncher.png)
 ![ignis-shell-controlcenter.png](https://i.postimg.cc/TYL0vDb8/ignis-shell-controlcenter.png)
 ![ignis-shell-preferences.png](https://i.postimg.cc/mDpW55zW/ignis-shell-preferences.png)
+![ignis-shell-overview.png](https://i.postimg.cc/GpKYr2xM/ignis-shell-overview.png)
 
 </details>
 
@@ -35,7 +36,8 @@ Requirements:
 - _Notification_ service is required in `NotificationPopups` and `ControlCenter`.
   - `NotificationPopups` can be disabled by commenting it out in `config.py`.
   - `NotificationCenter` can be removed from `ControlCenter`'s blueprint file.
-- _Wallpaper_ service is also initialized in `config.py`, and can be commented out if other wallpaper services are used.
+- `WallpaperWindow`s are initialized in `config.py`, and can be commented out if other wallpaper services are used.
+  - For _niri_, an extra `WallpaperWindow` is initialized as the overview backdrop, which should also be configured in _niri_ (example below).
 - _OSD_ displays changes of volumes, backlight, and optionally caps lock state.
   - _libevdev_ is required for caps lock state detection, installed via system package manager and pip.
     - Install _libevdev_: `pacman -S libevdev`.
@@ -75,6 +77,19 @@ Requirements:
   - Some widgets are designed to be used and customized in anywhere of `.blp` files.
   - `CommandPill`: a `Gtk.Button` that accepts an additional `click-command` property to be run upon clicked.
   - `ControlSwitchCmd`: a `ControlSwitch` that are used to toggle service up and down in `ControlCenter`, e.g. `wlsunset`.
+- Configure `BackdropWallpaper` in _niri_:
+
+  ```kdl
+  layer-rule {
+      match namespace="^ignis_wallpaper_backdrop_.*$"
+      place-within-backdrop true
+      opacity 0.5
+  }
+  layer-rule {
+      match namespace="^ignis_wallpaper_service_.*$"
+      baba-is-float true
+  }
+  ```
 
 ## Development
 

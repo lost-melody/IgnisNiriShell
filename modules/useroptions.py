@@ -37,11 +37,18 @@ class UserOptions(OptionsManager):
         exclusive: bool = True
         focusable: bool = False
 
+    class Wallpaper(OptionsGroup):
+        blur_radius: float = 0
+        bottom_margin: int = 0
+        backdrop_blur_radius: float = 5
+        backdrop_bottom_margin: int = 0
+
     applauncher = AppLauncher()
     activewindow = ActiveWindow()
     appdock = AppDock()
     topbar = Topbar()
     osd = Osd()
+    wallpaper = Wallpaper()
 
 
 user_options = UserOptions()

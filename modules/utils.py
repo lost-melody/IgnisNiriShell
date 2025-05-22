@@ -8,6 +8,7 @@ from ignis.widgets import Widget
 from ignis.services.applications import Application
 from ignis.services.niri import NiriService
 from ignis.options_manager import OptionsGroup
+from ignis.utils.debounce import debounce
 from ignis.utils.icon import get_app_icon_name as ignis_get_app_icon_name
 from ignis.utils.shell import exec_sh_async
 from ignis.utils.monitor import get_monitor
@@ -168,7 +169,7 @@ def connect_option(group: OptionsGroup, option: str, callback: Callable):
     binding = group.bind(option)
     source: GObject.Object = binding.target
     source_property: str = binding.target_properties[0]
-    source.connect(f"notify::{source_property.replace("-", "_")}", callback)
+    source.connect(f"notify::{source_property.replace("-", "_")}", debounce(500)(callback))
 
 
 def bind_option(

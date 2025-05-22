@@ -156,6 +156,54 @@ template $PreferencesView: Box {
                         clicked => $on_wallpaper_select_clicked();
                     }
                 }
+
+                Adw.SpinRow wallpaper_blur_radius {
+                    title: "Wallpaper Blur Radius";
+                    subtitle: "The blur radius of wallpaper";
+
+                    adjustment: Adjustment {
+                        lower: 0;
+                        upper: 32;
+                        page-increment: 5;
+                        step-increment: 1;
+                    };
+                }
+
+                Adw.SpinRow wallpaper_bottom_margin {
+                    title: "Wallpaper Bottom Margin";
+                    subtitle: "The bottom margin of wallpaper, useful for baba-is-float (niri)";
+
+                    adjustment: Adjustment {
+                        lower: -64;
+                        upper: 64;
+                        page-increment: 5;
+                        step-increment: 1;
+                    };
+                }
+
+                Adw.SpinRow backdrop_blur_radius {
+                    title: "Backdrop Wallpaper Blur Radius";
+                    subtitle: "The blur radius of backdrop wallpaper (niri only)";
+
+                    adjustment: Adjustment {
+                        lower: 0;
+                        upper: 32;
+                        page-increment: 5;
+                        step-increment: 1;
+                    };
+                }
+
+                Adw.SpinRow backdrop_bottom_margin {
+                    title: "Backdrop Wallpaper Bottom Margin";
+                    subtitle: "The bottom margin of backdrop wallpaper, useful for baba-is-float (niri only)";
+
+                    adjustment: Adjustment {
+                        lower: -64;
+                        upper: 64;
+                        page-increment: 5;
+                        step-increment: 1;
+                    };
+                }
             }
 
             Adw.PreferencesGroup {

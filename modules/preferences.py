@@ -28,6 +28,10 @@ class Preferences(Widget.RegularWindow):
         recorder_filename: Adw.EntryRow = gtk_template_child()
         osd_timeout: Adw.SpinRow = gtk_template_child()
         wallpaper_path: Adw.ActionRow = gtk_template_child()
+        wallpaper_blur_radius: Adw.SpinRow = gtk_template_child()
+        wallpaper_bottom_margin: Adw.SpinRow = gtk_template_child()
+        backdrop_blur_radius: Adw.SpinRow = gtk_template_child()
+        backdrop_bottom_margin: Adw.SpinRow = gtk_template_child()
         command_format: Adw.EntryRow = gtk_template_child()
         terminal_format: Adw.EntryRow = gtk_template_child()
         on_active_click: Adw.EntryRow = gtk_template_child()
@@ -120,6 +124,12 @@ class Preferences(Widget.RegularWindow):
             if user_options.topbar:
                 bind_option(user_options.topbar, "exclusive", self.topbar_exclusive, "active")
                 bind_option(user_options.topbar, "focusable", self.topbar_focusable, "active")
+
+            if user_options.wallpaper:
+                bind_option(user_options.wallpaper, "blur_radius", self.wallpaper_blur_radius, "value")
+                bind_option(user_options.wallpaper, "bottom_margin", self.wallpaper_bottom_margin, "value")
+                bind_option(user_options.wallpaper, "backdrop_blur_radius", self.backdrop_blur_radius, "value")
+                bind_option(user_options.wallpaper, "backdrop_bottom_margin", self.backdrop_bottom_margin, "value")
 
         @gtk_template_callback
         def on_wallpaper_select_clicked(self, *_):

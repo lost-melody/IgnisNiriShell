@@ -28,7 +28,7 @@ template $ControlCenterView: Box {
                     $CommandPill {
                         icon-name: "system-lock-screen-symbolic";
                         tooltip-text: "Lock Session";
-                        click-command: "ignis close ignis-controlcenter; sleep .5; loginctl lock-session";
+                        click-command: "ignis close-window ignis-controlcenter; sleep .5; loginctl lock-session";
 
                         styles [
                             "mx-1",
@@ -39,7 +39,7 @@ template $ControlCenterView: Box {
                     $CommandPill {
                         icon-name: "preferences-desktop-symbolic";
                         tooltip-text: "Preferences";
-                        click-command: "ignis close ignis-controlcenter; ignis open ignis-preferences";
+                        click-command: "ignis close-window ignis-controlcenter; ignis open-window ignis-preferences";
 
                         styles [
                             "mx-1",
