@@ -10,6 +10,7 @@ class UserOptions(OptionsManager):
             pass
 
     class AppLauncher(OptionsGroup):
+        exclusive_focus: bool = True
         command_format: str = "%command%"
         terminal_format: str = "foot %command%"
 

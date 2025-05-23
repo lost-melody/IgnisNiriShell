@@ -18,6 +18,7 @@ from .backdrop import overlay_window
 from .constants import AudioStreamType, WindowName
 from .variables import caffeine_state
 from .template import gtk_template, gtk_template_callback, gtk_template_child
+from .useroptions import user_options
 from .utils import (
     Pool,
     clear_dir,
@@ -1051,7 +1052,7 @@ class ControlCenter(RevealerWindow):
 
         super().__init__(
             namespace=WindowName.control_center.value,
-            kb_mode="exclusive",
+            kb_mode="on_demand",
             margin_top=8,
             margin_bottom=8,
             margin_right=8,
@@ -1065,7 +1066,16 @@ class ControlCenter(RevealerWindow):
 
         self.set_child(self.__view)
 
+        if user_options and user_options.applauncher:
+            connect_option(user_options.applauncher, "exclusive_focus", self.__on_exclusive_focus_changed)
+        self.__on_exclusive_focus_changed()
+
     def set_property(self, property_name: str, value: Any):
         if property_name == "visible":
             overlay_window.update_window_visible(self.namespace, value)
         super().set_property(property_name, value)
+
+    def __on_exclusive_focus_changed(self, *_):
+        opts = user_options and user_options.applauncher
+        if opts:
+            self.kb_mode = "exclusive" if opts.exclusive_focus else "on_demand"

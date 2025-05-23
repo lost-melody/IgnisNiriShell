@@ -8,7 +8,7 @@ from .backdrop import overlay_window
 from .constants import WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options
-from .utils import Pool, connect_window, get_app_icon_name, launch_application, set_on_click
+from .utils import Pool, connect_window, connect_option, get_app_icon_name, launch_application, set_on_click
 from .widgets import RevealerWindow
 
 
@@ -264,7 +264,7 @@ class AppLauncher(RevealerWindow):
 
         super().__init__(
             namespace=WindowName.app_launcher.value,
-            kb_mode="exclusive",
+            kb_mode="on_demand",
             layer="overlay",
             popup=True,
             visible=False,
@@ -284,10 +284,19 @@ class AppLauncher(RevealerWindow):
 
         self.__view.connect("search-stop", self.__on_search_stop)
 
+        if user_options and user_options.applauncher:
+            connect_option(user_options.applauncher, "exclusive_focus", self.__on_exclusive_focus_changed)
+        self.__on_exclusive_focus_changed()
+
     def set_property(self, property_name: str, value: Any):
         if property_name == "visible":
             overlay_window.update_window_visible(self.namespace, value)
         super().set_property(property_name, value)
+
+    def __on_exclusive_focus_changed(self, *_):
+        opts = user_options and user_options.applauncher
+        if opts:
+            self.kb_mode = "exclusive" if opts.exclusive_focus else "on_demand"
 
     def __add_shortcut(self, trigger: str, callback: Callable[[], Any]):
         def cb(*_) -> bool:

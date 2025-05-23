@@ -210,6 +210,11 @@ template $PreferencesView: Box {
                 title: "App Launcher";
                 description: "Options for the application launcher";
 
+                Adw.SwitchRow exclusive_focus {
+                    title: "Exclusive Keyboard Focus";
+                    subtitle: "Whether window should have exclusive keyboard focus (also affects Control Center)";
+                }
+
                 Adw.EntryRow command_format {
                     title: "Command Format";
                     tooltip-text: "Command to run for launching applications";

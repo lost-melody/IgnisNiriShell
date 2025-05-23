@@ -32,6 +32,7 @@ class Preferences(Widget.RegularWindow):
         wallpaper_bottom_margin: Adw.SpinRow = gtk_template_child()
         backdrop_blur_radius: Adw.SpinRow = gtk_template_child()
         backdrop_bottom_margin: Adw.SpinRow = gtk_template_child()
+        exclusive_focus: Adw.SwitchRow = gtk_template_child()
         command_format: Adw.EntryRow = gtk_template_child()
         terminal_format: Adw.EntryRow = gtk_template_child()
         on_active_click: Adw.EntryRow = gtk_template_child()
@@ -98,6 +99,7 @@ class Preferences(Widget.RegularWindow):
                 return
 
             if user_options.applauncher:
+                bind_option(user_options.applauncher, "exclusive_focus", self.exclusive_focus, "active")
                 bind_option(user_options.applauncher, "command_format", self.command_format, "text")
                 bind_option(user_options.applauncher, "terminal_format", self.terminal_format, "text")
 
