@@ -14,3 +14,22 @@
   @extend .h-8;
   font-size: calc(var(--length-4) * 0.875);
 }
+
+.notification-popup-item {
+  background-image: image(#{alpha }(var(--window-bg-color), 0.85));
+}
+
+.notification-item-low {
+  outline: solid 1px rgb(202 207 210 / 50%);
+  outline-offset: 0px;
+}
+
+.notification-item-normal {
+  outline: solid 1px rgb(93 173 226 / 50%);
+  outline-offset: 0px;
+}
+
+.notification-item-critical {
+  outline: solid 1px rgb(236 112 99 / 50%);
+  outline-offset: 0px;
+}

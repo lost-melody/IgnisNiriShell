@@ -822,6 +822,7 @@ class NotificationItem(Gtk.ListBoxRow):
         self.__action_signals.clear()
 
         self._notification = notify
+        self.__update_urgency(notify)
 
         summary, body = notify.summary, notify.body
         valid_markup = verify_pango_markup(summary) and verify_pango_markup(body)
@@ -863,6 +864,21 @@ class NotificationItem(Gtk.ListBoxRow):
     @is_popup.setter
     def is_popup(self, is_popup):
         self._is_popup = is_popup
+        css_class = "notification-popup-item"
+        if is_popup:
+            pass
+            self.add_css_class(css_class)
+        else:
+            self.remove_css_class(css_class)
+
+    def __update_urgency(self, notify: Notification):
+        urgency_dict = {0: "low", 1: "normal", 2: "critical"}
+        for urgency in urgency_dict:
+            css_class = f"notification-item-{urgency_dict[urgency]}"
+            if notify.urgency == urgency:
+                self.add_css_class(css_class)
+            else:
+                self.remove_css_class(css_class)
 
     def __on_child_revealed(self, *_):
         if self.revealer.get_reveal_child():
