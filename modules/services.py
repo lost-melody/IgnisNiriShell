@@ -1,11 +1,10 @@
 import os
-import threading
 from typing import Any
 from gi.repository import GLib
 from loguru import logger
 from ignis.base_service import BaseService
 from ignis.gobject import IgnisProperty
-from ignis.utils import Utils
+from ignis.utils import Poll, thread
 
 
 try:
@@ -23,7 +22,7 @@ class CpuLoadService(BaseService):
         self._idle_time: int = 0
         self._total_time: int = 0
         self.__cpu_times = self.__read_cpu_times()
-        self.__poll = Utils.Poll(timeout=1000, callback=self.__update_times)
+        self.__poll = Poll(timeout=1000, callback=self.__update_times)
 
     @classmethod
     def __read_cpu_count(cls) -> int:
@@ -133,7 +132,7 @@ class KeyboardLedsService(BaseService):
             try:
                 device = libevdev.Device(fd)
                 if self.__device_support_leds(device):
-                    threading.Thread(target=lambda d=device: self.__listen_to_events(d)).start()
+                    thread(target=lambda d=device: self.__listen_to_events(d))
             except:
                 logger.warning("User should be a member of the `input` group to display capslock state in OSD")
                 break

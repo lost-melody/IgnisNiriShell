@@ -3,7 +3,7 @@ import datetime, math
 from typing import Callable
 from gi.repository import Gio, GObject, Gtk
 from ignis.app import IgnisApp
-from ignis.widgets import Widget
+from ignis.widgets import Box, Icon, Window
 from ignis.services.audio import AudioService, Stream
 from ignis.services.hyprland import HyprlandService, HyprlandWorkspace
 from ignis.services.mpris import ART_URL_CACHE_DIR, MprisPlayer, MprisService
@@ -14,7 +14,7 @@ from ignis.services.system_tray import SystemTrayItem, SystemTrayService
 from ignis.services.upower import UPowerDevice, UPowerService
 from ignis.dbus_menu import DBusMenu
 from ignis.options import options
-from ignis.utils import Utils
+from ignis.utils import Poll
 from .constants import WindowName
 from .variables import caffeine_state
 from .services import CpuLoadService
@@ -133,7 +133,7 @@ class ActiveWindow(Gtk.CenterBox):
                 run_cmd_async(cmd)
 
 
-class Workspaces(Widget.Box):
+class Workspaces(Box):
     __gtype_name__ = "NiriWorkspaces"
 
     class WorkspaceItem(Gtk.Box):
@@ -319,7 +319,7 @@ class Tray(Gtk.FlowBox):
         __gtype_name__ = "IgnisTrayItem"
 
         def __init__(self):
-            self.__icon = Widget.Icon()
+            self.__icon = Icon()
             self.__box = Gtk.Box()
             self.__box.append(self.__icon)
             super().__init__(css_classes=["px-1"], child=self.__box)
@@ -412,7 +412,7 @@ class Tray(Gtk.FlowBox):
                 self.__pool.release(item)
 
 
-class CaffeineIndicator(Widget.Box):
+class CaffeineIndicator(Box):
     __gtype_name__ = "IgnisCaffeineIndicator"
 
     def __init__(self):
@@ -422,7 +422,7 @@ class CaffeineIndicator(Widget.Box):
             css_classes=["hover", "px-1", "rounded"],
             tooltip_text="Caffeine enabled",
             visible=False,
-            child=[Widget.Icon(image="my-caffeine-on-symbolic")],
+            child=[Icon(image="my-caffeine-on-symbolic")],
         )
         self.__state.connect("notify::value", self.__on_changed)
         set_on_click(self, left=self.__on_clicked, right=self.__on_right_clicked)
@@ -432,8 +432,8 @@ class CaffeineIndicator(Widget.Box):
         self.set_visible(enabled)
 
         if enabled:
-            window = self.get_ancestor(Widget.Window)
-            if isinstance(window, Widget.Window):
+            window = self.get_ancestor(Window)
+            if isinstance(window, Window):
                 self.__cookie = app.inhibit(
                     window=window, flags=Gtk.ApplicationInhibitFlags.IDLE, reason="Caffeine Mode Enabled"
                 )
@@ -448,7 +448,7 @@ class CaffeineIndicator(Widget.Box):
         app.toggle_window(WindowName.control_center.value)
 
 
-class DndIndicator(Widget.Box):
+class DndIndicator(Box):
     __gtype_name__ = "IgnisDndIndicator"
 
     def __init__(self):
@@ -456,7 +456,7 @@ class DndIndicator(Widget.Box):
         super().__init__(
             css_classes=["hover", "px-1", "rounded", "warning"],
             tooltip_text="Do Not Disturb enabled",
-            child=[Widget.Icon(image="notifications-disabled-symbolic")],
+            child=[Icon(image="notifications-disabled-symbolic")],
         )
 
         if self.__options:
@@ -475,12 +475,12 @@ class DndIndicator(Widget.Box):
         app.toggle_window(WindowName.control_center.value)
 
 
-class RecorderIndicator(Widget.Box):
+class RecorderIndicator(Box):
     __gtype_name__ = "IgnisRecorderIndicator"
 
     def __init__(self):
         self.__service = RecorderService.get_default()
-        self.__icon = Widget.Icon()
+        self.__icon = Icon()
         super().__init__(css_classes=["hover", "px-1", "rounded", "warning"], child=[self.__icon])
 
         self.__service.connect("notify::active", self.__on_status_changed)
@@ -517,17 +517,17 @@ class RecorderIndicator(Widget.Box):
                 self.__service.pause_recording()
 
 
-class Audio(Widget.Box):
+class Audio(Box):
     __gtype_name__ = "IgnisAudio"
 
-    class AudioItem(Widget.Box):
+    class AudioItem(Box):
         __gtype_name__ = "IgnisAudioItem"
 
         def __init__(self, stream: Stream):
             super().__init__(
                 css_classes=["px-1"],
                 tooltip_text=stream.bind("description"),
-                child=[Widget.Icon(image=stream.bind("icon_name"))],
+                child=[Icon(image=stream.bind("icon_name"))],
             )
             set_on_click(
                 self,
@@ -543,15 +543,15 @@ class Audio(Widget.Box):
         )
 
 
-class Network(Widget.Box):
+class Network(Box):
     __gtype_name__ = "IgnisNetwork"
 
-    class NetworkEthernet(Widget.Box):
+    class NetworkEthernet(Box):
         __gtype_name__ = "IgnisNetworkEthernet"
 
         def __init__(self, ethernet: Ethernet):
             self.__ethernet = ethernet
-            super().__init__(css_classes=["px-1"], child=[Widget.Icon(image=ethernet.bind("icon_name"))])
+            super().__init__(css_classes=["px-1"], child=[Icon(image=ethernet.bind("icon_name"))])
             ethernet.connect("notify::is-connected", self.__on_change)
             self.__on_change()
             set_on_click(self, left=self.__on_clicked, right=self.__on_clicked)
@@ -563,12 +563,12 @@ class Network(Widget.Box):
         def __on_clicked(self, *_):
             app.toggle_window(WindowName.control_center.value)
 
-    class NetworkWifi(Widget.Box):
+    class NetworkWifi(Box):
         __gtype_name__ = "IgnisNetworkWifi"
 
         def __init__(self, wifi: Wifi):
             self.__wifi = wifi
-            super().__init__(css_classes=["px-1"], child=[Widget.Icon(image=wifi.bind("icon_name"))])
+            super().__init__(css_classes=["px-1"], child=[Icon(image=wifi.bind("icon_name"))])
             wifi.connect("notify::enabled", self.__on_change)
             wifi.connect("notify::is-connected", self.__on_change)
             self.__on_change()
@@ -592,7 +592,7 @@ class Network(Widget.Box):
         )
 
 
-class Mpris(Widget.Box):
+class Mpris(Box):
     __gtype_name__ = "Mpris"
 
     # clear mpris art images cache on startup
@@ -695,9 +695,9 @@ class Clock(Gtk.Box):
 
         set_on_click(self, left=self.__on_clicked, right=self.__on_right_clicked)
 
-        Utils.Poll(timeout=1000, callback=self.__on_change)
+        Poll(timeout=1000, callback=self.__on_change)
 
-    def __on_change(self, poll: Utils.Poll):
+    def __on_change(self, poll: Poll):
         now = datetime.datetime.now()
 
         self.label.set_label(now.strftime("%H:%M"))

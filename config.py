@@ -3,7 +3,7 @@ import modules.adw as _
 import modules.overrides as _
 from ignis.app import IgnisApp
 from ignis.services.niri import NiriService
-from ignis.utils.monitor import get_n_monitors
+from ignis.utils import get_n_monitors
 from modules.modules import *
 from modules.appdock import AppDock
 from modules.applauncher import AppLauncher

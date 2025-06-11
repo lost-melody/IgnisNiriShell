@@ -1,5 +1,5 @@
 from ignis.app import IgnisApp
-from ignis.widgets import Widget
+from ignis.widgets import Box, Revealer
 from ignis.variable import Variable
 from .constants import WindowName
 from .utils import set_on_click
@@ -41,13 +41,13 @@ class OverlayBackdrop(RevealerWindow):
     __gtype_name__ = "IgnisBackdrop"
 
     def __init__(self, monitor: int):
-        self.__revealer = Widget.Revealer(
+        self.__revealer = Revealer(
             hexpand=True,
             vexpand=True,
             transition_type="crossfade",
-            child=Widget.Box(hexpand=True, vexpand=True, css_classes=["backdrop"]),
+            child=Box(hexpand=True, vexpand=True, css_classes=["backdrop"]),
         )
-        self.__view = Widget.Box(hexpand=True, vexpand=True, child=[self.__revealer])
+        self.__view = Box(hexpand=True, vexpand=True, child=[self.__revealer])
 
         super().__init__(
             namespace=f"{WindowName.backdrop.value}-{monitor}",

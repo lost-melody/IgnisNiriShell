@@ -2,7 +2,7 @@ from typing import Any, Callable
 from gi.repository import Gio, GObject, Gtk
 from ignis.app import IgnisApp
 from ignis.menu_model import IgnisMenuItem, IgnisMenuModel, IgnisMenuSeparator, ItemsType
-from ignis.widgets import Widget
+from ignis.widgets import Window
 from ignis.services.applications import Application, ApplicationAction, ApplicationsService
 from .backdrop import overlay_window
 from .constants import WindowName
@@ -192,7 +192,7 @@ class AppLauncherView(Gtk.Box):
         if not self.search_bar.get_search_mode():
             self.app_grid.grab_focus()
 
-    def __on_window_visible_change(self, window: Widget.Window, _):
+    def __on_window_visible_change(self, window: Window, _):
         if not window.get_visible():
             self.search_bar.set_search_mode(False)
 

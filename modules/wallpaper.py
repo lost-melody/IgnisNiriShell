@@ -1,5 +1,5 @@
 from gi.repository import Gtk
-from ignis.widgets import Widget
+from ignis.widgets import Window
 from ignis.utils.monitor import get_monitor
 from ignis.utils.debounce import debounce
 from ignis.options import options
@@ -28,7 +28,7 @@ class BlurredPicture(Gtk.Picture):
         self.__blur_radius = radius
 
 
-class WallpaperWindow(Widget.Window):
+class WallpaperWindow(Window):
     __gtype_name__ = "IgnisBackdropWallpaper"
 
     def __init__(self, monitor_idx: int, is_backdrop: bool = False):

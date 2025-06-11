@@ -1,10 +1,10 @@
 from gi.repository import Gdk, Gio, Gtk
 from ignis.menu_model import IgnisMenuItem, IgnisMenuModel, IgnisMenuSeparator, ItemsType
-from ignis.widgets import Widget
+from ignis.widgets import Window
 from ignis.services.applications import Application, ApplicationsService
 from ignis.services.hyprland import HyprlandWindow, HyprlandService
 from ignis.services.niri import NiriWindow, NiriService
-from ignis.utils.timeout import Timeout
+from ignis.utils import Timeout
 from .constants import WindowName
 from .template import gtk_template, gtk_template_child
 from .useroptions import user_options
@@ -565,7 +565,7 @@ class AppDockView(Gtk.Box):
         self.flow_box.invalidate_sort()
 
 
-class AppDock(Widget.Window):
+class AppDock(Window):
     __gtype_name__ = "IgnisAppDock"
 
     def __init__(self, monitor: int = 0):

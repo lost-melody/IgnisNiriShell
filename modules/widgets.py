@@ -1,10 +1,10 @@
 from typing import Any
 from gi.repository import Gtk
-from ignis.widgets import Widget
+from ignis.widgets import Window
 from .utils import gproperty
 
 
-class RevealerWindow(Widget.Window):
+class RevealerWindow(Window):
     __gtype_name__ = "MyRevealerWindow"
 
     def __init__(self, revealer: Gtk.Revealer, **kwargs):

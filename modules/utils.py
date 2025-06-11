@@ -4,14 +4,11 @@ import shlex
 from asyncio import create_task
 from typing import Any, Callable
 from gi.repository import Gdk, Gio, GLib, GObject, Gtk, Pango
-from ignis.widgets import Widget
+from ignis.widgets import Window
 from ignis.services.applications import Application
 from ignis.services.niri import NiriService
 from ignis.options_manager import OptionsGroup
-from ignis.utils.debounce import debounce
-from ignis.utils.icon import get_app_icon_name as ignis_get_app_icon_name
-from ignis.utils.shell import exec_sh_async
-from ignis.utils.monitor import get_monitor
+from ignis.utils import debounce, exec_sh_async, get_app_icon_name as ignis_get_app_icon_name, get_monitor
 
 
 ScrollFlags = Gtk.EventControllerScrollFlags
@@ -122,8 +119,8 @@ def clear_dir(dirpath: str):
 
 
 def get_widget_monitor_id(widget: Gtk.Widget) -> int | None:
-    window = widget.get_ancestor(Widget.Window)
-    if window and isinstance(window, Widget.Window):
+    window = widget.get_ancestor(Window)
+    if window and isinstance(window, Window):
         return window.get_monitor()
 
 
@@ -158,8 +155,8 @@ def verify_pango_markup(markup: str) -> bool:
 
 def connect_window(widget: Gtk.Widget, signal: str, callback: Callable[..., Any]):
     def on_realize(widget: Gtk.Widget):
-        window = widget.get_ancestor(Widget.Window)
-        if isinstance(window, Widget.Window):
+        window = widget.get_ancestor(Window)
+        if isinstance(window, Window):
             window.connect(signal, callback)
 
     widget.connect("realize", on_realize)

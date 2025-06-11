@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any
 from gi.repository import Adw, Gio, GLib, Gtk
 from ignis.app import IgnisApp
-from ignis.widgets import Widget
+from ignis.widgets import Icon, Window
 from ignis.services.audio import AudioService, Stream
 from ignis.services.backlight import BacklightDevice, BacklightService
 from ignis.services.bluetooth import BluetoothDevice, BluetoothService
@@ -178,7 +178,7 @@ class AudioControlGroup(Gtk.Box):
         item.stream_type = stream_type
         return item
 
-    def __on_window_visible_change(self, window: Widget.Window, _):
+    def __on_window_visible_change(self, window: Window, _):
         if not window.get_visible():
             self.revealer.set_reveal_child(False)
 
@@ -788,7 +788,7 @@ class NotificationItem(Gtk.ListBoxRow):
 
     revealer: Gtk.Revealer = gtk_template_child()
     action_row: Adw.ActionRow = gtk_template_child()
-    icon: Widget.Icon = gtk_template_child()
+    icon: Icon = gtk_template_child()
     time: Gtk.Label = gtk_template_child()
     actions: Gtk.Box = gtk_template_child()
 

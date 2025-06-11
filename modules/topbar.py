@@ -1,5 +1,5 @@
 from gi.repository import Gtk
-from ignis.widgets import Widget
+from ignis.widgets import Window
 from ignis.app import IgnisApp
 from .constants import WindowName
 from .template import gtk_template
@@ -10,7 +10,7 @@ from .utils import connect_option
 app = IgnisApp.get_default()
 
 
-class Topbar(Widget.Window):
+class Topbar(Window):
     __gtype_name__ = "Topbar"
 
     @gtk_template("topbar")

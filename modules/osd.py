@@ -1,7 +1,7 @@
 from gi.repository import Gtk
 from ignis.services.audio import AudioService, Stream
 from ignis.services.backlight import BacklightDevice, BacklightService
-from ignis.utils.timeout import Timeout
+from ignis.utils import Timeout
 from .constants import WindowName
 from .services import KeyboardLedsService
 from .template import gtk_template, gtk_template_child

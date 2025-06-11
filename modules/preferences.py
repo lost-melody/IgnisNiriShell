@@ -1,7 +1,7 @@
 import os.path
 from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk
 from ignis.app import IgnisApp
-from ignis.widgets import Widget
+from ignis.widgets import RegularWindow
 from ignis.options import options
 from .constants import WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
@@ -12,7 +12,7 @@ from .utils import bind_option
 app = IgnisApp.get_default()
 
 
-class Preferences(Widget.RegularWindow):
+class Preferences(RegularWindow):
     __gtype_name__ = "Preferences"
 
     @gtk_template("preferences")
