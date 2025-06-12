@@ -1,0 +1,12 @@
+<node>
+    <interface name="io.github.lost_melody.IgnisNiriShell">
+        <method name='ToggleAppLauncher' />
+        <method name='ToggleControlCenter' />
+        <method name='ToggleDock' />
+        <method name="ToggleRecording" />
+        <method name="StartRecording" />
+        <method name="PauseRecording" />
+        <method name="StopRecording" />
+        <method name='OpenSettings' />
+    </interface>
+</node>

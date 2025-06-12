@@ -5,6 +5,7 @@ from ignis.app import IgnisApp
 from ignis.services.niri import NiriService
 from ignis.utils import get_n_monitors
 from modules.modules import *
+from modules.dbus import DBusServeur
 from modules.appdock import AppDock
 from modules.applauncher import AppLauncher
 from modules.backdrop import OverlayBackdrop
@@ -17,6 +18,7 @@ from modules.wallpaper import WallpaperWindow
 
 app = IgnisApp.get_default()
 niri = NiriService.get_default()
+DBusServeur.get_default()
 
 if app._config_path is not None:
     config_dir = os.path.dirname(app._config_path)
