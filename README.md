@@ -51,8 +51,9 @@ Requirements:
   - Toggle _App Launcher_: `ignis toggle ignis-applauncher`.
     - It is recommended to also have a fallback launcher, since we are unstable now.
   - Toggle _Control Center_: `ignis toggle ignis-controlcenter`.
-  - Start/stop _Screen Recorder_: `ignis run-file /path/to/scripts/togglerecorder.py`.
-  - Toggle _Dock Auto Hide_: `ignis run-file /path/to/scripts/toggledock.py`.
+  - Call _DBus_ methods with `scripts/ignisctl.sh`:
+    - Start/stop _Screen Recorder_: `ignisctl.sh ToggleRecording`.
+    - Toggle _Dock Auto Hide_: `ignisctl.sh ToggleDock`.
 - Layer window rules:
   - Under _niri_, `layer-rule` can match `namespace` with `ignis-applauncher`, `ignis-controlcenter`, `ignis-topbar` and `ignis-appdock`.
   - Under _Hyprland_, `layerrule` is used instead.
