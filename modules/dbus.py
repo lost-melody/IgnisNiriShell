@@ -33,8 +33,10 @@ class DBusServeur(BaseService):
         dbus.register_dbus_method("ToggleDock", self.__dbus_toggle_dock)
         dbus.register_dbus_method("ToggleRecording", self.__dbus_toggle_recording)
         dbus.register_dbus_method("StartRecording", self.__dbus_start_recording)
-        dbus.register_dbus_method("PauseRecording", self.__dbus_pause_recording)
         dbus.register_dbus_method("StopRecording", self.__dbus_stop_recording)
+        dbus.register_dbus_method("TogglePauseRecording", self.__dbus_toggle_pause_recording)
+        dbus.register_dbus_method("PauseRecording", self.__dbus_pause_recording)
+        dbus.register_dbus_method("ContinueRecording", self.__dbus_continue_recording)
         dbus.register_dbus_method("OpenSettings", self.__dbus_open_settings)
 
     def __dbus_toggle_applauncher(self, _):
@@ -60,16 +62,25 @@ class DBusServeur(BaseService):
     def __dbus_start_recording(self, _):
         if not recorder.active:
             asyncio.create_task(recorder.start_recording(RecorderConfig.new_from_options()))
-        elif recorder.is_paused:
-            recorder.continue_recording()
+
+    def __dbus_stop_recording(self, _):
+        if recorder.active:
+            recorder.stop_recording()
+
+    def __dbus_toggle_pause_recording(self, _):
+        if recorder.active:
+            if recorder.is_paused:
+                recorder.continue_recording()
+            else:
+                recorder.pause_recording()
 
     def __dbus_pause_recording(self, _):
         if recorder.active and not recorder.is_paused:
             recorder.pause_recording()
 
-    def __dbus_stop_recording(self, _):
-        if recorder.active:
-            recorder.stop_recording()
+    def __dbus_continue_recording(self, _):
+        if recorder.active and recorder.is_paused:
+            recorder.continue_recording()
 
     def __dbus_open_settings(self, _):
         app.open_window(WindowName.preferences.value)

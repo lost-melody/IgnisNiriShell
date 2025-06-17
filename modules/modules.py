@@ -9,7 +9,7 @@ from ignis.services.hyprland import HyprlandService, HyprlandWorkspace
 from ignis.services.mpris import ART_URL_CACHE_DIR, MprisPlayer, MprisService
 from ignis.services.network import Ethernet, NetworkService, Wifi
 from ignis.services.niri import NiriService, NiriWorkspace
-from ignis.services.recorder import RecorderService
+from ignis.services.recorder import RecorderConfig, RecorderService
 from ignis.services.system_tray import SystemTrayItem, SystemTrayService
 from ignis.services.upower import UPowerDevice, UPowerService
 from ignis.dbus_menu import DBusMenu
@@ -507,7 +507,7 @@ class RecorderIndicator(Box):
             else:
                 self.__service.stop_recording()
         else:
-            self.__service.start_recording()
+            asyncio.create_task(self.__service.start_recording(RecorderConfig.new_from_options()))
 
     def __on_right_clicked(self, *_):
         if self.__service.active:
