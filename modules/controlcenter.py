@@ -12,7 +12,7 @@ from ignis.services.bluetooth import BluetoothDevice, BluetoothService
 from ignis.services.network import NetworkService
 from ignis.services.niri import NiriService
 from ignis.services.notifications import NOTIFICATIONS_IMAGE_DATA, Notification, NotificationAction, NotificationService
-from ignis.services.recorder import RecorderService
+from ignis.services.recorder import RecorderConfig, RecorderService
 from ignis.options import options
 from .backdrop import overlay_window
 from .constants import AudioStreamType, WindowName
@@ -563,10 +563,6 @@ class IgnisRecorder(Gtk.Box):
             self.__pill.icon.set_from_icon_name("screencast-recorded-symbolic")
 
     def __on_clicked(self, *_):
-        if self.__niri.is_available:
-            self.__pill.set_subtitle("unavailable for niri")
-            return
-
         if self.__service.active:
             if self.__service.is_paused:
                 self.__service.continue_recording()
@@ -574,7 +570,7 @@ class IgnisRecorder(Gtk.Box):
                 self.__service.stop_recording()
         else:
             app.close_window(WindowName.control_center.value)
-            self.__service.start_recording()
+            create_task(self.__service.start_recording(RecorderConfig.new_from_options()))
 
     def __on_right_clicked(self, *_):
         if self.__service.active:

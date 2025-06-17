@@ -1,16 +1,15 @@
+import asyncio
 import os
 from ignis.app import IgnisApp
 from ignis.dbus import DBusService
 from ignis.base_service import BaseService
-from ignis.services.recorder import RecorderService
-from ignis.services.niri import NiriService
+from ignis.services.recorder import RecorderConfig, RecorderService
 from ignis.utils import load_interface_xml
 from .constants import WindowName
 from .useroptions import user_options
 
 
 app = IgnisApp.get_default()
-niri = NiriService.get_default()
 recorder = RecorderService.get_default()
 
 
@@ -50,33 +49,25 @@ class DBusServeur(BaseService):
             opts.auto_conceal = not opts.auto_conceal
 
     def __dbus_toggle_recording(self, _):
-        if niri.is_available:
-            return
         if recorder.active:
             if recorder.is_paused:
                 recorder.continue_recording()
             else:
                 recorder.stop_recording()
         else:
-            recorder.start_recording()
+            asyncio.create_task(recorder.start_recording(RecorderConfig.new_from_options()))
 
     def __dbus_start_recording(self, _):
-        if niri.is_available:
-            return
         if not recorder.active:
-            recorder.start_recording()
+            asyncio.create_task(recorder.start_recording(RecorderConfig.new_from_options()))
         elif recorder.is_paused:
             recorder.continue_recording()
 
     def __dbus_pause_recording(self, _):
-        if niri.is_available:
-            return
         if recorder.active and not recorder.is_paused:
             recorder.pause_recording()
 
     def __dbus_stop_recording(self, _):
-        if niri.is_available:
-            return
         if recorder.active:
             recorder.stop_recording()
 
