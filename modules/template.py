@@ -2,15 +2,9 @@ import os, subprocess
 from typing import Any, Callable
 from gi.repository import Gtk
 from ignis import CACHE_DIR
-from ignis.app import IgnisApp
 
 
-app = IgnisApp.get_default()
-
-if app._config_path is None:
-    raise Exception("app._config_path is None")
-
-config_dir = os.path.dirname(app._config_path)
+config_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 blp_ui_path = os.path.join(config_dir, "ui")
 cache_ui_path = os.path.join(CACHE_DIR, "ui")
 

@@ -1,10 +1,10 @@
 import os
 import modules.adw as _
+import modules.modules as _
 import modules.overrides as _
 from ignis.app import IgnisApp
 from ignis.services.niri import NiriService
 from ignis.utils import get_n_monitors
-from modules.modules import *
 from modules.dbus import DBusServeur
 from modules.appdock import AppDock
 from modules.applauncher import AppLauncher
@@ -20,9 +20,8 @@ app = IgnisApp.get_default()
 niri = NiriService.get_default()
 DBusServeur.get_default()
 
-if app._config_path is not None:
-    config_dir = os.path.dirname(app._config_path)
-    app.apply_css(os.path.join(config_dir, "style.scss"))
+config_dir = os.path.dirname(os.path.abspath(__file__))
+app.apply_css(os.path.join(config_dir, "style.scss"))
 
 AppLauncher()
 ControlCenter()
