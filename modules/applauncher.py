@@ -1,6 +1,5 @@
 from typing import Any, Callable
 from gi.repository import Gio, GObject, Gtk
-from ignis.app import IgnisApp
 from ignis.menu_model import IgnisMenuItem, IgnisMenuModel, IgnisMenuSeparator, ItemsType
 from ignis.widgets import Window
 from ignis.services.applications import Application, ApplicationAction, ApplicationsService
@@ -10,9 +9,6 @@ from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options
 from .utils import Pool, connect_window, connect_option, get_app_icon_name, launch_application, set_on_click
 from .widgets import RevealerWindow
-
-
-app = IgnisApp.get_default()
 
 
 @gtk_template(filename="applauncher-item")

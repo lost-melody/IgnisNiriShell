@@ -1,13 +1,9 @@
 from gi.repository import Gtk
 from ignis.widgets import Window
-from ignis.app import IgnisApp
 from .constants import WindowName
 from .template import gtk_template
 from .useroptions import user_options
 from .utils import connect_option
-
-
-app = IgnisApp.get_default()
 
 
 class Topbar(Window):

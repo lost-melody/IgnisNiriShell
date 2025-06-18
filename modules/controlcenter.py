@@ -4,8 +4,8 @@ from asyncio import create_task
 from datetime import datetime
 from typing import Any
 from gi.repository import Adw, Gio, GLib, Gtk
-from ignis.app import IgnisApp
 from ignis.widgets import Icon, Window
+from ignis.window_manager import WindowManager
 from ignis.services.audio import AudioService, Stream
 from ignis.services.backlight import BacklightDevice, BacklightService
 from ignis.services.bluetooth import BluetoothDevice, BluetoothService
@@ -34,7 +34,7 @@ from .utils import (
 from .widgets import RevealerWindow
 
 
-app = IgnisApp.get_default()
+wm = WindowManager.get_default()
 
 
 @gtk_template("controlcenter/audio-group")
@@ -569,7 +569,7 @@ class IgnisRecorder(Gtk.Box):
             else:
                 self.__service.stop_recording()
         else:
-            app.close_window(WindowName.control_center.value)
+            wm.close_window(WindowName.control_center.value)
             create_task(self.__service.start_recording(RecorderConfig.new_from_options()))
 
     def __on_right_clicked(self, *_):
@@ -887,7 +887,7 @@ class NotificationItem(Gtk.ListBoxRow):
             return
 
         if self.is_popup:
-            app.open_window(WindowName.control_center.value)
+            wm.open_window(WindowName.control_center.value)
 
     def __on_right_clicked(self, *_):
         if not self.revealer.get_reveal_child():
@@ -903,7 +903,7 @@ class NotificationItem(Gtk.ListBoxRow):
     def __on_action(self, action: NotificationAction):
         def callback(_):
             action.invoke()
-            app.close_window(WindowName.control_center.value)
+            wm.close_window(WindowName.control_center.value)
 
         return callback
 

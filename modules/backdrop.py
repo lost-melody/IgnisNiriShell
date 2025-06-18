@@ -1,12 +1,12 @@
-from ignis.app import IgnisApp
 from ignis.widgets import Box, Revealer
+from ignis.window_manager import WindowManager
 from ignis.variable import Variable
 from .constants import WindowName
 from .utils import set_on_click
 from .widgets import RevealerWindow
 
 
-app = IgnisApp.get_default()
+wm = WindowManager.get_default()
 
 
 class OverlayWindow(Variable):
@@ -26,7 +26,7 @@ class OverlayWindow(Variable):
         previous = self.value
         if previous != name:
             if previous is not None:
-                app.close_window(previous)
+                wm.close_window(previous)
             self.value = name
 
     def unset_window(self, name: str):
@@ -76,4 +76,4 @@ class OverlayBackdrop(RevealerWindow):
     def __on_backdrop_clicked(self, *_):
         window_name = overlay_window.get_window()
         if window_name is not None:
-            app.close_window(window_name)
+            wm.close_window(window_name)

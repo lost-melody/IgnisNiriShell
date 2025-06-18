@@ -1,7 +1,7 @@
 import asyncio
 import os
-from ignis.app import IgnisApp
 from ignis.dbus import DBusService
+from ignis.window_manager import WindowManager
 from ignis.base_service import BaseService
 from ignis.services.recorder import RecorderConfig, RecorderService
 from ignis.utils import load_interface_xml
@@ -9,7 +9,7 @@ from .constants import WindowName
 from .useroptions import user_options
 
 
-app = IgnisApp.get_default()
+wm = WindowManager.get_default()
 recorder = RecorderService.get_default()
 
 
@@ -40,10 +40,10 @@ class DBusServeur(BaseService):
         dbus.register_dbus_method("OpenSettings", self.__dbus_open_settings)
 
     def __dbus_toggle_applauncher(self, _):
-        app.toggle_window(WindowName.app_launcher.value)
+        wm.toggle_window(WindowName.app_launcher.value)
 
     def __dbus_toggle_controlcenter(self, _):
-        app.toggle_window(WindowName.control_center.value)
+        wm.toggle_window(WindowName.control_center.value)
 
     def __dbus_toggle_dock(self, _):
         opts = user_options and user_options.appdock
@@ -83,4 +83,4 @@ class DBusServeur(BaseService):
             recorder.continue_recording()
 
     def __dbus_open_settings(self, _):
-        app.open_window(WindowName.preferences.value)
+        wm.open_window(WindowName.preferences.value)

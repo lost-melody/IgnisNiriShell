@@ -4,6 +4,7 @@ from typing import Callable
 from gi.repository import Gio, GObject, Gtk
 from ignis.app import IgnisApp
 from ignis.widgets import Box, Icon, Window
+from ignis.window_manager import WindowManager
 from ignis.services.audio import AudioService, Stream
 from ignis.services.hyprland import HyprlandService, HyprlandWorkspace
 from ignis.services.mpris import ART_URL_CACHE_DIR, MprisPlayer, MprisService
@@ -38,6 +39,7 @@ from .utils import (
 
 
 app = IgnisApp.get_default()
+wm = WindowManager.get_default()
 
 
 @gtk_template("modules/activewindow")
@@ -445,7 +447,7 @@ class CaffeineIndicator(Box):
         self.__state.value = not self.__state.value
 
     def __on_right_clicked(self, *_):
-        app.toggle_window(WindowName.control_center.value)
+        wm.toggle_window(WindowName.control_center.value)
 
 
 class DndIndicator(Box):
@@ -472,7 +474,7 @@ class DndIndicator(Box):
             self.__options.dnd = not self.__options.dnd
 
     def __on_right_clicked(self, *_):
-        app.toggle_window(WindowName.control_center.value)
+        wm.toggle_window(WindowName.control_center.value)
 
 
 class RecorderIndicator(Box):
@@ -532,7 +534,7 @@ class Audio(Box):
             set_on_click(
                 self,
                 left=lambda _: stream.set_is_muted(not stream.is_muted),
-                right=lambda _: app.toggle_window(WindowName.control_center.value),
+                right=lambda _: wm.toggle_window(WindowName.control_center.value),
             )
 
     def __init__(self):
@@ -561,7 +563,7 @@ class Network(Box):
             self.set_tooltip_text("Connected" if connected else "Disconnected")
 
         def __on_clicked(self, *_):
-            app.toggle_window(WindowName.control_center.value)
+            wm.toggle_window(WindowName.control_center.value)
 
     class NetworkWifi(Box):
         __gtype_name__ = "IgnisNetworkWifi"
@@ -573,7 +575,7 @@ class Network(Box):
             wifi.connect("notify::is-connected", self.__on_change)
             self.__on_change()
             set_on_click(
-                self, left=self.__on_clicked, right=lambda _: app.toggle_window(WindowName.control_center.value)
+                self, left=self.__on_clicked, right=lambda _: wm.toggle_window(WindowName.control_center.value)
             )
 
         def __on_change(self, *_):
@@ -653,7 +655,7 @@ class Mpris(Box):
             )
             player.connect("closed", self.__on_closed)
 
-            set_on_click(self, right=lambda _: app.toggle_window(WindowName.control_center.value))
+            set_on_click(self, right=lambda _: wm.toggle_window(WindowName.control_center.value))
 
         def __on_closed(self, *_):
             self.unparent()
@@ -713,7 +715,7 @@ class Clock(Gtk.Box):
         self.popover.popup()
 
     def __on_right_clicked(self, *_):
-        app.toggle_window(WindowName.control_center.value)
+        wm.toggle_window(WindowName.control_center.value)
 
 
 @gtk_template("modules/batteries")
@@ -787,9 +789,7 @@ class Batteries(Gtk.Box):
         self.__add_action("logout", self.__logout_session)
 
         set_on_click(
-            self,
-            left=lambda _: self.popover.popup(),
-            right=lambda _: app.toggle_window(WindowName.control_center.value),
+            self, left=lambda _: self.popover.popup(), right=lambda _: wm.toggle_window(WindowName.control_center.value)
         )
 
         self.__service.connect("battery_added", self.__on_battery_added)
