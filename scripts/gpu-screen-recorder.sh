@@ -9,6 +9,9 @@ target_pid=0
 # among all those "gpu-screen-recorder" processes,
 # find the one that is a descendant of the current instance
 function find_target() {
+    if [ "${target_pid}" -ne 0 ]; then
+        return
+    fi
     for pid in $(pidof gpu-screen-recorder); do
         local p="${pid}"
         while [ "${p}" -gt 1 ]; do
@@ -27,9 +30,7 @@ function find_target() {
 
 function on_signal() {
     local signal="$1"
-    if [ "${target_pid}" -eq 0 ]; then
-        find_target
-    fi
+    find_target
     if [ "${target_pid}" -gt 1 ]; then
         kill -s "${signal}" "${target_pid}"
     fi
@@ -46,6 +47,10 @@ function main() {
     # child process can exit on USR2, so keep waiting for a sleep process
     while true; do
         wait
+        find_target
+        if [ "${target_pid}" -le 1 ]; then
+            break
+        fi
         sleep 1m &
     done
 }
