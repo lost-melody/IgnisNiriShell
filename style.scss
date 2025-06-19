@@ -33,3 +33,7 @@
   outline: solid 1px rgb(236 112 99 / 50%);
   outline-offset: 0px;
 }
+
+.wallpaper.wallpaper-overview {
+  @extend .rounded;
+}
