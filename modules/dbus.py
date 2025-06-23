@@ -7,6 +7,7 @@ from ignis.services.recorder import RecorderConfig, RecorderService
 from ignis.utils import load_interface_xml
 from .constants import WindowName
 from .useroptions import user_options
+from .variables import fcitx5_state
 
 
 wm = WindowManager.get_default()
@@ -38,6 +39,7 @@ class DBusServeur(BaseService):
         dbus.register_dbus_method("PauseRecording", self.__dbus_pause_recording)
         dbus.register_dbus_method("ContinueRecording", self.__dbus_continue_recording)
         dbus.register_dbus_method("OpenSettings", self.__dbus_open_settings)
+        dbus.register_dbus_method("SyncFcitxState", self.__dbus_sync_fcitx_state)
 
     def __dbus_toggle_applauncher(self, _):
         wm.toggle_window(WindowName.app_launcher.value)
@@ -84,3 +86,10 @@ class DBusServeur(BaseService):
 
     def __dbus_open_settings(self, _):
         wm.open_window(WindowName.preferences.value)
+
+    def __dbus_sync_fcitx_state(self, _, state: str):
+        d = {}
+        for kv in state.split(";"):
+            k, v = kv.split(":", 1)
+            d[k] = v
+        fcitx5_state.value = d

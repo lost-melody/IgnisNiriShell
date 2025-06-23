@@ -6,6 +6,7 @@ from .constants import WindowName
 from .services import KeyboardLedsService
 from .template import gtk_template, gtk_template_child
 from .useroptions import user_options
+from .variables import fcitx5_state
 from .widgets import RevealerWindow
 
 
@@ -42,6 +43,7 @@ class OnscreenDisplay(RevealerWindow):
             self.__on_backlight_devices_changed()
 
             self.__leds.connect("notify::capslock", self.__on_capslock_changed)
+            fcitx5_state.connect("notify::value", self.__on_fcitx5_state_changed)
 
         def __display(self):
             window = self.get_ancestor(OnscreenDisplay)
@@ -54,6 +56,16 @@ class OnscreenDisplay(RevealerWindow):
             self.__display()
             self.title.set_label("Caps Lock")
             self.indicator.set_from_icon_name(f"capslock-{"enabled" if enabled else "disabled"}-symbolic")
+
+        def __on_fcitx5_state_changed(self, *_):
+            state: dict[str, str] = fcitx5_state.value
+            current_input_method = state.get("current_input_method")
+            if current_input_method:
+                enabled = not current_input_method.startswith("keyboard-")
+                self.stack.set_visible_child_name(self.page_indicator)
+                self.__display()
+                self.title.set_label(current_input_method.removeprefix("keyboard-"))
+                self.indicator.set_from_icon_name(f"fcitx-vk-{"active" if enabled else "inactive"}-symbolic")
 
         def __on_stream_changed(self, stream: Stream, *_):
             self.stack.set_visible_child_name(self.page_progress)
