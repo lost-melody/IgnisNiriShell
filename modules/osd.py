@@ -3,10 +3,9 @@ from ignis.services.audio import AudioService, Stream
 from ignis.services.backlight import BacklightDevice, BacklightService
 from ignis.utils import Timeout
 from .constants import WindowName
-from .services import KeyboardLedsService
+from .services import FcitxStateService, KeyboardLedsService
 from .template import gtk_template, gtk_template_child
 from .useroptions import user_options
-from .variables import fcitx5_state
 from .widgets import RevealerWindow
 
 
@@ -31,6 +30,7 @@ class OnscreenDisplay(RevealerWindow):
         def __init__(self):
             self.__audio = AudioService.get_default()
             self.__backlight = BacklightService.get_default()
+            self.__fcitx = FcitxStateService.get_default()
             self.__leds = KeyboardLedsService.get_default()
             super().__init__()
 
@@ -42,46 +42,54 @@ class OnscreenDisplay(RevealerWindow):
             self.__backlight.connect("notify::devices", self.__on_backlight_devices_changed)
             self.__on_backlight_devices_changed()
 
+            self.__fcitx.connect("notify::is-active", self.__on_fcitx5_state_changed)
+            self.__fcitx.connect("notify::current-input-method", self.__on_fcitx5_state_changed)
+            self.__fcitx.connect("notify::current-schema", self.__on_fcitx5_state_changed)
+            self.__fcitx.connect("notify::is-ascii-mode", self.__on_fcitx5_state_changed)
+
             self.__leds.connect("notify::capslock", self.__on_capslock_changed)
-            fcitx5_state.connect("notify::value", self.__on_fcitx5_state_changed)
 
         def __display(self):
             window = self.get_ancestor(OnscreenDisplay)
             if isinstance(window, OnscreenDisplay):
                 window.display_osd()
 
+        def __display_indicator(self, title: str, icon: str):
+            self.stack.set_visible_child_name(self.page_indicator)
+            self.title.set_label(title)
+            self.indicator.set_from_icon_name(icon)
+            self.__display()
+
+        def __display_progress(self, title: str, icon: str, progress: float, max_progress: float):
+            self.stack.set_visible_child_name(self.page_progress)
+            self.title.set_label(title)
+            self.icon.set_from_icon_name(icon)
+            self.progress.set_fraction(progress / max_progress)
+            self.label.set_label(f"{round(progress)}/{round(max_progress)}")
+            self.__display()
+
         def __on_capslock_changed(self, *_):
             enabled = self.__leds.capslock
-            self.stack.set_visible_child_name(self.page_indicator)
-            self.__display()
-            self.title.set_label("Caps Lock")
-            self.indicator.set_from_icon_name(f"capslock-{"enabled" if enabled else "disabled"}-symbolic")
+            self.__display_indicator("Caps Lock", f"capslock-{"enabled" if enabled else "disabled"}-symbolic")
 
         def __on_fcitx5_state_changed(self, *_):
-            state: dict[str, str] = fcitx5_state.value
-            current_input_method = state.get("current_input_method")
-            if current_input_method:
-                enabled = not current_input_method.startswith("keyboard-")
-                self.stack.set_visible_child_name(self.page_indicator)
-                self.__display()
-                self.title.set_label(current_input_method.removeprefix("keyboard-"))
-                self.indicator.set_from_icon_name(f"fcitx-vk-{"active" if enabled else "inactive"}-symbolic")
+            title = self.__fcitx.current_input_method.removeprefix("keyboard-")
+            icon = f"fcitx-vk-{"active" if self.__fcitx.is_active else "inactive"}-symbolic"
+            if title == "rime":
+                if self.__fcitx.is_ascii_mode:
+                    title = "rime-ascii"
+                    icon = "capslock-enabled-symbolic"
+                else:
+                    title = f"rime-{self.__fcitx.current_schema}"
+            self.__display_indicator(title, icon)
 
         def __on_stream_changed(self, stream: Stream, *_):
-            self.stack.set_visible_child_name(self.page_progress)
-            self.__display()
-            self.title.set_label(stream.description)
-            self.icon.set_from_icon_name(stream.icon_name)
-            self.progress.set_fraction(stream.volume / 100)
-            self.label.set_label(f"{round(stream.volume)}/100")
+            self.__display_progress(stream.description, stream.icon_name, stream.volume, 100)
 
         def __on_backlight_changed(self, device: BacklightDevice, *_):
-            self.stack.set_visible_child_name(self.page_progress)
-            self.__display()
-            self.title.set_label(device.device_name)
-            self.icon.set_from_icon_name("display-brightness-symbolic")
-            self.progress.set_fraction(device.brightness / device.max_brightness)
-            self.label.set_label(f"{round(device.brightness)}/{round(device.max_brightness)}")
+            self.__display_progress(
+                device.device_name, "display-brightness-symbolic", device.brightness, device.max_brightness
+            )
 
         def __on_backlight_devices_changed(self, *_):
             for device, id in self.__backlight_ids:

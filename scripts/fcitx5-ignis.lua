@@ -21,16 +21,7 @@ local fcitx = require("fcitx")
 ---Module [`ime`](https://fcitx.github.io/fcitx5-lua/modules/ime.html)
 local ime = ime
 
-local state = {
-	current_input_method = "",
-}
-
 local function sync_state()
-	local attrs = {}
-	for k, v in pairs(state) do
-		table.insert(attrs, k .. ":" .. tostring(v))
-	end
-	local msg = ime.join_string(attrs, ";")
 	local dest = "io.github.lost_melody.IgnisNiriShell"
 	local cmd = {
 		"dbus-send",
@@ -39,17 +30,20 @@ local function sync_state()
 		"--dest=" .. dest,
 		"/" .. string.gsub(dest, "[.]", "/"),
 		dest .. ".SyncFcitxState",
-		'string:"' .. string.gsub(msg, '"', '\\"') .. '"',
 	}
 	os.execute(ime.join_string(cmd, " "))
 end
 
-function INS_on_input_method_changed()
-	local new_input_method = fcitx.currentInputMethod()
-	if state.current_input_method ~= new_input_method then
-		state.current_input_method = new_input_method
+function INS_on_key_event(key_code, key_state, is_release)
+	local current_input_method = fcitx.currentInputMethod()
+	if is_release and key_state ~= 0 and not string.match(current_input_method, "^keyboard%-") then
 		sync_state()
 	end
 end
 
+function INS_on_input_method_changed()
+	sync_state()
+end
+
+fcitx.watchEvent(fcitx.EventType.KeyEvent, "INS_on_key_event")
 fcitx.watchEvent(fcitx.EventType.SwitchInputMethod, "INS_on_input_method_changed")

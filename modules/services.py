@@ -3,8 +3,9 @@ from typing import Any
 from gi.repository import GLib
 from loguru import logger
 from ignis.base_service import BaseService
+from ignis.dbus import DBusProxy
 from ignis.gobject import IgnisProperty
-from ignis.utils import Poll, thread
+from ignis.utils import load_interface_xml, Poll, thread
 
 
 try:
@@ -79,6 +80,88 @@ class CpuLoadService(BaseService):
         self._idle_time = deltas[3]
         self.notify("idle_time")
         self.__cpu_times = times
+
+
+class FcitxStateService(BaseService):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    def __init__(self):
+        super().__init__()
+
+        self._is_active: bool = False
+        self._current_input_method: str = ""
+        self._current_schema: str = ""
+        self._is_ascii_mode: str = ""
+
+    @IgnisProperty
+    def is_active(self) -> bool:
+        return self._is_active
+
+    @IgnisProperty
+    def current_input_method(self) -> str:
+        return self._current_input_method
+
+    @IgnisProperty
+    def current_schema(self) -> str:
+        return self._current_schema
+
+    @IgnisProperty
+    def is_ascii_mode(self) -> str:
+        return self._is_ascii_mode
+
+    async def __fcitx_proxy(self):
+        return await DBusProxy.new_async(
+            name="org.fcitx.Fcitx5",
+            object_path="/controller",
+            interface_name="org.fcitx.Fcitx.Controller1",
+            info=load_interface_xml(path=os.path.join(self.current_dir, "dbus", "org.fcitx.Fcitx5.controller.xml")),
+            bus_type="session",
+        )
+
+    async def __rime_proxy(self):
+        return await DBusProxy.new_async(
+            name="org.fcitx.Fcitx5",
+            object_path="/rime",
+            interface_name="org.fcitx.Fcitx.Rime1",
+            info=load_interface_xml(path=os.path.join(self.current_dir, "dbus", "org.fcitx.Fcitx5.rime.xml")),
+            bus_type="session",
+        )
+
+    async def sync_state_async(self):
+        try:
+            notify_properties = []
+            fcitx = await self.__fcitx_proxy()
+
+            fcitx_state = await fcitx.StateAsync("()")
+            is_active = fcitx_state[0] == 2
+            if self.is_active != is_active:
+                self._is_active = is_active
+                notify_properties.append("is-active")
+
+            current_input_method_info = await fcitx.CurrentInputMethodInfoAsync("()")
+            current_input_method = current_input_method_info[0]
+            if self.current_input_method != current_input_method:
+                self._current_input_method = current_input_method
+                notify_properties.append("current-input-method")
+
+            if current_input_method == "rime":
+                rime = await self.__rime_proxy()
+
+                current_schema = await rime.GetCurrentSchemaAsync("()")
+                if self.current_schema != current_schema[0]:
+                    self._current_schema = current_schema[0]
+                    notify_properties.append("current-schema")
+
+                is_ascii_mode = await rime.IsAsciiModeAsync("()")
+                if self.is_ascii_mode != is_ascii_mode[0]:
+                    self._is_ascii_mode = is_ascii_mode[0]
+                    notify_properties.append("is-ascii-mode")
+
+            for property in notify_properties:
+                self.notify(property)
+
+        except GLib.Error:
+            pass
 
 
 class KeyboardLedsService(BaseService):

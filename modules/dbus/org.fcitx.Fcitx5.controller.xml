@@ -1,0 +1,147 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"https://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+ <interface name="org.fcitx.Fcitx.Controller1">
+  <method name="Activate">
+  </method>
+  <method name="AddInputMethodGroup">
+   <arg type="s" direction="in"/>
+  </method>
+  <method name="AddonForIM">
+   <arg type="s" direction="in"/>
+   <arg type="s" direction="out"/>
+  </method>
+  <method name="AvailableInputMethods">
+   <arg type="a(ssssssb)" direction="out"/>
+  </method>
+  <method name="AvailableKeyboardLayouts">
+   <arg type="a(ssasa(ssas))" direction="out"/>
+  </method>
+  <method name="CanRestart">
+   <arg type="b" direction="out"/>
+  </method>
+  <method name="CheckUpdate">
+   <arg type="b" direction="out"/>
+  </method>
+  <method name="Configure">
+  </method>
+  <method name="ConfigureAddon">
+   <arg type="s" direction="in"/>
+  </method>
+  <method name="ConfigureIM">
+   <arg type="s" direction="in"/>
+  </method>
+  <method name="CurrentInputMethod">
+   <arg type="s" direction="out"/>
+  </method>
+  <method name="CurrentInputMethodGroup">
+   <arg type="s" direction="out"/>
+  </method>
+  <method name="CurrentInputMethodInfo">
+   <arg type="s" direction="out"/>
+   <arg type="s" direction="out"/>
+   <arg type="s" direction="out"/>
+   <arg type="s" direction="out"/>
+   <arg type="s" direction="out"/>
+   <arg type="s" direction="out"/>
+   <arg type="s" direction="out"/>
+   <arg type="b" direction="out"/>
+   <arg type="s" direction="out"/>
+   <arg type="a{sv}" direction="out"/>
+  </method>
+  <method name="CurrentUI">
+   <arg type="s" direction="out"/>
+  </method>
+  <method name="Deactivate">
+  </method>
+  <method name="DebugInfo">
+   <arg type="s" direction="out"/>
+  </method>
+  <method name="Exit">
+  </method>
+  <method name="FullInputMethodGroupInfo">
+   <arg type="s" direction="in"/>
+   <arg type="s" direction="out"/>
+   <arg type="s" direction="out"/>
+   <arg type="s" direction="out"/>
+   <arg type="a{sv}" direction="out"/>
+   <arg type="a(sssssssbsa{sv})" direction="out"/>
+  </method>
+  <method name="GetAddons">
+   <arg type="a(sssibb)" direction="out"/>
+  </method>
+  <method name="GetAddonsV2">
+   <arg type="a(sssibbbasas)" direction="out"/>
+  </method>
+  <method name="GetConfig">
+   <arg type="s" direction="in"/>
+   <arg type="v" direction="out"/>
+   <arg type="a(sa(sssva{sv}))" direction="out"/>
+  </method>
+  <method name="InputMethodGroupInfo">
+   <arg type="s" direction="in"/>
+   <arg type="s" direction="out"/>
+   <arg type="a(ss)" direction="out"/>
+  </method>
+  <method name="InputMethodGroups">
+   <arg type="as" direction="out"/>
+  </method>
+  <method name="OpenWaylandConnection">
+   <arg type="s" direction="in"/>
+  </method>
+  <method name="OpenWaylandConnectionSocket">
+   <arg type="h" direction="in"/>
+  </method>
+  <method name="OpenX11Connection">
+   <arg type="s" direction="in"/>
+  </method>
+  <method name="Refresh">
+  </method>
+  <method name="ReloadAddonConfig">
+   <arg type="s" direction="in"/>
+  </method>
+  <method name="ReloadConfig">
+  </method>
+  <method name="RemoveInputMethodGroup">
+   <arg type="s" direction="in"/>
+  </method>
+  <method name="ReopenWaylandConnectionSocket">
+   <arg type="s" direction="in"/>
+   <arg type="h" direction="in"/>
+  </method>
+  <method name="ResetIMList">
+  </method>
+  <method name="Restart">
+  </method>
+  <method name="Save">
+  </method>
+  <method name="SetAddonsState">
+   <arg type="a(sb)" direction="in"/>
+  </method>
+  <method name="SetConfig">
+   <arg type="s" direction="in"/>
+   <arg type="v" direction="in"/>
+  </method>
+  <method name="SetCurrentIM">
+   <arg type="s" direction="in"/>
+  </method>
+  <method name="SetInputMethodGroupInfo">
+   <arg type="s" direction="in"/>
+   <arg type="s" direction="in"/>
+   <arg type="a(ss)" direction="in"/>
+  </method>
+  <method name="SetLogRule">
+   <arg type="s" direction="in"/>
+  </method>
+  <method name="State">
+   <arg type="i" direction="out"/>
+  </method>
+  <method name="SwitchInputMethodGroup">
+   <arg type="s" direction="in"/>
+  </method>
+  <method name="Toggle">
+  </method>
+  <signal name="InputMethodGroupsChanged">
+  </signal>
+ </interface>
+</node>

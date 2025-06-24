@@ -6,12 +6,13 @@ from ignis.base_service import BaseService
 from ignis.services.recorder import RecorderConfig, RecorderService
 from ignis.utils import load_interface_xml
 from .constants import WindowName
+from .services import FcitxStateService
 from .useroptions import user_options
-from .variables import fcitx5_state
 
 
 wm = WindowManager.get_default()
 recorder = RecorderService.get_default()
+fcitx = FcitxStateService.get_default()
 
 
 class DBusServeur(BaseService):
@@ -87,9 +88,5 @@ class DBusServeur(BaseService):
     def __dbus_open_settings(self, _):
         wm.open_window(WindowName.preferences.value)
 
-    def __dbus_sync_fcitx_state(self, _, state: str):
-        d = {}
-        for kv in state.split(";"):
-            k, v = kv.split(":", 1)
-            d[k] = v
-        fcitx5_state.value = d
+    def __dbus_sync_fcitx_state(self, _):
+        asyncio.create_task(fcitx.sync_state_async())
