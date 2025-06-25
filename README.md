@@ -5,7 +5,7 @@ Requirements:
 - One of the compositors:
   - [YaLTeR/niri](https://github.com/yalter/niri), a scrollable-tiling _Wayland_ compositor.
   - [hyprwm/Hyprland](https://hyprland.org), an independent, highly customizable, dynamic tiling _Wayland_ compositor.
-- [linkfrg/ignis](https://github.com/linkfrg/ignis), a widget framework for building desktop shells.
+- [ignis-sh/ignis](https://github.com/ignis-sh/ignis), a widget framework for building desktop shells.
   - Currently the latest main branch should be installed.
 - [Blueprint](https://jwestman.pages.gitlab.gnome.org/blueprint-compiler/), a markup language for _GTK_ user interfaces.
 - [libadwaita](https://gnome.pages.gitlab.gnome.org/libadwaita/), building blocks for modern _GNOME_ applications.
