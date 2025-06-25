@@ -128,6 +128,7 @@ class FcitxStateService(BaseService):
         )
 
     async def sync_state_async(self):
+        # fcitx5 dbus: https://github.com/fcitx/fcitx5/blob/master/src/modules/dbus/dbusmodule.cpp
         try:
             notify_properties = []
             fcitx = await self.__fcitx_proxy()
