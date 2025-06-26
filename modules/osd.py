@@ -1,6 +1,8 @@
 from gi.repository import Gtk
 from ignis.services.audio import AudioService, Stream
 from ignis.services.backlight import BacklightDevice, BacklightService
+from ignis.services.hyprland import HyprlandService
+from ignis.services.niri import NiriService
 from ignis.utils import Timeout
 from .constants import WindowName
 from .services import FcitxStateService, KeyboardLedsService
@@ -31,7 +33,9 @@ class OnscreenDisplay(RevealerWindow):
             self.__audio = AudioService.get_default()
             self.__backlight = BacklightService.get_default()
             self.__fcitx = FcitxStateService.get_default()
+            self.__hypr = HyprlandService.get_default()
             self.__leds = KeyboardLedsService.get_default()
+            self.__niri = NiriService.get_default()
             super().__init__()
 
             for stream in [self.__audio.speaker, self.__audio.microphone]:
@@ -48,6 +52,12 @@ class OnscreenDisplay(RevealerWindow):
             self.__fcitx.connect("notify::is-ascii-mode", self.__on_fcitx5_state_changed)
 
             self.__leds.connect("notify::capslock", self.__on_capslock_changed)
+
+            if self.__hypr.is_available:
+                self.__hypr.main_keyboard.connect("notify::layout", self.__on_keyboard_layout_changed)
+                self.__hypr.main_keyboard.connect("notify::variant", self.__on_keyboard_layout_changed)
+            if self.__niri.is_available:
+                self.__niri.keyboard_layouts.connect("notify::current-name", self.__on_keyboard_layout_changed)
 
         def __display(self):
             window = self.get_ancestor(OnscreenDisplay)
@@ -82,6 +92,14 @@ class OnscreenDisplay(RevealerWindow):
                 else:
                     title = f"rime-{self.__fcitx.current_schema}"
             self.__display_indicator(title, icon)
+
+        def __on_keyboard_layout_changed(self, *_):
+            label = ""
+            if self.__hypr.is_available:
+                label = f"{self.__hypr.main_keyboard.layout}-{self.__hypr.main_keyboard.variant}"
+            if self.__niri.is_available:
+                label = self.__niri.keyboard_layouts.current_name
+            self.__display_indicator(label, "input-keyboard-symbolic")
 
         def __on_stream_changed(self, stream: Stream, *_):
             self.__display_progress(stream.description, stream.icon_name, stream.volume, 100)
