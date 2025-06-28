@@ -1,11 +1,12 @@
+import asyncio
 import os
 from typing import Any
-from gi.repository import GLib
+from gi.repository import Gio, GLib
 from loguru import logger
 from ignis.base_service import BaseService
 from ignis.dbus import DBusProxy
 from ignis.gobject import IgnisProperty
-from ignis.utils import load_interface_xml, Poll, thread
+from ignis.utils import file_monitor, load_interface_xml, Poll, thread
 
 
 try:
@@ -93,6 +94,14 @@ class FcitxStateService(BaseService):
         self._current_schema: str = ""
         self._is_ascii_mode: str = ""
 
+        run_dir = os.getenv("XDG_RUNTIME_DIR")
+        if run_dir:
+            fm = file_monitor.FileMonitor(
+                path=os.path.join(run_dir, "fcitx-ignis-signal"), callback=self.__on_fcitx_signal
+            )
+            if isinstance(fm._monitor, Gio.FileMonitor):
+                fm._monitor.set_rate_limit(50)
+
     @IgnisProperty
     def is_active(self) -> bool:
         return self._is_active
@@ -108,6 +117,9 @@ class FcitxStateService(BaseService):
     @IgnisProperty
     def is_ascii_mode(self) -> str:
         return self._is_ascii_mode
+
+    def __on_fcitx_signal(self, *_):
+        asyncio.create_task(self.sync_state_async())
 
     async def __fcitx_proxy(self):
         return await DBusProxy.new_async(

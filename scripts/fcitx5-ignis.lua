@@ -21,28 +21,45 @@ local fcitx = require("fcitx")
 ---Module [`ime`](https://fcitx.github.io/fcitx5-lua/modules/ime.html)
 local ime = ime
 
-local function sync_state()
-	local dest = "io.github.lost_melody.IgnisNiriShell"
-	local cmd = {
-		"dbus-send",
-		"--session",
-		"--type=method_call",
-		"--dest=" .. dest,
-		"/" .. string.gsub(dest, "[.]", "/"),
-		dest .. ".SyncFcitxState",
-	}
-	os.execute(ime.join_string(cmd, " "))
+local function open_signal_file()
+	local run_dir = os.getenv("XDG_RUNTIME_DIR")
+	if not run_dir then
+		return
+	end
+	local file = io.open(run_dir .. "/fcitx-ignis-signal", "w")
+	return file
+end
+
+local signal_file = open_signal_file()
+local signal_count = 0
+
+local function notify_state()
+	if not signal_file then
+		signal_file = open_signal_file()
+		if not signal_file then
+			return
+		end
+	end
+
+	signal_file:write("\n")
+	signal_file:flush()
+
+	signal_count = signal_count + 1
+	if signal_count > 256 then
+		signal_count = 0
+		signal_file:close()
+		signal_file = nil
+	end
 end
 
 function INS_on_key_event(key_code, key_state, is_release)
-	local current_input_method = fcitx.currentInputMethod()
-	if is_release and key_state ~= 0 and not string.match(current_input_method, "^keyboard%-") then
-		sync_state()
+	if is_release and key_state ~= 0 and not string.match(fcitx.currentInputMethod(), "^keyboard%-") then
+		notify_state()
 	end
 end
 
 function INS_on_input_method_changed()
-	sync_state()
+	notify_state()
 end
 
 fcitx.watchEvent(fcitx.EventType.KeyEvent, "INS_on_key_event")
