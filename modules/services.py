@@ -139,43 +139,6 @@ class FcitxStateService(BaseService):
             bus_type="session",
         )
 
-    async def sync_state_async(self):
-        # fcitx5 dbus: https://github.com/fcitx/fcitx5/blob/master/src/modules/dbus/dbusmodule.cpp
-        try:
-            notify_properties = []
-            fcitx = await self.__fcitx_proxy()
-
-            fcitx_state = await fcitx.StateAsync("()")
-            is_active = fcitx_state[0] == 2
-            if self.is_active != is_active:
-                self._is_active = is_active
-                notify_properties.append("is-active")
-
-            current_input_method_info = await fcitx.CurrentInputMethodInfoAsync("()")
-            current_input_method = current_input_method_info[0]
-            if self.current_input_method != current_input_method:
-                self._current_input_method = current_input_method
-                notify_properties.append("current-input-method")
-
-            if current_input_method == "rime":
-                rime = await self.__rime_proxy()
-
-                current_schema = await rime.GetCurrentSchemaAsync("()")
-                if self.current_schema != current_schema[0]:
-                    self._current_schema = current_schema[0]
-                    notify_properties.append("current-schema")
-
-                is_ascii_mode = await rime.IsAsciiModeAsync("()")
-                if self.is_ascii_mode != is_ascii_mode[0]:
-                    self._is_ascii_mode = is_ascii_mode[0]
-                    notify_properties.append("is-ascii-mode")
-
-            for property in notify_properties:
-                self.notify(property)
-
-        except GLib.Error:
-            pass
-
 
 class KeyboardLedsService(BaseService):
     DEV_PATH = "/dev/input"

@@ -10,6 +10,5 @@
         <method name="PauseRecording" />
         <method name="ContinueRecording" />
         <method name='OpenSettings' />
-        <method name='SyncFcitxState' />
     </interface>
 </node>
