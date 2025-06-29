@@ -31,6 +31,11 @@ class UserOptions(OptionsManager):
         monitor_only: bool = True
         workspace_only: bool = True
 
+    class FcitxKimPanel(OptionsGroup):
+        enabled: bool = True
+        show_popup_window: bool = False
+        vertical_list: bool = False
+
     class Osd(OptionsGroup):
         timeout: int = 3000
 
@@ -47,6 +52,7 @@ class UserOptions(OptionsManager):
     applauncher = AppLauncher()
     activewindow = ActiveWindow()
     appdock = AppDock()
+    fcitx_kimpanel = FcitxKimPanel()
     topbar = Topbar()
     osd = Osd()
     wallpaper = Wallpaper()

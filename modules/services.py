@@ -9,6 +9,7 @@ from ignis.dbus import DBusProxy, DBusService
 from ignis.gobject import IgnisGObject, IgnisProperty, IgnisSignal
 from ignis.utils import load_interface_xml, Poll, thread
 from ignis.variable import Variable
+from .useroptions import user_options
 
 
 try:
@@ -121,6 +122,14 @@ class FcitxStateService(BaseService):
             w: int = 0
             h: int = 0
 
+        @dataclasses.dataclass
+        class Lookup:
+            layout: int = 0
+            cursor: int = 0
+            label: list[str] = dataclasses.field(default_factory=list)
+            text: list[str] = dataclasses.field(default_factory=list)
+            attr: list[str] = dataclasses.field(default_factory=list)
+
         def __init__(self):
             super().__init__()
 
@@ -133,6 +142,12 @@ class FcitxStateService(BaseService):
             self._fcitx_im = self.Property(key="/Fcitx/im")
             self._properties: list[FcitxStateService.KIMPanel.Property] = []
             self._spot = self.Rect()
+            self._lookup = self.Lookup()
+
+            # whther fcitx KIM panel is enabled
+            options = user_options and user_options.fcitx_kimpanel
+            if options and not options.enabled:
+                return
 
             self.impanel = DBusService(
                 name="org.kde.impanel",
@@ -204,6 +219,10 @@ class FcitxStateService(BaseService):
         def spot(self) -> Rect:
             return self._spot
 
+        @IgnisProperty
+        def lookup(self) -> Lookup:
+            return self._lookup
+
         def signal_trigger_property(self, key: str):
             self.impanel.emit_signal("TriggerProperty", GLib.Variant.new_tuple(GLib.Variant.new_string(key)))
 
@@ -245,7 +264,8 @@ class FcitxStateService(BaseService):
             cursor: int,
             layout: int,
         ):
-            pass
+            self._lookup = self.Lookup(label=label, text=text, attr=attr, cursor=cursor, layout=layout)
+            self.notify("lookup")
 
         def __on_signal(self, _, __, ___, ____, signal: str, param: GLib.Variant):
             match self.SignalName(signal):

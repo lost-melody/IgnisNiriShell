@@ -1,0 +1,23 @@
+using Gtk 4.0;
+
+template $FcitxKimPopupCandidate: FlowBoxChild {
+    Box box {
+        orientation: horizontal;
+
+        styles [
+            "kim-popup-candidate",
+        ]
+
+        Label index_label {
+            styles [
+                "kim-popup-candidate-label",
+            ]
+        }
+
+        Label text_label {
+            styles [
+                "kim-popup-candidate-text",
+            ]
+        }
+    }
+}

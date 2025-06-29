@@ -1,0 +1,32 @@
+using Gtk 4.0;
+
+template $FcitxKimPopupView: Box {
+    orientation: vertical;
+
+    styles [
+        "kim-popup-box",
+        "frame",
+        "view",
+    ]
+
+    Label preedit {
+        visible: false;
+        halign: start;
+
+        styles [
+            "kim-popup-preedit",
+            "caption",
+        ]
+    }
+
+    FlowBox candidates {
+        homogeneous: false;
+        selection-mode: none;
+        min-children-per-line: 100;
+        max-children-per-line: 100;
+
+        styles [
+            "kim-popup-table",
+        ]
+    }
+}

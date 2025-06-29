@@ -6,6 +6,7 @@ class WindowName(Enum):
     app_launcher = "ignis-applauncher"
     app_dock = "ignis-appdock"
     control_center = "ignis-controlcenter"
+    kim_popup = "ignis-kimpopup"
     notification_popups = "ignis-notificationpopups"
     preferences = "ignis-preferences"
     backdrop = "ignis-backdrop"

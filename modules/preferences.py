@@ -48,6 +48,9 @@ class Preferences(RegularWindow):
         dock_monitor_only: Adw.SwitchRow = gtk_template_child()
         dock_workspace_only: Adw.SwitchRow = gtk_template_child()
         dock_conceal_delay: Adw.SpinRow = gtk_template_child()
+        fcitx_kimpanel_enabled: Adw.SwitchRow = gtk_template_child()
+        fcitx_show_popup: Adw.SwitchRow = gtk_template_child()
+        fcitx_vertical_list: Adw.SwitchRow = gtk_template_child()
 
         def __init__(self):
             super().__init__()
@@ -119,6 +122,11 @@ class Preferences(RegularWindow):
                 bind_option(user_options.appdock, "monitor_only", self.dock_monitor_only, "active")
                 bind_option(user_options.appdock, "workspace_only", self.dock_workspace_only, "active")
                 bind_option(user_options.appdock, "conceal_delay", self.dock_conceal_delay, "value")
+
+            if user_options.fcitx_kimpanel:
+                bind_option(user_options.fcitx_kimpanel, "enabled", self.fcitx_kimpanel_enabled, "active")
+                bind_option(user_options.fcitx_kimpanel, "show_popup_window", self.fcitx_show_popup, "active")
+                bind_option(user_options.fcitx_kimpanel, "vertical_list", self.fcitx_vertical_list, "active")
 
             if user_options.osd:
                 bind_option(user_options.osd, "timeout", self.osd_timeout, "value")

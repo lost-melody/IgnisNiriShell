@@ -15,6 +15,33 @@
   font-size: calc(var(--length-4) * 0.875);
 }
 
+.kim-popup-window {
+  @extend .rounded;
+}
+
+.kim-popup-box {
+  @extend .p-1;
+  @extend .rounded;
+}
+
+.kim-popup-preedit {
+  @extend .px-2;
+  @extend .rounded;
+}
+
+.kim-popup-table {
+  .kim-popup-candidate {
+    // candidate box
+    @extend .px-2, .py-1;
+    @extend .rounded;
+
+    &.kim-popup-candidate-selected {
+      // selected candidate box
+      background-image: image(#{alpha }(var(--accent-color), 0.2));
+    }
+  }
+}
+
 .notification-popup-item {
   background-image: image(#{alpha }(var(--window-bg-color), 0.85));
 }

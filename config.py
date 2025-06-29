@@ -10,6 +10,7 @@ from modules.appdock import AppDock
 from modules.applauncher import AppLauncher
 from modules.backdrop import OverlayBackdrop
 from modules.controlcenter import ControlCenter, NotificationPopups
+from modules.fcitxkimpopup import FcitxKimPopup
 from modules.osd import OnscreenDisplay
 from modules.preferences import Preferences
 from modules.topbar import Topbar
@@ -25,6 +26,7 @@ app.apply_css(os.path.join(config_dir, "style.scss"))
 
 AppLauncher()
 ControlCenter()
+FcitxKimPopup()
 NotificationPopups()
 OnscreenDisplay()
 Preferences()

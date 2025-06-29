@@ -227,6 +227,26 @@ template $PreferencesView: Box {
             }
 
             Adw.PreferencesGroup {
+                title: "Fcitx KIM Panel";
+                description: "Options for KIM Panel module";
+
+                Adw.SwitchRow fcitx_kimpanel_enabled {
+                    title: "Enable KIM Panel";
+                    tooltip-text: "Whether KIM Panel module is enabled (requires restart).";
+                }
+
+                Adw.SwitchRow fcitx_show_popup {
+                    title: "Show Popup Window";
+                    tooltip-text: "Whether candidates popup window is displayed";
+                }
+
+                Adw.SwitchRow fcitx_vertical_list {
+                    title: "Vertical Candidates List";
+                    tooltip-text: "Orient candidates vertically";
+                }
+            }
+
+            Adw.PreferencesGroup {
                 title: "Active Window";
                 description: "Options for the active window indicator";
 
