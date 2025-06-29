@@ -131,6 +131,7 @@ class FcitxStateService(BaseService):
             self._aux = ""
             self._preedit = ""
             self._fcitx_im = self.Property(key="/Fcitx/im")
+            self._properties: list[FcitxStateService.KIMPanel.Property] = []
             self._spot = self.Rect()
 
             self.impanel = DBusService(
@@ -196,6 +197,10 @@ class FcitxStateService(BaseService):
             return self._fcitx_im
 
         @IgnisProperty
+        def fcitx_properties(self) -> "list[FcitxStateService.KIMPanel.Property]":
+            return self._properties
+
+        @IgnisProperty
         def spot(self) -> Rect:
             return self._spot
 
@@ -254,7 +259,8 @@ class FcitxStateService(BaseService):
                     self.emit("exec-menu", Variable(value=properties))
                 case self.SignalName.RegisterProperties:
                     # register properties
-                    pass
+                    self._properties = [self.__parse_property(p) for p in param.get_child_value(0).unpack()]
+                    self.notify("fcitx-properties")
                 case self.SignalName.ShowAux:
                     # show and hide aux tooltip
                     self._show_aux = param.get_child_value(0).get_boolean()

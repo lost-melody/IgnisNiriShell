@@ -14,7 +14,7 @@ from ignis.services.recorder import RecorderConfig, RecorderService
 from ignis.services.system_tray import SystemTrayItem, SystemTrayService
 from ignis.services.upower import UPowerDevice, UPowerService
 from ignis.dbus_menu import DBusMenu
-from ignis.menu_model import IgnisMenuItem, IgnisMenuModel, IgnisMenuSeparator
+from ignis.menu_model import IgnisMenuItem, IgnisMenuModel, IgnisMenuSeparator, ItemsType
 from ignis.options import options
 from ignis.utils import Poll
 from .constants import WindowName
@@ -450,14 +450,14 @@ class FcitxIndicator(Box):
         self.__icon.set_visible(True if icon else False)
 
     def __on_fcitx_exec_menu(self, _, properties: Variable):
-        menu_items: list[IgnisMenuItem | IgnisMenuSeparator] = []
+        self.__menu.model = IgnisMenuModel(*self.__menu_items_from_properties(properties.value))
+        self.__menu.popup()
 
-        props: list[FcitxStateService.KIMPanel.Property] = properties.value
-        for p in props:
-            label = p.label.split("-")[-1].strip(" ")
-            menu_items.append(
-                IgnisMenuItem(label=label, enabled=True, on_activate=lambda _, key=p.key: self.__trigger_property(key))
-            )
+    def __on_clicked(self, *_):
+        asyncio.create_task(self.__fcitx.toggle_activate())
+
+    def __on_right_clicked(self, *_):
+        menu_items = self.__menu_items_from_properties(self.__fcitx.kimpanel.fcitx_properties)
 
         menu_items.append(IgnisMenuSeparator())
         menu_items.append(
@@ -477,14 +477,21 @@ class FcitxIndicator(Box):
         self.__menu.model = IgnisMenuModel(*menu_items)
         self.__menu.popup()
 
-    def __on_clicked(self, *_):
-        asyncio.create_task(self.__fcitx.toggle_activate())
-
-    def __on_right_clicked(self, *_):
-        self.__trigger_property("/Fcitx/im")
-
     def __trigger_property(self, property: str):
         self.__fcitx.kimpanel.signal_trigger_property(property)
+
+    def __menu_items_from_properties(self, properties: list[FcitxStateService.KIMPanel.Property]) -> ItemsType:
+        menu_items: ItemsType = []
+
+        for property in properties:
+            label = ("＋" if "menu" in property.hint else "　") + property.label.split("-")[-1].strip(" ")
+            menu_items.append(
+                IgnisMenuItem(
+                    label=label, enabled=True, on_activate=lambda _, key=property.key: self.__trigger_property(key)
+                )
+            )
+
+        return menu_items
 
 
 class CaffeineIndicator(Box):
@@ -503,7 +510,7 @@ class CaffeineIndicator(Box):
         set_on_click(self, left=self.__on_clicked, right=self.__on_right_clicked)
 
     def __on_changed(self, *_):
-        enabled = self.__state.value == True
+        enabled = True if self.__state.value else False
         self.set_visible(enabled)
 
         if enabled:
