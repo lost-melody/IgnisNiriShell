@@ -3,7 +3,7 @@ import datetime, math
 from typing import Callable
 from gi.repository import Gio, GObject, Gtk
 from ignis.app import IgnisApp
-from ignis.widgets import Box, Icon, Label, Window
+from ignis.widgets import Box, Icon, Label, PopoverMenu, Window
 from ignis.window_manager import WindowManager
 from ignis.services.audio import AudioService, Stream
 from ignis.services.hyprland import HyprlandService, HyprlandWorkspace
@@ -14,6 +14,7 @@ from ignis.services.recorder import RecorderConfig, RecorderService
 from ignis.services.system_tray import SystemTrayItem, SystemTrayService
 from ignis.services.upower import UPowerDevice, UPowerService
 from ignis.dbus_menu import DBusMenu
+from ignis.menu_model import IgnisMenuItem, IgnisMenuModel, IgnisMenuSeparator
 from ignis.options import options
 from ignis.utils import Poll
 from .constants import WindowName
@@ -36,6 +37,7 @@ from .utils import (
     set_on_click,
     set_on_scroll,
 )
+from ignis.variable import Variable
 
 
 app = IgnisApp.get_default()
@@ -420,15 +422,19 @@ class FcitxIndicator(Box):
     def __init__(self):
         self.__text = Label(visible=False)
         self.__icon = Icon(visible=False)
-        super().__init__(css_classes=["hover", "px-1", "rounded"], visible=True, child=[self.__text, self.__icon])
+        self.__menu = PopoverMenu()
+        super().__init__(
+            css_classes=["hover", "px-1", "rounded"], visible=True, child=[self.__text, self.__icon, self.__menu]
+        )
 
         self.__fcitx = FcitxStateService.get_default()
         self.__fcitx.kimpanel.connect("notify::enabled", self.__on_fcitx_enabled)
         self.__fcitx.connect("notify::label", self.__on_fcitx_state_changed)
         self.__fcitx.connect("notify::icon", self.__on_fcitx_state_changed)
         self.__fcitx.connect("notify::text", lambda *_: self.set_tooltip_text(self.__fcitx.text))
+        self.__fcitx.kimpanel.connect("exec-menu", self.__on_fcitx_exec_menu)
 
-        set_on_click(self, left=self.__on_clicked)
+        set_on_click(self, left=self.__on_clicked, right=self.__on_right_clicked)
 
     def __on_fcitx_enabled(self, *_):
         self.set_visible(self.__fcitx.kimpanel.enabled)
@@ -443,8 +449,42 @@ class FcitxIndicator(Box):
         self.__text.set_visible(not icon)
         self.__icon.set_visible(True if icon else False)
 
+    def __on_fcitx_exec_menu(self, _, properties: Variable):
+        menu_items: list[IgnisMenuItem | IgnisMenuSeparator] = []
+
+        props: list[FcitxStateService.KIMPanel.Property] = properties.value
+        for p in props:
+            label = p.label.split("-")[-1].strip(" ")
+            menu_items.append(
+                IgnisMenuItem(label=label, enabled=True, on_activate=lambda _, key=p.key: self.__trigger_property(key))
+            )
+
+        menu_items.append(IgnisMenuSeparator())
+        menu_items.append(
+            IgnisMenuItem(
+                label="Configure", enabled=True, on_activate=lambda _: self.__fcitx.kimpanel.signal_configure()
+            )
+        )
+        menu_items.append(
+            IgnisMenuItem(
+                label="Restart", enabled=True, on_activate=lambda _: self.__fcitx.kimpanel.signal_reload_config()
+            )
+        )
+        menu_items.append(
+            IgnisMenuItem(label="Exit", enabled=True, on_activate=lambda _: self.__fcitx.kimpanel.signal_exit())
+        )
+
+        self.__menu.model = IgnisMenuModel(*menu_items)
+        self.__menu.popup()
+
     def __on_clicked(self, *_):
         asyncio.create_task(self.__fcitx.toggle_activate())
+
+    def __on_right_clicked(self, *_):
+        self.__trigger_property("/Fcitx/im")
+
+    def __trigger_property(self, property: str):
+        self.__fcitx.kimpanel.signal_trigger_property(property)
 
 
 class CaffeineIndicator(Box):

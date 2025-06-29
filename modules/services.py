@@ -6,8 +6,9 @@ from gi.repository import GLib
 from loguru import logger
 from ignis.base_service import BaseService
 from ignis.dbus import DBusProxy, DBusService
-from ignis.gobject import IgnisGObject, IgnisProperty
+from ignis.gobject import IgnisGObject, IgnisProperty, IgnisSignal
 from ignis.utils import load_interface_xml, Poll, thread
+from ignis.variable import Variable
 
 
 try:
@@ -162,6 +163,10 @@ class FcitxStateService(BaseService):
             )
             self.__subscribe_signals(self.proxy)
 
+        @IgnisSignal
+        def exec_menu(self, properties: Variable):
+            return
+
         @IgnisProperty
         def enabled(self) -> bool:
             return self._enabled
@@ -245,7 +250,8 @@ class FcitxStateService(BaseService):
                     self.notify("enabled")
                 case self.SignalName.ExecMenu:
                     # show menu: list[str]
-                    pass
+                    properties = [self.__parse_property(p) for p in param.get_child_value(0).unpack()]
+                    self.emit("exec-menu", Variable(value=properties))
                 case self.SignalName.RegisterProperties:
                     # register properties
                     pass

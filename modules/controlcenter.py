@@ -862,7 +862,6 @@ class NotificationItem(Gtk.ListBoxRow):
         self._is_popup = is_popup
         css_class = "notification-popup-item"
         if is_popup:
-            pass
             self.add_css_class(css_class)
         else:
             self.remove_css_class(css_class)
