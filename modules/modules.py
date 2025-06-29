@@ -3,7 +3,7 @@ import datetime, math
 from typing import Callable
 from gi.repository import Gio, GObject, Gtk
 from ignis.app import IgnisApp
-from ignis.widgets import Box, Icon, Window
+from ignis.widgets import Box, Icon, Label, Window
 from ignis.window_manager import WindowManager
 from ignis.services.audio import AudioService, Stream
 from ignis.services.hyprland import HyprlandService, HyprlandWorkspace
@@ -18,7 +18,7 @@ from ignis.options import options
 from ignis.utils import Poll
 from .constants import WindowName
 from .variables import caffeine_state
-from .services import CpuLoadService
+from .services import CpuLoadService, FcitxStateService
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options
 from .utils import (
@@ -412,6 +412,39 @@ class Tray(Gtk.FlowBox):
             self.__list_store.remove(pos)
             if isinstance(item, Tray.TrayItem):
                 self.__pool.release(item)
+
+
+class FcitxIndicator(Box):
+    __gtype_name__ = "IgnisFcitxIndicator"
+
+    def __init__(self):
+        self.__text = Label(visible=False)
+        self.__icon = Icon(visible=False)
+        super().__init__(css_classes=["hover", "px-1", "rounded"], visible=True, child=[self.__text, self.__icon])
+
+        self.__fcitx = FcitxStateService.get_default()
+        self.__fcitx.kimpanel.connect("notify::enabled", self.__on_fcitx_enabled)
+        self.__fcitx.connect("notify::label", self.__on_fcitx_state_changed)
+        self.__fcitx.connect("notify::icon", self.__on_fcitx_state_changed)
+        self.__fcitx.connect("notify::text", lambda *_: self.set_tooltip_text(self.__fcitx.text))
+
+        set_on_click(self, left=self.__on_clicked)
+
+    def __on_fcitx_enabled(self, *_):
+        self.set_visible(self.__fcitx.kimpanel.enabled)
+
+    def __on_fcitx_state_changed(self, *_):
+        label = self.__fcitx.label
+        icon = self.__fcitx.icon
+        if icon:
+            self.__icon.set_from_icon_name(icon)
+        else:
+            self.__text.set_label(label)
+        self.__text.set_visible(not icon)
+        self.__icon.set_visible(True if icon else False)
+
+    def __on_clicked(self, *_):
+        asyncio.create_task(self.__fcitx.toggle_activate())
 
 
 class CaffeineIndicator(Box):

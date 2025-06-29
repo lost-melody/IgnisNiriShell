@@ -38,15 +38,34 @@ template $OnscreenDisplayView: Box {
                         ]
 
                         Image indicator {
+                            width-request: 80;
+                            height-request: 64;
                             hexpand: true;
                             halign: center;
                             valign: center;
                             icon-name: "capslock-disabled-symbolic";
                             pixel-size: 48;
+                        }
+                    };
+                }
+
+                StackPage {
+                    name: "indicator-text";
+
+                    child: Box {
+                        styles [
+                            "p-1",
+                        ]
+
+                        Label indicator_text {
+                            width-request: 80;
+                            height-request: 64;
+                            hexpand: true;
+                            halign: center;
+                            valign: center;
 
                             styles [
-                                "px-4",
-                                "py-2",
+                                "title-1",
                             ]
                         }
                     };

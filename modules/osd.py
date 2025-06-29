@@ -19,12 +19,14 @@ class OnscreenDisplay(RevealerWindow):
         __gtype_name__ = "OnscreenDisplayView"
 
         page_indicator = "indicator"
+        page_indicator_text = "indicator-text"
         page_progress = "progress"
 
         revealer: Gtk.Revealer = gtk_template_child()
         title: Gtk.Label = gtk_template_child()
         stack: Gtk.Stack = gtk_template_child()
         indicator: Gtk.Image = gtk_template_child()
+        indicator_text: Gtk.Label = gtk_template_child()
         icon: Gtk.Image = gtk_template_child()
         progress: Gtk.ProgressBar = gtk_template_child()
         label: Gtk.Label = gtk_template_child()
@@ -46,10 +48,10 @@ class OnscreenDisplay(RevealerWindow):
             self.__backlight.connect("notify::devices", self.__on_backlight_devices_changed)
             self.__on_backlight_devices_changed()
 
-            self.__fcitx.connect("notify::is-active", self.__on_fcitx5_state_changed)
-            self.__fcitx.connect("notify::current-input-method", self.__on_fcitx5_state_changed)
-            self.__fcitx.connect("notify::current-schema", self.__on_fcitx5_state_changed)
-            self.__fcitx.connect("notify::is-ascii-mode", self.__on_fcitx5_state_changed)
+            self.__fcitx.kimpanel.connect("notify::show-aux", self.__on_fcitx5_show_aux)
+            self.__fcitx.connect("notify::label", self.__on_fcitx5_state_changed)
+            self.__fcitx.connect("notify::icon", self.__on_fcitx5_state_changed)
+            self.__fcitx.connect("notify::text", self.__on_fcitx5_state_changed)
 
             self.__leds.connect("notify::capslock", self.__on_capslock_changed)
 
@@ -70,6 +72,12 @@ class OnscreenDisplay(RevealerWindow):
             self.indicator.set_from_icon_name(icon)
             self.__display()
 
+        def __display_indicator_text(self, title: str, indicator_text: str):
+            self.stack.set_visible_child_name(self.page_indicator_text)
+            self.title.set_label(title)
+            self.indicator_text.set_label(indicator_text)
+            self.__display()
+
         def __display_progress(self, title: str, icon: str, progress: float, max_progress: float):
             self.stack.set_visible_child_name(self.page_progress)
             self.title.set_label(title)
@@ -82,16 +90,16 @@ class OnscreenDisplay(RevealerWindow):
             enabled = self.__leds.capslock
             self.__display_indicator("Caps Lock", f"capslock-{"enabled" if enabled else "disabled"}-symbolic")
 
+        def __on_fcitx5_show_aux(self, *_):
+            if self.__fcitx.kimpanel.show_aux:
+                self.__on_fcitx5_state_changed()
+
         def __on_fcitx5_state_changed(self, *_):
-            title = self.__fcitx.current_input_method.removeprefix("keyboard-")
-            icon = f"fcitx-vk-{"active" if self.__fcitx.is_active else "inactive"}-symbolic"
-            if title == "rime":
-                if self.__fcitx.is_ascii_mode:
-                    title = "rime-ascii"
-                    icon = "capslock-enabled-symbolic"
-                else:
-                    title = f"rime-{self.__fcitx.current_schema}"
-            self.__display_indicator(title, icon)
+            icon = self.__fcitx.icon
+            if icon:
+                self.__display_indicator(self.__fcitx.text, icon)
+            else:
+                self.__display_indicator_text(self.__fcitx.text, self.__fcitx.label)
 
         def __on_keyboard_layout_changed(self, *_):
             label = ""
