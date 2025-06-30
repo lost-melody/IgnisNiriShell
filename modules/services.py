@@ -212,7 +212,7 @@ class FcitxStateService(BaseService):
             return self._fcitx_im
 
         @IgnisProperty
-        def fcitx_properties(self) -> "list[FcitxStateService.KIMPanel.Property]":
+        def fcitx_properties(self) -> list[Property]:
             return self._properties
 
         @IgnisProperty
@@ -304,6 +304,7 @@ class FcitxStateService(BaseService):
                 case self.SignalName.UpdateProperty:
                     # update property
                     self._fcitx_im = self.__parse_property(param.get_child_value(0).get_string())
+                    self._fcitx_im.text = self.fcitx_im.text.split(" - ")[-1]
                     self.notify("fcitx-im")
                 case self.SignalName.UpdateSpotLocation:
                     # update spot location: x, y
@@ -325,28 +326,11 @@ class FcitxStateService(BaseService):
     def __init__(self):
         super().__init__()
 
-        self._label: str = ""
-        self._text: str = ""
-        self._icon: str = ""
-
         self._kimpanel = self.KIMPanel()
-        self._kimpanel.connect("notify::fcitx-im", self.__on_fcitx_im_changed)
 
     @IgnisProperty
     def kimpanel(self) -> KIMPanel:
         return self._kimpanel
-
-    @IgnisProperty
-    def label(self) -> str:
-        return self._label
-
-    @IgnisProperty
-    def text(self) -> str:
-        return self._text
-
-    @IgnisProperty
-    def icon(self) -> str:
-        return self._icon
 
     async def is_active(self, proxy: DBusProxy | None = None) -> bool:
         proxy = proxy or await self.__fcitx_proxy()
@@ -359,20 +343,6 @@ class FcitxStateService(BaseService):
             await proxy.DeactivateAsync("()")
         else:
             await proxy.ActivateAsync("()")
-
-    def __on_fcitx_im_changed(self, *_):
-        prop = self._kimpanel.fcitx_im
-        # "Keyboard - French - French (AZERTY, AFNOR)"
-        text = prop.text.split("-")[-1].strip(" ")
-        if self.label != prop.label:
-            self._label = prop.label
-            self.notify("label")
-        if self.text != text:
-            self._text = text
-            self.notify("text")
-        if self.icon != prop.icon:
-            self._icon = prop.icon
-            self.notify("icon")
 
     async def __fcitx_proxy(self):
         return await DBusProxy.new_async(

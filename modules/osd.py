@@ -49,9 +49,6 @@ class OnscreenDisplay(RevealerWindow):
             self.__on_backlight_devices_changed()
 
             self.__fcitx.kimpanel.connect("notify::show-aux", self.__on_fcitx5_show_aux)
-            self.__fcitx.connect("notify::label", self.__on_fcitx5_state_changed)
-            self.__fcitx.connect("notify::icon", self.__on_fcitx5_state_changed)
-            self.__fcitx.connect("notify::text", self.__on_fcitx5_state_changed)
 
             self.__leds.connect("notify::capslock", self.__on_capslock_changed)
 
@@ -91,15 +88,13 @@ class OnscreenDisplay(RevealerWindow):
             self.__display_indicator("Caps Lock", f"capslock-{"enabled" if enabled else "disabled"}-symbolic")
 
         def __on_fcitx5_show_aux(self, *_):
-            if self.__fcitx.kimpanel.show_aux:
-                self.__on_fcitx5_state_changed()
-
-        def __on_fcitx5_state_changed(self, *_):
-            icon = self.__fcitx.icon
-            if icon:
-                self.__display_indicator(self.__fcitx.text, icon)
+            if not self.__fcitx.kimpanel.show_aux:
+                return
+            prop = self.__fcitx.kimpanel.fcitx_im
+            if prop.icon:
+                self.__display_indicator(prop.text, prop.icon)
             else:
-                self.__display_indicator_text(self.__fcitx.text, self.__fcitx.label)
+                self.__display_indicator_text(prop.text, prop.label)
 
         def __on_keyboard_layout_changed(self, *_):
             label = ""

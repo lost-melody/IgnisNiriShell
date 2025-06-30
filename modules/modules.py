@@ -420,18 +420,19 @@ class FcitxIndicator(Box):
     __gtype_name__ = "IgnisFcitxIndicator"
 
     def __init__(self):
-        self.__text = Label(visible=False)
-        self.__icon = Icon(visible=False)
+        self.__text = Label(hexpand=True, visible=False)
+        self.__icon = Icon(hexpand=True, visible=False)
         self.__menu = PopoverMenu()
         super().__init__(
-            css_classes=["hover", "px-1", "rounded"], visible=True, child=[self.__text, self.__icon, self.__menu]
+            width_request=32,
+            visible=True,
+            css_classes=["hover", "px-1", "rounded"],
+            child=[self.__text, self.__icon, self.__menu],
         )
 
         self.__fcitx = FcitxStateService.get_default()
         self.__fcitx.kimpanel.connect("notify::enabled", self.__on_fcitx_enabled)
-        self.__fcitx.connect("notify::label", self.__on_fcitx_state_changed)
-        self.__fcitx.connect("notify::icon", self.__on_fcitx_state_changed)
-        self.__fcitx.connect("notify::text", lambda *_: self.set_tooltip_text(self.__fcitx.text))
+        self.__fcitx.kimpanel.connect("notify::fcitx-im", self.__on_fcitx_state_changed)
         self.__fcitx.kimpanel.connect("exec-menu", self.__on_fcitx_exec_menu)
 
         set_on_click(self, left=self.__on_clicked, right=self.__on_right_clicked)
@@ -440,14 +441,14 @@ class FcitxIndicator(Box):
         self.set_visible(self.__fcitx.kimpanel.enabled)
 
     def __on_fcitx_state_changed(self, *_):
-        label = self.__fcitx.label
-        icon = self.__fcitx.icon
-        if icon:
-            self.__icon.set_from_icon_name(icon)
+        prop = self.__fcitx.kimpanel.fcitx_im
+        if prop.icon:
+            self.__icon.set_from_icon_name(prop.icon)
         else:
-            self.__text.set_label(label)
-        self.__text.set_visible(not icon)
-        self.__icon.set_visible(True if icon else False)
+            self.__text.set_label(prop.label)
+        self.set_tooltip_text(prop.text)
+        self.__text.set_visible(not prop.icon)
+        self.__icon.set_visible(True if prop.icon else False)
 
     def __on_fcitx_exec_menu(self, _, properties: Variable):
         self.__menu.model = IgnisMenuModel(*self.__menu_items_from_properties(properties.value))
@@ -484,7 +485,7 @@ class FcitxIndicator(Box):
         menu_items: ItemsType = []
 
         for property in properties:
-            label = ("＋" if "menu" in property.hint else "　") + property.label.split("-")[-1].strip(" ")
+            label = ("＋" if "menu" in property.hint else "　") + property.label.split(" - ")[-1]
             menu_items.append(
                 IgnisMenuItem(
                     label=label, enabled=True, on_activate=lambda _, key=property.key: self.__trigger_property(key)
