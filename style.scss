@@ -45,6 +45,15 @@
   outline-offset: 0px;
 }
 
+.osd-caption-scroll {
+  > .overlay-indicator slider {
+    opacity: 0;
+  }
+  .osd-caption {
+    font-size: 0.75rem;
+  }
+}
+
 .wallpaper.wallpaper-overview {
   @extend .rounded;
 }

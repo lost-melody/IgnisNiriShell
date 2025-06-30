@@ -8,19 +8,31 @@ template $OnscreenDisplayView: Box {
             orientation: vertical;
 
             styles [
+                "osd-box",
                 "osd",
                 "p-2",
                 "rounded",
             ]
 
-            Label title {
-                label: "Volume - Device";
-                ellipsize: end;
+            ScrolledWindow scroll {
+                hexpand: true;
+                vscrollbar-policy: never;
+                propagate-natural-height: true;
 
                 styles [
-                    "caption",
-                    "p-1",
+                    "osd-caption-scroll",
+                    "px-1",
                 ]
+
+                Label title {
+                    label: "Volume - Device";
+
+                    styles [
+                        "osd-caption",
+                        "caption",
+                        "py-1",
+                    ]
+                }
             }
 
             Stack stack {
@@ -34,6 +46,7 @@ template $OnscreenDisplayView: Box {
 
                     child: Box {
                         styles [
+                            "osd-indicator-box",
                             "p-1",
                         ]
 
@@ -54,6 +67,7 @@ template $OnscreenDisplayView: Box {
 
                     child: Box {
                         styles [
+                            "osd-indicator-box",
                             "p-1",
                         ]
 
@@ -76,6 +90,7 @@ template $OnscreenDisplayView: Box {
 
                     child: Box {
                         styles [
+                            "osd-progress-box",
                             "p-1",
                         ]
 

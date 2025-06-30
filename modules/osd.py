@@ -1,4 +1,4 @@
-from gi.repository import Gtk
+from gi.repository import Adw, Gtk
 from ignis.services.audio import AudioService, Stream
 from ignis.services.backlight import BacklightDevice, BacklightService
 from ignis.services.hyprland import HyprlandService
@@ -24,6 +24,7 @@ class OnscreenDisplay(RevealerWindow):
 
         revealer: Gtk.Revealer = gtk_template_child()
         title: Gtk.Label = gtk_template_child()
+        scroll: Gtk.ScrolledWindow = gtk_template_child()
         stack: Gtk.Stack = gtk_template_child()
         indicator: Gtk.Image = gtk_template_child()
         indicator_text: Gtk.Label = gtk_template_child()
@@ -39,6 +40,14 @@ class OnscreenDisplay(RevealerWindow):
             self.__leds = KeyboardLedsService.get_default()
             self.__niri = NiriService.get_default()
             super().__init__()
+
+            self.__options = user_options and user_options.osd
+            self.__scroll_adjust = self.scroll.get_hadjustment()
+            self.__defer_animation: Timeout | None = None
+            self.__scroll_animation = Adw.TimedAnimation.new(
+                self.scroll, 0, 0, 0, Adw.PropertyAnimationTarget.new(self.__scroll_adjust, "value")
+            )
+            self.__scroll_animation.set_easing(Adw.Easing.EASE_IN_OUT_SINE)
 
             for stream in [self.__audio.speaker, self.__audio.microphone]:
                 stream.connect("notify::volume", self.__on_stream_changed)
@@ -58,7 +67,27 @@ class OnscreenDisplay(RevealerWindow):
             if self.__niri.is_available:
                 self.__niri.keyboard_layouts.connect("notify::current-name", self.__on_keyboard_layout_changed)
 
+        def __animate_scroll(self, *_):
+            value_to = self.__scroll_adjust.get_upper() - self.__scroll_adjust.get_page_size()
+            duration = 750
+            if self.__options:
+                duration = min(1000, max(500, self.__options.timeout // 2))
+            self.__scroll_animation.set_value_to(value_to)
+            self.__scroll_animation.set_duration(duration)
+            self.__scroll_animation.play()
+
+        def __defer_animate_scroll(self):
+            if self.__defer_animation:
+                self.__defer_animation.cancel()
+            timeout = 500
+            if self.__options:
+                timeout = min(750, max(250, self.__options.timeout // 3))
+            self.__scroll_animation.reset()
+            self.__scroll_adjust.set_value(0)
+            self.__defer_animation = Timeout(ms=timeout, target=self.__animate_scroll)
+
         def __display(self):
+            self.__defer_animate_scroll()
             window = self.get_ancestor(OnscreenDisplay)
             if isinstance(window, OnscreenDisplay):
                 window.display_osd()
