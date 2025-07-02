@@ -169,7 +169,7 @@ class FcitxStateService(BaseService):
             self.__register_methods2(self.impanel2)
 
             self.proxy = DBusProxy.new(
-                name="org.fcitx.Fcitx5",
+                name="org.kde.kimpanel.inputmethod",
                 object_path="/kimpanel",
                 interface_name="org.kde.kimpanel.inputmethod",
                 info=load_interface_xml(

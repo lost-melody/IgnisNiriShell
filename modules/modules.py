@@ -425,7 +425,7 @@ class FcitxIndicator(Box):
         self.__menu = PopoverMenu()
         super().__init__(
             width_request=32,
-            visible=True,
+            visible=False,
             css_classes=["hover", "px-1", "rounded"],
             child=[self.__text, self.__icon, self.__menu],
         )
