@@ -49,6 +49,11 @@ class OnscreenDisplay(RevealerWindow):
             )
             self.__scroll_animation.set_easing(Adw.Easing.EASE_IN_OUT_SINE)
 
+            self.__progress_animation = Adw.TimedAnimation.new(
+                self.progress, 0, 0, 0, Adw.PropertyAnimationTarget.new(self.progress, "fraction")
+            )
+            self.__progress_animation.set_duration(250)
+
             for stream in [self.__audio.speaker, self.__audio.microphone]:
                 stream.connect("notify::volume", self.__on_stream_changed)
                 stream.connect("notify::is-muted", self.__on_stream_changed)
@@ -86,6 +91,19 @@ class OnscreenDisplay(RevealerWindow):
             self.__scroll_adjust.set_value(0)
             self.__defer_animation = Timeout(ms=timeout, target=self.__animate_scroll)
 
+        def __animate_progress(self, value_to: float):
+            if not self.get_mapped():
+                self.progress.set_fraction(value_to)
+                return
+
+            self.__progress_animation.pause()
+            self.__progress_animation.set_value_from(self.progress.get_fraction())
+            self.__progress_animation.set_value_to(min(1, value_to))
+            self.__progress_animation.set_easing(
+                Adw.Easing.EASE_OUT_SINE if 0.01 <= value_to <= 0.99 else Adw.Easing.EASE_OUT_BOUNCE
+            )
+            self.__progress_animation.play()
+
         def __display(self):
             self.__defer_animate_scroll()
             window = self.get_ancestor(OnscreenDisplay)
@@ -104,12 +122,16 @@ class OnscreenDisplay(RevealerWindow):
             self.indicator_text.set_label(indicator_text)
             self.__display()
 
-        def __display_progress(self, title: str, icon: str, progress: float, max_progress: float):
+        def __display_progress(
+            self, title: str, icon: str, progress: float, max_progress: float, label_progress: float | None = None
+        ):
             self.stack.set_visible_child_name(self.page_progress)
             self.title.set_label(title)
             self.icon.set_from_icon_name(icon)
-            self.progress.set_fraction(progress / max_progress)
-            self.label.set_label(f"{round(progress)}/{round(max_progress)}")
+            self.__animate_progress(progress / max_progress)
+            if label_progress is None:
+                label_progress = progress
+            self.label.set_label(f"{round(label_progress)}/{round(max_progress)}")
             self.__display()
 
         def __on_capslock_changed(self, *_):
@@ -134,7 +156,9 @@ class OnscreenDisplay(RevealerWindow):
             self.__display_indicator(label, "input-keyboard-symbolic")
 
         def __on_stream_changed(self, stream: Stream, *_):
-            self.__display_progress(stream.description, stream.icon_name, stream.volume, 100)
+            self.__display_progress(
+                stream.description, stream.icon_name, 0 if stream.is_muted else stream.volume, 100, stream.volume
+            )
 
         def __on_backlight_changed(self, device: BacklightDevice, *_):
             self.__display_progress(

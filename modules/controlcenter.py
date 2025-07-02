@@ -234,6 +234,8 @@ class AudioControlGroup(Gtk.Box):
         self.label.set_label(f"{volume}")
         if volume != round(self._default.volume):
             self._default.volume = volume
+            if self._default.is_muted:
+                self._default.is_muted = False
 
 
 class AudioControlGroupSpeaker(Gtk.Box):
