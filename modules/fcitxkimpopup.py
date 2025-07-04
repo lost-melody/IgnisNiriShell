@@ -54,6 +54,7 @@ class FcitxKimPopup(Window):
             self.__options = user_options and user_options.fcitx_kimpanel
             if self.__options:
                 connect_option(self.__options, "vertical_list", self.__on_vertical_list_changed)
+                self.__on_vertical_list_changed()
 
             self.__fcitx = FcitxStateService.get_default()
             self.__fcitx.kimpanel.connect("notify::preedit", self.__on_preedit_changed)
