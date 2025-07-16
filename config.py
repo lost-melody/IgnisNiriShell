@@ -18,7 +18,7 @@ from modules.topbar import Topbar
 from modules.wallpaper import WallpaperWindow
 
 
-app = IgnisApp.get_default()
+app = IgnisApp.get_initialized()
 css_manager = CssManager.get_default()
 niri = NiriService.get_default()
 DBusServeur.get_default()

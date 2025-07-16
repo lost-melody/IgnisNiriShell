@@ -40,7 +40,7 @@ from .utils import (
 from ignis.variable import Variable
 
 
-app = IgnisApp.get_default()
+app = IgnisApp.get_initialized()
 wm = WindowManager.get_default()
 
 

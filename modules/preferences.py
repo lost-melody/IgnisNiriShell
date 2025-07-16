@@ -9,7 +9,7 @@ from .useroptions import user_options
 from .utils import bind_option
 
 
-app = IgnisApp.get_default()
+app = IgnisApp.get_initialized()
 
 
 class Preferences(RegularWindow):
