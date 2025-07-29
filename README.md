@@ -48,9 +48,9 @@ Requirements:
 
 - As is stated, this project works under _niri_ and _Hyprland_, and synchronizes windows and workspaces in addition to their focus states. These functions are designed as three widgets: a workspaces pill, a focused window indicator, and a dock.
 - Recommended keybindings (which should be configured in _niri_ or _Hyprland_):
-  - Toggle _App Launcher_: `ignis toggle ignis-applauncher`.
+  - Toggle _App Launcher_: `ignis toggle-window ignis-applauncher`.
     - It is recommended to also have a fallback launcher, since we are unstable now.
-  - Toggle _Control Center_: `ignis toggle ignis-controlcenter`.
+  - Toggle _Control Center_: `ignis toggle-window ignis-controlcenter`.
   - Call _DBus_ methods with `scripts/ignisctl.sh`:
     - Start/stop _Screen Recorder_: `ignisctl.sh ToggleRecording`.
     - Toggle _Dock Auto Hide_: `ignisctl.sh ToggleDock`.
