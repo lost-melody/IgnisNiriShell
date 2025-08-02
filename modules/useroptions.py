@@ -27,6 +27,7 @@ class UserOptions(OptionsManager):
         exclusive: bool = False
         focusable: bool = False
         auto_conceal: bool = True
+        show_in_overview: bool = True
         conceal_delay: int = 1000
         monitor_only: bool = True
         workspace_only: bool = True

@@ -409,6 +409,7 @@ class AppDockView(Gtk.Box):
                 "notify::active-window", lambda *_: WindowFocusHistory.focus_window(self.__niri.active_window.id)
             )
             self.__niri.connect("notify::active-window", self.__on_windows_changed)
+            self.__niri.connect("notify::overview-opened", self.__on_overview_changed)
         if self.__hypr.is_available:
             WindowFocusHistory.sync_windows(hypr_windows=self.__hypr.windows)
             self.__hypr.connect("notify::workspaces", self.__on_workspaces_changed)
@@ -442,6 +443,13 @@ class AppDockView(Gtk.Box):
             self.__connector = monitor.get_connector()
         self.__on_auto_conceal_changed()
 
+    def __on_overview_changed(self, *_):
+        if self.__dock_options and self.__dock_options.show_in_overview:
+            if self.__niri.overview_opened:
+                self.__on_mouse_enter()
+            else:
+                self.__on_mouse_leave()
+
     def __on_mouse_enter(self, *_):
         if self.__defer_conceal:
             self.__defer_conceal.cancel()
@@ -450,8 +458,11 @@ class AppDockView(Gtk.Box):
         self.revealer.set_reveal_child(True)
 
     def __on_mouse_leave(self, *_):
-        if self.__dock_options and not self.__dock_options.auto_conceal:
-            return
+        if self.__dock_options:
+            if not self.__dock_options.auto_conceal:
+                return
+            if self.__dock_options.show_in_overview and self.__niri.overview_opened:
+                return
 
         delay = 1000
         if self.__dock_options:

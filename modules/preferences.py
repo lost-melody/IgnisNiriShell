@@ -6,7 +6,7 @@ from ignis.options import options
 from .constants import WindowName
 from .template import gtk_template, gtk_template_callback, gtk_template_child
 from .useroptions import user_options
-from .utils import bind_option
+from .utils import bind_option, connect_option
 
 
 app = IgnisApp.get_initialized()
@@ -45,6 +45,7 @@ class Preferences(RegularWindow):
         dock_exclusive: Adw.SwitchRow = gtk_template_child()
         dock_focusable: Adw.SwitchRow = gtk_template_child()
         dock_auto_conceal: Adw.SwitchRow = gtk_template_child()
+        dock_in_overview: Adw.SwitchRow = gtk_template_child()
         dock_monitor_only: Adw.SwitchRow = gtk_template_child()
         dock_workspace_only: Adw.SwitchRow = gtk_template_child()
         dock_conceal_delay: Adw.SpinRow = gtk_template_child()
@@ -119,9 +120,17 @@ class Preferences(RegularWindow):
                 bind_option(user_options.appdock, "exclusive", self.dock_exclusive, "active")
                 bind_option(user_options.appdock, "focusable", self.dock_focusable, "active")
                 bind_option(user_options.appdock, "auto_conceal", self.dock_auto_conceal, "active")
+                bind_option(user_options.appdock, "show_in_overview", self.dock_in_overview, "active")
                 bind_option(user_options.appdock, "monitor_only", self.dock_monitor_only, "active")
                 bind_option(user_options.appdock, "workspace_only", self.dock_workspace_only, "active")
                 bind_option(user_options.appdock, "conceal_delay", self.dock_conceal_delay, "value")
+                # show this option only when `auto_conceal` is enabled
+                self.dock_in_overview.set_visible(user_options.appdock.auto_conceal)
+                connect_option(
+                    user_options.appdock,
+                    "auto_conceal",
+                    lambda *_: self.dock_in_overview.set_visible(user_options.appdock.auto_conceal),
+                )
 
             if user_options.fcitx_kimpanel:
                 bind_option(user_options.fcitx_kimpanel, "enabled", self.fcitx_kimpanel_enabled, "active")
