@@ -1,14 +1,12 @@
 using Gtk 4.0;
 
 template $TopbarView: CenterBox {
+    styles [
+        "bar-bg",
+    ]
+
     [start]
     Box {
-        styles [
-            "bar-bg",
-            "rounded-tr",
-            "rounded-br",
-        ]
-
         $CommandPill {
             icon-name: "view-app-grid-symbolic";
             click-command: "ignis toggle-window ignis-applauncher";
@@ -27,22 +25,11 @@ template $TopbarView: CenterBox {
 
     [center]
     Box {
-        styles [
-            "bar-bg",
-            "rounded",
-        ]
-
         $NiriActiveWindow {}
     }
 
     [end]
     Box {
-        styles [
-            "bar-bg",
-            "rounded-tl",
-            "rounded-bl",
-        ]
-
         $IgnisTray {}
 
         $IgnisFcitxIndicator {}
