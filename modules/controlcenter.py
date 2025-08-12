@@ -202,7 +202,7 @@ class AudioControlGroup(Gtk.Box):
         self._streams.append(self.__new_stream(stream, self._stream_type))
 
         def on_removed(stream: Stream):
-            found, pos = self._streams.find(stream)
+            found, pos = self._streams.find_with_equal_func(stream, lambda item, stream: item.stream == stream)
             if found:
                 item = self._streams.get_item(pos)
                 self._streams.remove(pos)
