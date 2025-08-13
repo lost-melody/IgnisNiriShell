@@ -51,9 +51,11 @@ Requirements:
   - Toggle _App Launcher_: `ignis toggle-window ignis-applauncher`.
     - It is recommended to also have a fallback launcher, since we are unstable now.
   - Toggle _Control Center_: `ignis toggle-window ignis-controlcenter`.
-  - Call _DBus_ methods with `scripts/ignisctl.sh`:
-    - Start/stop _Screen Recorder_: `ignisctl.sh ToggleRecording`.
-    - Toggle _Dock Auto Hide_: `ignisctl.sh ToggleDock`.
+  - Run custom commands with `ignis run-command`:
+    - Start/stop _Screen Recorder_: `ignis run-command toggle-recording`.
+    - Toggle _Dock Auto Hide_: `ignis run-command toggle-dock`.
+    - List all available commands: `ignis list-commands`.
+  - Note: if the `ignis` _CLI_ is slow for you, try [`goignis`](https://github.com/ignis-sh/goignis).
 - Layer window rules:
   - Under _niri_, `layer-rule` can match `namespace` with `ignis-applauncher`, `ignis-controlcenter`, `ignis-topbar` and `ignis-appdock`.
   - Under _Hyprland_, `layerrule` is used instead.

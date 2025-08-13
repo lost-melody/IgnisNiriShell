@@ -6,6 +6,13 @@ function logf() {
     printf "${fmt}\n" "$@" >&2
 }
 
+function deprecated() {
+    logf "DEPRECATED:"
+    logf "\t'%s' is now deprecated." "$0"
+    logf "\tUse 'goignis' and 'goignis run-command' instead."
+    logf "\tInstall 'goignis' here: %s" "https://github.com/ignis-sh/goignis"
+}
+
 function dbus_call() {
     local dest
     local object
@@ -36,16 +43,18 @@ function usage() {
     logf "\t%s ToggleWindow string:ignis-applauncher" "$0"
     logf "For a list of available methods, please refer to:"
     logf "\t%s" "{ignis}/dbus/com.github.linkfrg.ignis.xml"
-    logf "\t%s" "{IgnisNiriShell}/modules/dbus/io.github.lost-melody.IgnisNiriShell.xml"
 }
 
 function main() {
     if [ -z "$1" ]; then
         usage
+        deprecated
         return 1
     fi
 
     dbus_call "$@"
+
+    deprecated
 }
 
 main "$@"

@@ -1,12 +1,12 @@
 import os
 import modules.adw as _
+import modules.commands as _
 import modules.modules as _
 import modules.overrides as _
 from ignis.app import IgnisApp
 from ignis.css_manager import CssInfoPath, CssManager
 from ignis.services.niri import NiriService
 from ignis.utils import get_n_monitors, sass_compile
-from modules.dbus import DBusServeur
 from modules.appdock import AppDock
 from modules.applauncher import AppLauncher
 from modules.backdrop import OverlayBackdrop
@@ -21,7 +21,6 @@ from modules.wallpaper import WallpaperWindow
 app = IgnisApp.get_initialized()
 css_manager = CssManager.get_default()
 niri = NiriService.get_default()
-DBusServeur.get_default()
 
 config_dir = os.path.dirname(os.path.abspath(__file__))
 css_manager.apply_css(
