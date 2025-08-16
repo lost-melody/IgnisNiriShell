@@ -610,4 +610,4 @@ class AppDock(Window):
         if not self.__options:
             return
 
-        self.exclusivity = "on_demand" if self.__options.focusable else "none"
+        self.focusable = "on_demand" if self.__options.focusable else "none"

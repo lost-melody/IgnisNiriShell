@@ -34,10 +34,10 @@ class Topbar(Window):
         if not self.__options:
             return
 
-        self.set_exclusivity("exclusive" if self.__options.exclusive else "normal")
+        self.exclusivity = "exclusive" if self.__options.exclusive else "normal"
 
     def __on_focusable_changed(self, *_):
         if not self.__options:
             return
 
-        self.set_exclusivity("on_demand" if self.__options.focusable else "none")
+        self.focusable = "on_demand" if self.__options.focusable else "none"
