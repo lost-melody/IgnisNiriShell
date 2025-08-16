@@ -1,10 +1,10 @@
+from ignis.variable import Variable
 from ignis.widgets import Box, Revealer
 from ignis.window_manager import WindowManager
-from ignis.variable import Variable
-from .constants import WindowName
-from .utils import set_on_click
-from .widgets import RevealerWindow
 
+from ..constants import WindowName
+from ..utils import set_on_click
+from ..widgets import RevealerWindow
 
 wm = WindowManager.get_default()
 

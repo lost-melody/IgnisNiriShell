@@ -1,11 +1,11 @@
 from gi.repository import Gtk
 from ignis.gobject import IgnisProperty
 from ignis.widgets import Window
-from .constants import WindowName
-from .services import FcitxStateService
-from .template import gtk_template, gtk_template_child
-from .useroptions import user_options
-from .utils import connect_option, Pool
+
+from ..constants import WindowName
+from ..services import FcitxStateService
+from ..useroptions import user_options
+from ..utils import Pool, connect_option, gtk_template, gtk_template_child
 
 
 class FcitxKimPopup(Window):

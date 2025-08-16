@@ -1,4 +1,9 @@
 from enum import Enum
+from os import path
+
+current_dir = path.dirname(path.realpath(__file__))
+CONFIG_DIR = path.dirname(current_dir)
+del current_dir
 
 
 class WindowName(Enum):
@@ -15,4 +20,4 @@ class WindowName(Enum):
 
 class AudioStreamType(Enum):
     speaker = "speaker"
-    microphone = "microphone"
+    microphone = "micrphone"

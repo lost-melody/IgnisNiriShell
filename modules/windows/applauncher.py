@@ -1,14 +1,25 @@
 from typing import Any, Callable
+
 from gi.repository import Gio, GObject, Gtk
 from ignis.menu_model import IgnisMenuItem, IgnisMenuModel, IgnisMenuSeparator, ItemsType
-from ignis.widgets import Window
 from ignis.services.applications import Application, ApplicationAction, ApplicationsService
+from ignis.widgets import Window
+
+from ..constants import WindowName
+from ..useroptions import user_options
+from ..utils import (
+    Pool,
+    connect_option,
+    connect_window,
+    get_app_icon_name,
+    gtk_template,
+    gtk_template_callback,
+    gtk_template_child,
+    launch_application,
+    set_on_click,
+)
+from ..widgets import RevealerWindow
 from .backdrop import overlay_window
-from .constants import WindowName
-from .template import gtk_template, gtk_template_callback, gtk_template_child
-from .useroptions import user_options
-from .utils import Pool, connect_window, connect_option, get_app_icon_name, launch_application, set_on_click
-from .widgets import RevealerWindow
 
 
 @gtk_template(filename="applauncher-item")
@@ -129,11 +140,11 @@ class AppLauncherView(Gtk.Box):
             self.__pool = Pool(AppLauncherGridItem)
             # we don't connect to "setup" or "teardown" signals
             # instead we acquire and release childs in "bind" and "unbind"
-            self.connect("bind", self.__item_bind)
-            self.connect("unbind", self.__item_unbind)
+            self.connect("bind", self.__class__.__item_bind)
+            self.connect("unbind", self.__class__.__item_unbind)
 
-        def __item_bind(self, _, item: Gtk.ListItem):
-            self.__item_unbind(_, item)
+        def __item_bind(self, item: Gtk.ListItem):
+            self.__item_unbind(item)
 
             grid_item = self.__pool.acquire()
             app = item.get_item()
@@ -141,7 +152,7 @@ class AppLauncherView(Gtk.Box):
                 grid_item.application = app
                 item.set_child(grid_item)
 
-        def __item_unbind(self, _, item: Gtk.ListItem):
+        def __item_unbind(self, item: Gtk.ListItem):
             grid_item = item.get_child()
             if isinstance(grid_item, AppLauncherGridItem):
                 grid_item.application = None

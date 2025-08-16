@@ -1,9 +1,9 @@
 from gi.repository import Gtk
 from ignis.widgets import Window
-from .constants import WindowName
-from .template import gtk_template
-from .useroptions import user_options
-from .utils import connect_option
+
+from ..constants import WindowName
+from ..useroptions import user_options
+from ..utils import connect_option, gtk_template
 
 
 class Topbar(Window):

@@ -1,12 +1,14 @@
-import os, subprocess
+import os
+import subprocess
+from os import path
 from typing import Any, Callable
+
 from gi.repository import Gtk
 from ignis import CACHE_DIR
+from ..constants import CONFIG_DIR
 
-
-config_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-blp_ui_path = os.path.join(config_dir, "ui")
-cache_ui_path = os.path.join(CACHE_DIR, "ui")
+blp_ui_path = path.join(CONFIG_DIR, "ui")
+cache_ui_path = path.join(CACHE_DIR, "ui")
 
 
 def build_blueprint(blp_filename: str, ui_filename: str):

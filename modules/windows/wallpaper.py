@@ -1,34 +1,14 @@
 from gi.repository import Gtk
-from ignis.widgets import Window
+from ignis.options import options
 from ignis.services.niri import NiriService
 from ignis.utils.monitor import get_monitor
-from ignis.options import options
-from .useroptions import user_options
-from .utils import connect_option
+from ignis.widgets import Window
 
+from ..useroptions import user_options
+from ..utils import connect_option
+from ..widgets import BlurredPicture
 
 niri = NiriService.get_default()
-
-
-class BlurredPicture(Gtk.Picture):
-    __gtype_name__ = "IgnisBlurredPicture"
-
-    def __init__(self, blur_radius: float = 0, **kvargs):
-        self.__blur_radius = blur_radius
-        super().__init__(**kvargs)
-
-    def do_snapshot(self, snapshot: Gtk.Snapshot):
-        snapshot.push_blur(self.blur_radius)
-        Gtk.Picture.do_snapshot(self, snapshot)
-        snapshot.pop()
-
-    @property
-    def blur_radius(self) -> float:
-        return self.__blur_radius
-
-    @blur_radius.setter
-    def blur_radius(self, radius: float):
-        self.__blur_radius = radius
 
 
 class WallpaperWindow(Window):
@@ -45,7 +25,7 @@ class WallpaperWindow(Window):
             self.__picture.set_size_request(geometry.width, geometry.height)
 
         super().__init__(
-            namespace=f"ignis_wallpaper_{"backdrop" if is_backdrop else "service"}_{monitor_idx}",
+            namespace=f"ignis_wallpaper_{'backdrop' if is_backdrop else 'service'}_{monitor_idx}",
             monitor=monitor_idx,
             anchor=["top", "right", "bottom", "left"],
             exclusivity="ignore",

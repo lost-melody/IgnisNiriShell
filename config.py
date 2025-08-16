@@ -1,22 +1,23 @@
 import os
-import modules.adw as _
-import modules.commands as _
-import modules.modules as _
-import modules.overrides as _
+
 from ignis.app import IgnisApp
 from ignis.css_manager import CssInfoPath, CssManager
 from ignis.services.niri import NiriService
 from ignis.utils import get_n_monitors, sass_compile
-from modules.appdock import AppDock
-from modules.applauncher import AppLauncher
-from modules.backdrop import OverlayBackdrop
-from modules.controlcenter import ControlCenter, NotificationPopups
-from modules.fcitxkimpopup import FcitxKimPopup
-from modules.osd import OnscreenDisplay
-from modules.preferences import Preferences
-from modules.topbar import Topbar
-from modules.wallpaper import WallpaperWindow
 
+from modules.prelude import post_initialized
+from modules.windows import (
+    AppDock,
+    AppLauncher,
+    ControlCenter,
+    FcitxKimPopup,
+    NotificationPopups,
+    OnscreenDisplay,
+    OverlayBackdrop,
+    Preferences,
+    Topbar,
+    WallpaperWindow,
+)
 
 app = IgnisApp.get_initialized()
 css_manager = CssManager.get_default()
@@ -44,3 +45,5 @@ for idx in range(get_n_monitors()):
     WallpaperWindow(idx)
     if niri.is_available:
         WallpaperWindow(idx, is_backdrop=True)
+
+post_initialized()

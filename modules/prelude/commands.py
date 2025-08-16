@@ -4,8 +4,8 @@ from ignis.exceptions import WindowNotFoundError
 from ignis.window_manager import WindowManager
 from ignis.services.recorder import RecorderConfig, RecorderService
 from ignis.options import options
-from .constants import WindowName
-from .useroptions import user_options
+from ..constants import WindowName
+from ..useroptions import user_options
 
 
 cm = CommandManager.get_default()

@@ -1,13 +1,13 @@
 import os.path
+
 from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk
 from ignis.app import IgnisApp
-from ignis.widgets import RegularWindow
 from ignis.options import options
-from .constants import WindowName
-from .template import gtk_template, gtk_template_callback, gtk_template_child
-from .useroptions import user_options
-from .utils import bind_option, connect_option
+from ignis.widgets import RegularWindow
 
+from ..constants import WindowName
+from ..useroptions import user_options
+from ..utils import bind_option, connect_option, gtk_template, gtk_template_callback, gtk_template_child
 
 app = IgnisApp.get_initialized()
 

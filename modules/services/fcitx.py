@@ -1,94 +1,19 @@
 import dataclasses
 import enum
 import os
-from typing import Any
+
 from gi.repository import GLib
-from loguru import logger
 from ignis.base_service import BaseService
 from ignis.dbus import DBusProxy, DBusService
 from ignis.gobject import IgnisGObject, IgnisProperty, IgnisSignal
-from ignis.utils import load_interface_xml, Poll, thread
+from ignis.utils import load_interface_xml
 from ignis.variable import Variable
-from .useroptions import user_options
 
-
-try:
-    import libevdev as _
-
-    libevdev_available = True
-except:
-    libevdev_available = False
-
-
-class CpuLoadService(BaseService):
-    def __init__(self):
-        super().__init__()
-        self._cpu_count = self.__read_cpu_count()
-        self._idle_time: int = 0
-        self._total_time: int = 0
-        self.__cpu_times = self.__read_cpu_times()
-        self.__poll = Poll(timeout=1000, callback=self.__update_times)
-
-    @classmethod
-    def __read_cpu_count(cls) -> int:
-        with open("/proc/cpuinfo") as cpuinfo:
-            count = 0
-            for line in cpuinfo.readlines():
-                if line.startswith("processor"):
-                    count += 1
-            return count
-
-    @classmethod
-    def __read_cpu_times(cls) -> list[int]:
-        with open("/proc/stat") as stat:
-            line = stat.readline().split()[1:]
-            return list(map(int, line[: min(7, len(line))]))
-
-    @IgnisProperty
-    def cpu_count(self) -> int:
-        return self._cpu_count
-
-    @IgnisProperty
-    def idle_time(self) -> int:
-        """
-        idle cpu time during last polling interval
-        """
-        return self._idle_time
-
-    @IgnisProperty
-    def total_time(self) -> int:
-        """
-        total cpu time during last polling interval
-        """
-        return self._total_time
-
-    @IgnisProperty
-    def interval(self) -> int:
-        """
-        sample interval in milliseconds
-        """
-        return self.__poll.timeout
-
-    @interval.setter
-    def interval(self, ms: int):
-        self.__poll.timeout = ms
-
-    def __update_times(self, *_):
-        """
-        updates (idle, total) since last called
-        """
-        times = self.__read_cpu_times()
-        deltas = [times[i] - self.__cpu_times[i] for i in range(len(times))]
-        self._total_time = sum(deltas)
-        self.notify("total_time")
-        self._idle_time = deltas[3]
-        self.notify("idle_time")
-        self.__cpu_times = times
+from ..useroptions import user_options
+from ..utils import dbus_info_file
 
 
 class FcitxStateService(BaseService):
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-
     class KIMPanel(IgnisGObject):
         class SignalName(enum.Enum):
             Enable = "Enable"
@@ -152,18 +77,14 @@ class FcitxStateService(BaseService):
             self.impanel = DBusService(
                 name="org.kde.impanel",
                 object_path="/org/kde/impanel",
-                info=load_interface_xml(
-                    path=os.path.join(FcitxStateService.current_dir, "dbus", "org.kde.impanel.xml")
-                ),
+                info=load_interface_xml(path=dbus_info_file("org.kde.impanel.xml")),
                 on_name_acquired=self.__on_impanel_acquired,
             )
 
             self.impanel2 = DBusService(
                 name="org.kde.impanel",
                 object_path="/org/kde/impanel",
-                info=load_interface_xml(
-                    path=os.path.join(FcitxStateService.current_dir, "dbus", "org.kde.impanel2.xml")
-                ),
+                info=load_interface_xml(path=dbus_info_file("org.kde.impanel2.xml")),
                 on_name_acquired=self.__on_impanel2_acquired,
             )
             self.__register_methods2(self.impanel2)
@@ -172,9 +93,7 @@ class FcitxStateService(BaseService):
                 name="org.kde.kimpanel.inputmethod",
                 object_path="/kimpanel",
                 interface_name="org.kde.kimpanel.inputmethod",
-                info=load_interface_xml(
-                    path=os.path.join(FcitxStateService.current_dir, "dbus", "org.kde.impanel.inputmethod.xml")
-                ),
+                info=load_interface_xml(path=dbus_info_file("org.kde.impanel.inputmethod.xml")),
                 bus_type="session",
             )
             self.__subscribe_signals(self.proxy)
@@ -352,113 +271,3 @@ class FcitxStateService(BaseService):
             info=load_interface_xml(path=os.path.join(self.current_dir, "dbus", "org.fcitx.Fcitx5.controller.xml")),
             bus_type="session",
         )
-
-    async def __rime_proxy(self):
-        return await DBusProxy.new_async(
-            name="org.fcitx.Fcitx5",
-            object_path="/rime",
-            interface_name="org.fcitx.Fcitx.Rime1",
-            info=load_interface_xml(path=os.path.join(self.current_dir, "dbus", "org.fcitx.Fcitx5.rime.xml")),
-            bus_type="session",
-        )
-
-
-class KeyboardLedsService(BaseService):
-    DEV_PATH = "/dev/input"
-
-    if libevdev_available:
-        import libevdev
-
-        EV_LED = libevdev.EV_LED  # type: ignore
-        LED_NUML = libevdev.EV_LED.LED_NUML  # type: ignore
-        LED_CAPSL = libevdev.EV_LED.LED_CAPSL  # type: ignore
-        LED_SCROLLL = libevdev.EV_LED.LED_SCROLLL  # type: ignore
-    else:
-        EV_LED = None
-        LED_NUML = None
-        LED_CAPSL = None
-        LED_SCROLLL = None
-
-    def __init__(self):
-        super().__init__()
-
-        self._numlock: bool | None = None
-        self._capslock: bool | None = None
-        self._scrolllock: bool | None = None
-
-        self.__sync_devices()
-
-    @IgnisProperty
-    def numlock(self) -> bool | None:
-        return self._numlock
-
-    @IgnisProperty
-    def capslock(self) -> bool | None:
-        return self._capslock
-
-    @IgnisProperty
-    def scrolllock(self) -> bool | None:
-        return self._scrolllock
-
-    def __sync_devices(self):
-        if not libevdev_available:
-            logger.warning("Install `libevdev` to display capslock state in OSD")
-            return
-        import libevdev
-
-        for file in os.listdir(self.DEV_PATH):
-            if not file.startswith("event"):
-                continue
-
-            fd = open(f"{self.DEV_PATH}/{file}", "rb")
-            try:
-                device = libevdev.Device(fd)
-                if self.__device_support_leds(device):
-                    thread(target=lambda d=device: self.__listen_to_events(d))
-            except:
-                logger.warning("User should be a member of the `input` group to display capslock state in OSD")
-                break
-
-    @classmethod
-    def __device_support_leds(cls, d: Any) -> bool:
-        import libevdev
-
-        device: libevdev.Device = d
-        if not device.has(cls.EV_LED):
-            return False
-
-        for led in [cls.LED_NUML, cls.LED_CAPSL, cls.LED_SCROLLL]:
-            if device.has(led):
-                return True
-
-        return False
-
-    def __listen_to_events(self, d: Any):
-        import libevdev
-
-        device: libevdev.Device = d
-        try:
-            while True:
-                for event in device.events():
-                    if not event.type == self.EV_LED:
-                        continue
-
-                    GLib.idle_add(lambda c=event.code, s=event.value: self.__on_led_changed(c, s))
-        except:
-            pass
-
-    def __on_led_changed(self, code: Any, state: Any):
-        enabled = state != 0
-        match code:
-            case self.LED_NUML:
-                if self._numlock != enabled:
-                    self._numlock = enabled
-                    self.notify("numlock")
-            case self.LED_CAPSL:
-                if self._capslock != enabled:
-                    self._capslock = enabled
-                    self.notify("capslock")
-            case self.LED_SCROLLL:
-                if self._scrolllock != enabled:
-                    self._scrolllock = enabled
-                    self.notify("scrolllock")

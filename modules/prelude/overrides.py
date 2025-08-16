@@ -1,4 +1,4 @@
-from .utils import app_icon_overrides, app_id_overrides
+from ..utils import app_icon_overrides, app_id_overrides
 
 
 app_icons_mapper: dict[str, str] = {

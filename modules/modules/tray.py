@@ -1,0 +1,108 @@
+import asyncio
+
+from gi.repository import Gio, Gtk
+from ignis.dbus_menu import DBusMenu
+from ignis.services.system_tray import SystemTrayItem, SystemTrayService
+from ignis.widgets import Icon
+
+from ..utils import Pool, set_on_click, set_on_scroll
+
+
+class Tray(Gtk.FlowBox):
+    __gtype_name__ = "IgnisTray"
+
+    class TrayItem(Gtk.FlowBoxChild):
+        __gtype_name__ = "IgnisTrayItem"
+
+        def __init__(self):
+            self.__icon = Icon()
+            self.__box = Gtk.Box()
+            self.__box.append(self.__icon)
+            super().__init__(css_classes=["px-1"], child=self.__box)
+            set_on_click(self, left=self.__on_clicked, middle=self.__on_middlet_clicked, right=self.__on_right_clicked)
+            set_on_scroll(self, self.__on_scroll)
+            self.__tooltip_id: int = 0
+            self.__icon_id: int = 0
+
+            self.__item: SystemTrayItem | None = None
+            self.__menu: DBusMenu | None = None
+
+        @property
+        def tray_item(self) -> SystemTrayItem | None:
+            return self.__item
+
+        @tray_item.setter
+        def tray_item(self, item: SystemTrayItem):
+            if self.__item:
+                self.__item.disconnect(self.__tooltip_id)
+                self.__item.disconnect(self.__icon_id)
+            if self.__menu:
+                self.__box.remove(self.__menu)
+
+            self.__item = item
+            self.__menu = item.menu
+            self.__tooltip_id = item.connect("notify::tooltip", self.__on_changed)
+            self.__icon_id = item.connect("notify::icon", self.__on_changed)
+            if self.__menu:
+                self.__menu = self.__menu.copy()
+                self.__box.append(self.__menu)
+
+            self.__on_changed()
+
+        def __on_changed(self, *_):
+            if self.__item:
+                self.__icon.image = self.__item.icon or ""
+                self.set_tooltip_text(self.__item.tooltip)
+
+        def __on_clicked(self, _):
+            if self.__item:
+                asyncio.create_task(self.__item.activate_async())
+
+        def __on_middlet_clicked(self, _):
+            if self.__item:
+                asyncio.create_task(self.__item.secondary_activate_async())
+
+        def __on_scroll(self, _, dx: float, dy: float):
+            if not self.__item:
+                return
+
+            if dx != 0:
+                self.__item.scroll(int(dx), orientation="horizontal")
+            elif dy != 0:
+                self.__item.scroll(int(dy), orientation="vertical")
+
+        def __on_right_clicked(self, _):
+            if self.__menu:
+                self.__menu.popup()
+
+    def __init__(self):
+        self.__service = SystemTrayService.get_default()
+        super().__init__()
+        self.add_css_class("hover")
+        self.add_css_class("rounded")
+
+        self.__pool = Pool(self.TrayItem)
+        self.__service.connect("added", self.__on_item_added)
+        self.__list_store = Gio.ListStore()
+        self.bind_model(self.__list_store, lambda item: item)
+        self.set_selection_mode(Gtk.SelectionMode.NONE)
+        self.set_min_children_per_line(100)
+        self.set_max_children_per_line(100)
+
+    def __new_item(self, tray_item: SystemTrayItem):
+        item = self.__pool.acquire()
+        item.tray_item = tray_item
+        return item
+
+    def __on_item_added(self, _, tray_item: SystemTrayItem):
+        item = self.__new_item(tray_item)
+        self.__list_store.insert(0, item)
+        tray_item.connect("removed", self.__on_item_removed)
+
+    def __on_item_removed(self, tray_item: SystemTrayItem):
+        found, pos = self.__list_store.find_with_equal_func(tray_item, lambda i, t: i.tray_item == t)
+        if found:
+            item = self.__list_store.get_item(pos)
+            self.__list_store.remove(pos)
+            if isinstance(item, Tray.TrayItem):
+                self.__pool.release(item)

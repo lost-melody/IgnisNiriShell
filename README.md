@@ -97,18 +97,21 @@ Requirements:
 ## Development
 
 I personally use `neovim` for coding.
-With `pyright`, `python-black`, `blueprint-compiler` installed, and with typing stubs, _LSP_, code formatter configured, it should be easy to work with.
+With `pyright`, `ruff`, `blueprint-compiler` installed, and with typing stubs, _LSP_, code formatter configured, it should be easy to work with.
 
 An example `pyproject.toml`:
 
 ```toml
-[tool.black]
-target-version = ["py313"]
-line-length = 120
-skip-magic-trailing-comma = true
-
 [tool.pyright]
 # ignis is installed at venv "/path/to/venv/lib/ignis"
 venvPath = "/path/to/venv/lib"
 venv = "ignis"
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.format]
+skip-magic-trailing-comma = true
+docstring-code-format = true
 ```

@@ -1,7 +1,9 @@
 from typing import Any
+
 from gi.repository import Gtk
 from ignis.widgets import Window
-from .utils import gproperty
+
+from ..utils import gproperty
 
 
 class RevealerWindow(Window):

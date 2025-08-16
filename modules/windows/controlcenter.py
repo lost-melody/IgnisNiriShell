@@ -3,9 +3,9 @@ import urllib.parse
 from asyncio import create_task
 from datetime import datetime
 from typing import Any
+
 from gi.repository import Adw, Gio, GLib, Gtk
-from ignis.widgets import Icon, Window
-from ignis.window_manager import WindowManager
+from ignis.options import options
 from ignis.services.audio import AudioService, Stream
 from ignis.services.backlight import BacklightDevice, BacklightService
 from ignis.services.bluetooth import BluetoothDevice, BluetoothService
@@ -13,26 +13,29 @@ from ignis.services.network import NetworkService
 from ignis.services.niri import NiriService
 from ignis.services.notifications import NOTIFICATIONS_IMAGE_DATA, Notification, NotificationAction, NotificationService
 from ignis.services.recorder import RecorderConfig, RecorderService
-from ignis.options import options
-from .backdrop import overlay_window
-from .constants import AudioStreamType, WindowName
-from .variables import caffeine_state
-from .template import gtk_template, gtk_template_callback, gtk_template_child
-from .useroptions import user_options
-from .utils import (
+from ignis.widgets import Icon, Window
+from ignis.window_manager import WindowManager
+
+from ..constants import AudioStreamType, WindowName
+from ..useroptions import user_options
+from ..utils import (
     Pool,
     clear_dir,
-    connect_window,
     connect_option,
+    connect_window,
     escape_pango_markup,
     gproperty,
+    gtk_template,
+    gtk_template_callback,
+    gtk_template_child,
     niri_action,
     run_cmd_async,
     set_on_click,
     verify_pango_markup,
 )
-from .widgets import RevealerWindow
-
+from ..variables import caffeine_state
+from ..widgets import RevealerWindow
+from .backdrop import overlay_window
 
 wm = WindowManager.get_default()
 

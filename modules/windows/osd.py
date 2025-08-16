@@ -4,11 +4,11 @@ from ignis.services.backlight import BacklightDevice, BacklightService
 from ignis.services.hyprland import HyprlandService
 from ignis.services.niri import NiriService
 from ignis.utils import Timeout
-from .constants import WindowName
-from .services import FcitxStateService, KeyboardLedsService
-from .template import gtk_template, gtk_template_child
-from .useroptions import user_options
-from .widgets import RevealerWindow
+from ..constants import WindowName
+from ..services import FcitxStateService, KeyboardLedsService
+from ..useroptions import user_options
+from ..utils import gtk_template, gtk_template_child
+from ..widgets import RevealerWindow
 
 
 class OnscreenDisplay(RevealerWindow):
@@ -136,7 +136,7 @@ class OnscreenDisplay(RevealerWindow):
 
         def __on_capslock_changed(self, *_):
             enabled = self.__leds.capslock
-            self.__display_indicator("Caps Lock", f"capslock-{"enabled" if enabled else "disabled"}-symbolic")
+            self.__display_indicator("Caps Lock", f"capslock-{'enabled' if enabled else 'disabled'}-symbolic")
 
         def __on_fcitx5_show_aux(self, *_):
             if not self.__fcitx.kimpanel.show_aux:

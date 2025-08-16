@@ -1,19 +1,21 @@
 from gi.repository import Gdk, Gio, Gtk
 from ignis.menu_model import IgnisMenuItem, IgnisMenuModel, IgnisMenuSeparator, ItemsType
-from ignis.widgets import Window
 from ignis.services.applications import Application, ApplicationsService
-from ignis.services.hyprland import HyprlandWindow, HyprlandService
-from ignis.services.niri import NiriWindow, NiriService
+from ignis.services.hyprland import HyprlandService, HyprlandWindow
+from ignis.services.niri import NiriService, NiriWindow
 from ignis.utils import Timeout
-from .constants import WindowName
-from .template import gtk_template, gtk_template_child
-from .useroptions import user_options
-from .utils import (
+from ignis.widgets import Window
+
+from ..constants import WindowName
+from ..useroptions import user_options
+from ..utils import (
     Pool,
     connect_option,
-    get_app_id,
     get_app_icon_name,
+    get_app_id,
     get_widget_monitor,
+    gtk_template,
+    gtk_template_child,
     launch_application,
     niri_action,
     set_on_click,
@@ -111,7 +113,9 @@ class AppDockView(Gtk.Box):
                 transition = (
                     types.SLIDE_RIGHT
                     if direction == "left"
-                    else types.SLIDE_LEFT if direction == "right" else types.CROSSFADE
+                    else types.SLIDE_LEFT
+                    if direction == "right"
+                    else types.CROSSFADE
                 )
                 self.__revealer.set_transition_type(transition)
                 self.__revealer.set_reveal_child(reveal)
