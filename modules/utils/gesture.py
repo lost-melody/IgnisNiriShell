@@ -1,4 +1,5 @@
 from typing import Any, Callable
+import weakref
 
 from gi.repository import Gdk, Gtk
 
@@ -11,19 +12,22 @@ def set_on_click[Widget: Gtk.Widget](
     middle: Callable[[Widget], Any] | None = None,
     right: Callable[[Widget], Any] | None = None,
 ) -> Widget:
-    def on_released(callback: Callable[[Widget], Any]):
+    def on_released(widget: Widget, callback: Callable[[Widget], Any]):
+        ref = weakref.ref(widget)
+
         def handler(gesture_click: Gtk.GestureClick, n_press: int, x: int, y: int):
-            if widget.contains(x, y):
+            widget = ref()
+            if widget and widget.contains(x, y):
                 gesture_click.set_state(Gtk.EventSequenceState.CLAIMED)
-                callback(widget)
+                return callback(widget)
 
         return handler
 
-    def set_controller(widget: Gtk.Widget, button: int, callback: Callable[[Widget], Any] | None):
+    def set_controller(widget: Widget, button: int, callback: Callable[[Widget], Any] | None):
         if callback:
             controller = Gtk.GestureClick(button=button)
             widget.add_controller(controller)
-            controller.connect("released", on_released(callback))
+            controller.connect("released", on_released(widget, callback))
 
     for button, callback in [(Gdk.BUTTON_PRIMARY, left), (Gdk.BUTTON_MIDDLE, middle), (Gdk.BUTTON_SECONDARY, right)]:
         set_controller(widget, button, callback)
@@ -37,9 +41,12 @@ def set_on_scroll[Widget: Gtk.Widget](
     flags: ScrollFlags = ScrollFlags.BOTH_AXES | ScrollFlags.DISCRETE,
 ) -> Widget:
     if callback:
+        ref = weakref.ref(widget)
 
         def on_scroll(controller: Gtk.EventControllerScroll, dx: float, dy: float):
-            callback(widget, dx, dy)
+            widget = ref()
+            if widget:
+                return callback(widget, dx, dy)
 
         controller = Gtk.EventControllerScroll(flags=flags)
         widget.add_controller(controller)
@@ -57,11 +64,31 @@ def set_on_motion[Widget: Gtk.Widget](
     controller = Gtk.EventControllerMotion()
     widget.add_controller(controller)
 
+    def callback(widget: Widget, cb: Callable[[Widget], Any]):
+        ref = weakref.ref(widget)
+
+        def handler():
+            widget = ref()
+            if widget:
+                return cb(widget)
+
+        return handler
+
+    def callback_xy(widget: Widget, cb: Callable[[Widget, float, float], Any]):
+        ref = weakref.ref(widget)
+
+        def handler(controller: Gtk.EventControllerMotion, x: float, y: float):
+            widget = ref()
+            if widget:
+                return cb(widget, x, y)
+
+        return handler
+
     if enter:
-        controller.connect("enter", lambda _, x, y: enter(widget, x, y))
+        controller.connect("enter", callback_xy(widget, enter))
     if leave:
-        controller.connect("leave", lambda _: leave(widget))
+        controller.connect("leave", callback(widget, leave))
     if motion:
-        controller.connect("motion", lambda _, x, y: motion(widget, x, y))
+        controller.connect("motion", callback_xy(widget, motion))
 
     return widget
