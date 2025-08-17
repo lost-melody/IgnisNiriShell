@@ -3,22 +3,23 @@ import os.path
 from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk
 from ignis.app import IgnisApp
 from ignis.options import options
-from ignis.widgets import RegularWindow
 
 from ..constants import WindowName
 from ..useroptions import user_options
 from ..utils import bind_option, connect_option, gtk_template, gtk_template_callback, gtk_template_child
+from ..widgets import AdwRegularWindow
 
 app = IgnisApp.get_initialized()
 
 
-class Preferences(RegularWindow):
+class Preferences(AdwRegularWindow):
     __gtype_name__ = "Preferences"
 
     @gtk_template("preferences")
     class View(Gtk.Box):
         __gtype_name__ = "PreferencesView"
 
+        breakpoint: Adw.Breakpoint = gtk_template_child()
         dnd: Adw.SwitchRow = gtk_template_child()
         popup_timeout: Adw.SpinRow = gtk_template_child()
         max_popups: Adw.SpinRow = gtk_template_child()
@@ -65,90 +66,72 @@ class Preferences(RegularWindow):
             self.wallpaper_path.add_controller(wallpaper_drop_target)
 
         def __bind_ignis_options(self):
-            if not options:
-                return
+            # notifications
+            bind_option(options.notifications, "dnd", self.dnd, "active")
+            bind_option(
+                options.notifications, "popup_timeout", self.popup_timeout, "value", transform_from=lambda f: round(f)
+            )
+            bind_option(
+                options.notifications, "max_popups_count", self.max_popups, "value", transform_from=lambda f: round(f)
+            )
 
-            if options.notifications is not None:
-                bind_option(options.notifications, "dnd", self.dnd, "active")
-                bind_option(
-                    options.notifications,
-                    "popup_timeout",
-                    self.popup_timeout,
-                    "value",
-                    transform_from=lambda f: round(f),
-                )
-                bind_option(
-                    options.notifications,
-                    "max_popups_count",
-                    self.max_popups,
-                    "value",
-                    transform_from=lambda f: round(f),
-                )
+            # recorder
+            bind_option(options.recorder, "bitrate", self.bitrate, "value", transform_from=lambda f: round(f))
+            bind_option(options.recorder, "default_filename", self.recorder_filename, "text")
 
-            if options.recorder is not None:
-                bind_option(options.recorder, "bitrate", self.bitrate, "value", transform_from=lambda f: round(f))
-                bind_option(options.recorder, "default_filename", self.recorder_filename, "text")
-
-            if options.wallpaper is not None:
-                bind_option(
-                    options.wallpaper,
-                    "wallpaper_path",
-                    self.wallpaper_path,
-                    "subtitle",
-                    flags=GObject.BindingFlags.DEFAULT,
-                )
+            # wallpaper
+            bind_option(
+                options.wallpaper, "wallpaper_path", self.wallpaper_path, "subtitle", flags=GObject.BindingFlags.DEFAULT
+            )
 
         def __bind_user_options(self):
-            if not user_options:
-                return
+            # app launcher
+            bind_option(user_options.applauncher, "exclusive_focus", self.exclusive_focus, "active")
+            bind_option(user_options.applauncher, "command_format", self.command_format, "text")
+            bind_option(user_options.applauncher, "terminal_format", self.terminal_format, "text")
 
-            if user_options.applauncher:
-                bind_option(user_options.applauncher, "exclusive_focus", self.exclusive_focus, "active")
-                bind_option(user_options.applauncher, "command_format", self.command_format, "text")
-                bind_option(user_options.applauncher, "terminal_format", self.terminal_format, "text")
+            # active window indicator
+            bind_option(user_options.activewindow, "on_click", self.on_active_click, "text")
+            bind_option(user_options.activewindow, "on_right_click", self.on_active_right_click, "text")
+            bind_option(user_options.activewindow, "on_middle_click", self.on_active_middle_click, "text")
+            bind_option(user_options.activewindow, "on_scroll_up", self.on_active_scroll_up, "text")
+            bind_option(user_options.activewindow, "on_scroll_down", self.on_active_scroll_down, "text")
+            bind_option(user_options.activewindow, "on_scroll_left", self.on_active_scroll_left, "text")
+            bind_option(user_options.activewindow, "on_scroll_right", self.on_active_scroll_right, "text")
 
-            if user_options.activewindow:
-                bind_option(user_options.activewindow, "on_click", self.on_active_click, "text")
-                bind_option(user_options.activewindow, "on_right_click", self.on_active_right_click, "text")
-                bind_option(user_options.activewindow, "on_middle_click", self.on_active_middle_click, "text")
-                bind_option(user_options.activewindow, "on_scroll_up", self.on_active_scroll_up, "text")
-                bind_option(user_options.activewindow, "on_scroll_down", self.on_active_scroll_down, "text")
-                bind_option(user_options.activewindow, "on_scroll_left", self.on_active_scroll_left, "text")
-                bind_option(user_options.activewindow, "on_scroll_right", self.on_active_scroll_right, "text")
+            # app dock
+            bind_option(user_options.appdock, "exclusive", self.dock_exclusive, "active")
+            bind_option(user_options.appdock, "focusable", self.dock_focusable, "active")
+            bind_option(user_options.appdock, "auto_conceal", self.dock_auto_conceal, "active")
+            bind_option(user_options.appdock, "show_in_overview", self.dock_in_overview, "active")
+            bind_option(user_options.appdock, "monitor_only", self.dock_monitor_only, "active")
+            bind_option(user_options.appdock, "workspace_only", self.dock_workspace_only, "active")
+            bind_option(user_options.appdock, "conceal_delay", self.dock_conceal_delay, "value")
+            # show this option only when `auto_conceal` is enabled
+            self.dock_in_overview.set_visible(user_options.appdock.auto_conceal)
+            connect_option(
+                user_options.appdock,
+                "auto_conceal",
+                lambda *_: self.dock_in_overview.set_visible(user_options.appdock.auto_conceal),
+            )
 
-            if user_options.appdock:
-                bind_option(user_options.appdock, "exclusive", self.dock_exclusive, "active")
-                bind_option(user_options.appdock, "focusable", self.dock_focusable, "active")
-                bind_option(user_options.appdock, "auto_conceal", self.dock_auto_conceal, "active")
-                bind_option(user_options.appdock, "show_in_overview", self.dock_in_overview, "active")
-                bind_option(user_options.appdock, "monitor_only", self.dock_monitor_only, "active")
-                bind_option(user_options.appdock, "workspace_only", self.dock_workspace_only, "active")
-                bind_option(user_options.appdock, "conceal_delay", self.dock_conceal_delay, "value")
-                # show this option only when `auto_conceal` is enabled
-                self.dock_in_overview.set_visible(user_options.appdock.auto_conceal)
-                connect_option(
-                    user_options.appdock,
-                    "auto_conceal",
-                    lambda *_: self.dock_in_overview.set_visible(user_options.appdock.auto_conceal),
-                )
+            # fcitx kimpanel
+            bind_option(user_options.fcitx_kimpanel, "enabled", self.fcitx_kimpanel_enabled, "active")
+            bind_option(user_options.fcitx_kimpanel, "show_popup_window", self.fcitx_show_popup, "active")
+            bind_option(user_options.fcitx_kimpanel, "vertical_list", self.fcitx_vertical_list, "active")
 
-            if user_options.fcitx_kimpanel:
-                bind_option(user_options.fcitx_kimpanel, "enabled", self.fcitx_kimpanel_enabled, "active")
-                bind_option(user_options.fcitx_kimpanel, "show_popup_window", self.fcitx_show_popup, "active")
-                bind_option(user_options.fcitx_kimpanel, "vertical_list", self.fcitx_vertical_list, "active")
+            # on screen display
+            bind_option(user_options.osd, "timeout", self.osd_timeout, "value")
 
-            if user_options.osd:
-                bind_option(user_options.osd, "timeout", self.osd_timeout, "value")
+            # topbar
+            bind_option(user_options.topbar, "exclusive", self.topbar_exclusive, "active")
+            bind_option(user_options.topbar, "focusable", self.topbar_focusable, "active")
 
-            if user_options.topbar:
-                bind_option(user_options.topbar, "exclusive", self.topbar_exclusive, "active")
-                bind_option(user_options.topbar, "focusable", self.topbar_focusable, "active")
-
-            if user_options.wallpaper:
-                bind_option(user_options.wallpaper, "blur_radius", self.wallpaper_blur_radius, "value")
-                bind_option(user_options.wallpaper, "bottom_margin", self.wallpaper_bottom_margin, "value")
-                bind_option(user_options.wallpaper, "backdrop_blur_radius", self.backdrop_blur_radius, "value")
-                bind_option(user_options.wallpaper, "backdrop_bottom_margin", self.backdrop_bottom_margin, "value")
+            # wallpaper
+            bind_option(user_options.wallpaper, "blur_radius", self.wallpaper_blur_radius, "value")
+            bind_option(user_options.wallpaper, "bottom_margin", self.wallpaper_bottom_margin, "value")
+            bind_option(user_options.wallpaper, "backdrop_blur_radius", self.backdrop_blur_radius, "value")
+            bind_option(user_options.wallpaper, "backdrop_bottom_margin", self.backdrop_bottom_margin, "value")
 
         @gtk_template_callback
         def on_wallpaper_select_clicked(self, *_):
@@ -175,13 +158,14 @@ class Preferences(RegularWindow):
     def __init__(self):
         super().__init__(
             namespace=WindowName.preferences.value,
-            default_width=512,
+            title="Ignis Preferences",
+            application=app,
+            default_width=768,
             default_height=384,
             hide_on_close=True,
             visible=False,
         )
 
         self.__view = self.View()
-        self.set_child(self.__view)
-        self.set_title("Ignis Preferences")
-        self.set_application(app)
+        self.set_content(self.__view)
+        self.add_breakpoint(self.__view.breakpoint)
