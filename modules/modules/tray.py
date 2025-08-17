@@ -1,6 +1,7 @@
 import asyncio
+from typing import Coroutine
 
-from gi.repository import Gio, Gtk
+from gi.repository import Gio, GLib, Gtk
 from ignis.dbus_menu import DBusMenu
 from ignis.services.system_tray import SystemTrayItem, SystemTrayService
 from ignis.widgets import Icon
@@ -19,8 +20,13 @@ class Tray(Gtk.FlowBox):
             self.__box = Gtk.Box()
             self.__box.append(self.__icon)
             super().__init__(css_classes=["px-1"], child=self.__box)
-            set_on_click(self, left=self.__on_clicked, middle=self.__on_middlet_clicked, right=self.__on_right_clicked)
-            set_on_scroll(self, self.__on_scroll)
+            set_on_click(
+                self,
+                left=self.__class__.__on_clicked,
+                middle=self.__class__.__on_middlet_clicked,
+                right=self.__class__.__on_right_clicked,
+            )
+            set_on_scroll(self, self.__class__.__on_scroll)
             self.__tooltip_id: int = 0
             self.__icon_id: int = 0
 
@@ -49,20 +55,40 @@ class Tray(Gtk.FlowBox):
 
             self.__on_changed()
 
+        @classmethod
+        async def try_async(cls, coro: Coroutine):
+            """
+            Wraps an async function and catches the ``GLib.Error``.
+            """
+            try:
+                return await coro
+            except GLib.Error as e:
+                from loguru import logger
+
+                logger.warning(f"GLib.Error: {e}")
+
+        @classmethod
+        def create_task(cls, coro: Coroutine):
+            """
+            Creates an async task and catches the ``GLib.Error``.
+            """
+
+            asyncio.create_task(cls.try_async(coro))
+
         def __on_changed(self, *_):
             if self.__item:
                 self.__icon.image = self.__item.icon or ""
                 self.set_tooltip_text(self.__item.tooltip)
 
-        def __on_clicked(self, _):
+        def __on_clicked(self):
             if self.__item:
-                asyncio.create_task(self.__item.activate_async())
+                self.create_task(self.__item.activate_async())
 
-        def __on_middlet_clicked(self, _):
+        def __on_middlet_clicked(self):
             if self.__item:
-                asyncio.create_task(self.__item.secondary_activate_async())
+                self.create_task(self.__item.secondary_activate_async())
 
-        def __on_scroll(self, _, dx: float, dy: float):
+        def __on_scroll(self, dx: float, dy: float):
             if not self.__item:
                 return
 
@@ -71,7 +97,7 @@ class Tray(Gtk.FlowBox):
             elif dy != 0:
                 self.__item.scroll(int(dy), orientation="vertical")
 
-        def __on_right_clicked(self, _):
+        def __on_right_clicked(self):
             if self.__menu:
                 self.__menu.popup()
 
