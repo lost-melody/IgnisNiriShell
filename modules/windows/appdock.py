@@ -599,6 +599,7 @@ class AppDock(Window):
             connect_option(self.__options, "exclusive", self.__on_exclusive_changed)
             connect_option(self.__options, "focusable", self.__on_focusable_changed)
             self.__on_exclusive_changed()
+            self.__on_focusable_changed()
 
     def __on_exclusive_changed(self, *_):
         if not self.__options:
