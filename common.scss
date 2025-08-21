@@ -129,3 +129,20 @@ $variants: view, card, accent, destructive, success, warning, error;
 .rounded {
   border-radius: var(--window-radius);
 }
+
+@keyframes animation-pop {
+  0% {
+    transform: scale(1.0);
+  }
+  80% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1.1);
+  }
+}
+
+.animation-pop {
+  transform: scale(1.1);
+  animation: animation-pop 0.3s ease both;
+}

@@ -20,15 +20,20 @@ template $IgnisAppDockView: Box {
                     click-command: "ignis toggle-window ignis-applauncher";
 
                     child: Image {
+                        styles [
+                            "appdock-item-icon",
+                            "hover",
+                            "p-1",
+                            "rounded",
+                            "transition",
+                        ]
+
                         icon-name: "view-app-grid-symbolic";
                         pixel-size: 48;
                     };
 
                     styles [
-                        "hover",
                         "m-1",
-                        "p-1",
-                        "rounded",
                         "unset",
                     ]
                 }

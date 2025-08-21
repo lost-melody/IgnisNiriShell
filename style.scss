@@ -45,6 +45,15 @@
   outline-offset: 0px;
 }
 
+.appdock-item-icon {
+  margin: 0 -0.2em 0;
+
+  &:hover {
+    margin: 0 0.2em 0;
+    @extend .animation-pop;
+  }
+}
+
 .osd-caption-scroll {
   > .overlay-indicator slider {
     opacity: 0;
