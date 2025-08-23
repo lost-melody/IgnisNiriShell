@@ -50,7 +50,10 @@
 
   &:hover {
     margin: 0 0.2em 0;
-    @extend .animation-pop;
+
+    &:not(:active) {
+      @extend .animation-pop;
+    }
   }
 }
 
