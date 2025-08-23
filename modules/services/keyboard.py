@@ -8,8 +8,11 @@ from ignis.utils import thread
 from loguru import logger
 
 try:
+    import libevdev
+
+    del libevdev
     libevdev_available = True
-except:
+except ModuleNotFoundError:
     libevdev_available = False
 
 
@@ -65,7 +68,7 @@ class KeyboardLedsService(BaseService):
                 device = libevdev.Device(fd)
                 if self.__device_support_leds(device):
                     thread(target=lambda d=device: self.__listen_to_events(d))
-            except:
+            except Exception:
                 logger.warning("User should be a member of the `input` group to display capslock state in OSD")
                 break
 
@@ -94,7 +97,7 @@ class KeyboardLedsService(BaseService):
                         continue
 
                     GLib.idle_add(lambda c=event.code, s=event.value: self.__on_led_changed(c, s))
-        except:
+        except Exception:
             pass
 
     def __on_led_changed(self, code: Any, state: Any):
