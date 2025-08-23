@@ -10,7 +10,7 @@ class CommandPill(Gtk.Button):
         self._click_cmd: str = ""
         super().__init__()
 
-        self.connect("clicked", self.__on_clicked)
+        self.connect("clicked", self.__class__.__on_clicked)
 
     def __on_clicked(self, *_):
         if self._click_cmd != "":

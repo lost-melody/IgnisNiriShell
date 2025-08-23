@@ -3,7 +3,7 @@ from ignis.widgets import Box, Revealer
 from ignis.window_manager import WindowManager
 
 from ..constants import WindowName
-from ..utils import set_on_click
+from ..utils import WeakMethod, set_on_click, weak_connect_method
 from ..widgets import RevealerWindow
 
 wm = WindowManager.get_default()
@@ -64,9 +64,9 @@ class OverlayBackdrop(RevealerWindow):
         overlay_window.connect("notify::value", self.__on_overlay_window_changed)
         set_on_click(
             self.__view,
-            left=self.__on_backdrop_clicked,
-            middle=self.__on_backdrop_clicked,
-            right=self.__on_backdrop_clicked,
+            left=WeakMethod(self.__on_backdrop_clicked),
+            middle=WeakMethod(self.__on_backdrop_clicked),
+            right=WeakMethod(self.__on_backdrop_clicked),
         )
 
     def __on_overlay_window_changed(self, *_):

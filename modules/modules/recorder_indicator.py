@@ -14,9 +14,7 @@ class RecorderIndicator(Box):
         self.__icon = Icon()
         super().__init__(css_classes=["hover", "px-1", "rounded", "warning"], child=[self.__icon])
 
-        self.__service.connect("notify::active", self.__on_status_changed)
-        self.__service.connect("notify::is-paused", self.__on_status_changed)
-        set_on_click(self, left=self.__on_clicked, right=self.__on_right_clicked)
+        set_on_click(self, left=self.__class__.__on_clicked, right=self.__class__.__on_right_clicked)
         self.__on_status_changed()
 
     def __on_status_changed(self, *_):

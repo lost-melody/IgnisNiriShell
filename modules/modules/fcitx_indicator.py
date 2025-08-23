@@ -27,7 +27,7 @@ class FcitxIndicator(Box):
         self.__fcitx.kimpanel.connect("notify::fcitx-im", self.__on_fcitx_state_changed)
         self.__fcitx.kimpanel.connect("exec-menu", self.__on_fcitx_exec_menu)
 
-        set_on_click(self, left=self.__on_clicked, right=self.__on_right_clicked)
+        set_on_click(self, left=self.__class__.__on_clicked, right=self.__class__.__on_right_clicked)
 
     def __on_fcitx_enabled(self, *_):
         self.set_visible(self.__fcitx.kimpanel.enabled)

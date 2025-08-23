@@ -21,7 +21,7 @@ class DndIndicator(Box):
 
         if self.__options:
             connect_option(self.__options, "dnd", self.__on_changed)
-            set_on_click(self, left=self.__on_clicked, right=self.__on_right_clicked)
+            set_on_click(self, left=self.__class__.__on_clicked, right=self.__class__.__on_right_clicked)
         self.__on_changed()
 
     def __on_changed(self, *_):

@@ -22,7 +22,7 @@ class Workspaces(Box):
             self.icon = Gtk.Image(icon_name="pager-checked-symbolic")
             self.append(self.icon)
 
-            set_on_click(self, left=self.__on_clicked)
+            set_on_click(self, left=self.__class__.__on_clicked)
             if self.__niri.is_available:
                 self.__niri.connect("notify::active-workspace", self.__on_changed)
             if self.__hypr.is_available:
@@ -81,8 +81,8 @@ class Workspaces(Box):
         super().__init__(css_classes=["hover", "rounded", "p-2"])
 
         self.__pool = Pool(self.WorkspaceItem)
-        self.connect("realize", self.__on_realize)
-        set_on_scroll(self, self.__on_scroll)
+        self.connect("realize", self.__class__.__on_realize)
+        set_on_scroll(self, self.__class__.__on_scroll)
 
         if self.__niri.is_available:
             self.__niri.connect("notify::workspaces", self.__on_change)
@@ -98,7 +98,7 @@ class Workspaces(Box):
             item.hypr_ws = hypr_ws
         return item
 
-    def __on_realize(self, _):
+    def __on_realize(self):
         monitor = get_widget_monitor(self)
         if monitor:
             self.__connector = monitor.get_connector()
@@ -116,7 +116,7 @@ class Workspaces(Box):
                 self.__new_item(hypr_ws=ws) for ws in self.__hypr.workspaces if ws.monitor == self.__connector
             ]
 
-    def __on_scroll(self, _, dx: float, dy: float):
+    def __on_scroll(self, dx: float, dy: float):
         if self.__niri.is_available:
             niri_action(f"FocusWorkspace{'Up' if dx + dy < 0 else 'Down'}")
         if self.__hypr.is_available:

@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Any, Callable
 
 from gi.repository import Gio, Gtk
 from ignis.services.hyprland import HyprlandService
@@ -83,14 +83,15 @@ class Batteries(Gtk.Box):
         self.__add_action("logout", self.__logout_session)
 
         set_on_click(
-            self, left=lambda _: self.popover.popup(), right=lambda _: wm.toggle_window(WindowName.control_center.value)
+            self, left=lambda s: s.popover.popup(), right=lambda _: wm.toggle_window(WindowName.control_center.value)
         )
 
         self.__service.connect("battery_added", self.__on_battery_added)
         self.__service.connect("notify::batteries", self.__on_change)
         self.__on_change()
 
-    def __logout_session(self):
+    @classmethod
+    def __logout_session(cls):
         niri = NiriService.get_default()
         if niri.is_available:
             niri_action("Quit", {"skip_confirmation": True})
@@ -99,7 +100,7 @@ class Batteries(Gtk.Box):
         if hypr.is_available:
             run_cmd_async("hyprctl dispatch exit")
 
-    def __add_action(self, name: str, callback: Callable):
+    def __add_action(self, name: str, callback: Callable[[], Any]):
         def do_action(*_):
             callback()
 

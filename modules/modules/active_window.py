@@ -31,11 +31,11 @@ class ActiveWindow(Gtk.CenterBox):
 
         set_on_click(
             self,
-            left=lambda _: self.__on_click("LEFT"),
-            right=lambda _: self.__on_click("RIGHT"),
-            middle=lambda _: self.__on_click("MIDDLE"),
+            left=lambda s: s.__on_click("LEFT"),
+            right=lambda s: s.__on_click("RIGHT"),
+            middle=lambda s: s.__on_click("MIDDLE"),
         )
-        set_on_scroll(self, self.__on_scroll)
+        set_on_scroll(self, self.__class__.__on_scroll)
 
         if self.__niri.is_available:
             self.__niri.connect("notify::active-window", self.__on_change)
@@ -92,7 +92,7 @@ class ActiveWindow(Gtk.CenterBox):
             if cmd != "":
                 run_cmd_async(cmd)
 
-    def __on_scroll(self, _, dx: float, dy: float):
+    def __on_scroll(self, dx: float, dy: float):
         if self.__options:
             cmd: str = ""
             if dx < 0:

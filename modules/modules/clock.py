@@ -22,7 +22,7 @@ class Clock(Gtk.Box):
     def __init__(self):
         super().__init__()
 
-        set_on_click(self, left=self.__on_clicked, right=self.__on_right_clicked)
+        set_on_click(self, left=self.__class__.__on_clicked, right=self.__class__.__on_right_clicked)
 
         Poll(timeout=1000, callback=self.__on_change)
 

@@ -109,11 +109,7 @@ class Preferences(AdwRegularWindow):
             bind_option(user_options.appdock, "conceal_delay", self.dock_conceal_delay, "value")
             # show this option only when `auto_conceal` is enabled
             self.dock_in_overview.set_visible(user_options.appdock.auto_conceal)
-            connect_option(
-                user_options.appdock,
-                "auto_conceal",
-                lambda *_: self.dock_in_overview.set_visible(user_options.appdock.auto_conceal),
-            )
+            bind_option(user_options.appdock, "auto_conceal", self.dock_in_overview, "visible")
 
             # fcitx kimpanel
             bind_option(user_options.fcitx_kimpanel, "enabled", self.fcitx_kimpanel_enabled, "active")

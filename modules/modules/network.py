@@ -19,7 +19,7 @@ class Network(Box):
             super().__init__(css_classes=["px-1"], child=[Icon(image=ethernet.bind("icon_name"))])
             ethernet.connect("notify::is-connected", self.__on_change)
             self.__on_change()
-            set_on_click(self, left=self.__on_clicked, right=self.__on_clicked)
+            set_on_click(self, left=self.__class__.__on_clicked, right=self.__class__.__on_clicked)
 
         def __on_change(self, *_):
             connected = self.__ethernet.is_connected
@@ -38,7 +38,9 @@ class Network(Box):
             wifi.connect("notify::is-connected", self.__on_change)
             self.__on_change()
             set_on_click(
-                self, left=self.__on_clicked, right=lambda _: wm.toggle_window(WindowName.control_center.value)
+                self,
+                left=self.__class__.__on_clicked,
+                right=lambda _: wm.toggle_window(WindowName.control_center.value),
             )
 
         def __on_change(self, *_):
