@@ -70,6 +70,7 @@ class AudioControlGroup(Gtk.Box):
             set_on_click(self.icon, WeakMethod(self.__on_mute_clicked))
             set_on_click(self, self.__class__.__on_clicked)
 
+            self.signal(stream, "removed", self.__on_removed)
             self.signal(stream, "notify::name", self.__on_stream_changed)
             self.signal(stream, "notify::icon-name", self.__on_stream_changed)
             self.signal(stream, "notify::is_default", self.__on_default_changed)
@@ -88,6 +89,15 @@ class AudioControlGroup(Gtk.Box):
             self.clear_specs()
             self.dispose_template(self.__class__)
             super().do_dispose()  # type: ignore
+
+        @property
+        def stream(self) -> Stream:
+            return self._stream
+
+        def __on_removed(self, *_):
+            widget = self.get_ancestor(AudioControlGroup)
+            if isinstance(widget, AudioControlGroup):
+                widget.on_stream_removed(self.stream)
 
         def __on_stream_changed(self, *_):
             icon = self._stream.icon_name
@@ -164,15 +174,13 @@ class AudioControlGroup(Gtk.Box):
     def __on_stream_added(self, _, stream: Stream):
         self._streams.append(self.AudioControlStream(stream, self._stream_type))
 
-        def on_removed(stream: Stream):
-            found, pos = self._streams.find_with_equal_func(stream, lambda item, stream: item.stream == stream)
-            if found:
-                item = self._streams.get_item(pos)
-                self._streams.remove(pos)
-                if isinstance(item, self.AudioControlStream):
-                    item.run_dispose()
-
-        stream.connect("removed", on_removed)
+    def on_stream_removed(self, stream: Stream):
+        found, pos = self._streams.find_with_equal_func(stream, lambda item, stream: item.stream == stream)
+        if found:
+            item = self._streams.get_item(pos)
+            self._streams.remove(pos)
+            if isinstance(item, self.AudioControlStream):
+                GLib.idle_add(lambda *_: item.run_dispose())
 
     def __on_mute_clicked(self, *_):
         if self._default is None:
