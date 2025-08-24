@@ -8,21 +8,6 @@ from ignis.utils import exec_sh_async
 from ..constants import CONFIG_DIR
 
 
-class Pool[T]:
-    def __init__(self, provider: Callable[[], T]):
-        self.__pool: list[T] = []
-        self.__provider = provider
-
-    def acquire(self) -> T:
-        if len(self.__pool) == 0:
-            return self.__provider()
-        else:
-            return self.__pool.pop()
-
-    def release(self, value: T):
-        self.__pool.append(value)
-
-
 def b64enc(input: str) -> str:
     return base64.b64encode(input.encode()).decode().rstrip("=")
 

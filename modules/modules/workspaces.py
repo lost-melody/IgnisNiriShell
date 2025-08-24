@@ -1,15 +1,14 @@
 from gi.repository import Gtk
 from ignis.services.hyprland import HyprlandService, HyprlandWorkspace
 from ignis.services.niri import NiriService, NiriWorkspace
-from ignis.widgets import Box
 
-from ..utils import Pool, get_widget_monitor, niri_action, set_on_click, set_on_scroll
+from ..utils import SpecsBase, get_widget_monitor, niri_action, set_on_click, set_on_scroll
 
 
-class Workspaces(Box):
+class Workspaces(Gtk.Box):
     __gtype_name__ = "NiriWorkspaces"
 
-    class WorkspaceItem(Gtk.Box):
+    class WorkspaceItem(Gtk.Box, SpecsBase):
         __gtype_name__ = "WorkspaceItem"
 
         def __init__(self):
@@ -18,15 +17,20 @@ class Workspaces(Box):
             self.__niri_ws: NiriWorkspace | None = None
             self.__hypr_ws: HyprlandWorkspace | None = None
             super().__init__()
+            SpecsBase.__init__(self)
 
-            self.icon = Gtk.Image(icon_name="pager-checked-symbolic")
-            self.append(self.icon)
+            self.__icon = Gtk.Image(icon_name="pager-checked-symbolic")
+            self.append(self.__icon)
 
             set_on_click(self, left=self.__class__.__on_clicked)
             if self.__niri.is_available:
-                self.__niri.connect("notify::active-workspace", self.__on_changed)
+                self.signal(self.__niri, "notify::active-workspace", self.__on_changed)
             if self.__hypr.is_available:
-                self.__hypr.connect("notify::active-workspace", self.__on_changed)
+                self.signal(self.__hypr, "notify::active-workspace", self.__on_changed)
+
+        def do_dispose(self):
+            self.clear_specs()
+            super().do_dispose()  # type: ignore
 
         @property
         def is_active(self) -> bool:
@@ -78,9 +82,9 @@ class Workspaces(Box):
         self.__niri = NiriService.get_default()
         self.__hypr = HyprlandService.get_default()
         self.__connector: str | None = None
+        self.__childs: list[Workspaces.WorkspaceItem] = []
         super().__init__(css_classes=["hover", "rounded", "p-2"])
 
-        self.__pool = Pool(self.WorkspaceItem)
         self.connect("realize", self.__class__.__on_realize)
         set_on_scroll(self, self.__class__.__on_scroll)
 
@@ -91,7 +95,7 @@ class Workspaces(Box):
             self.__hypr.connect("notify::workspaces", self.__on_change)
 
     def __new_item(self, niri_ws: NiriWorkspace | None = None, hypr_ws: HyprlandWorkspace | None = None):
-        item = self.__pool.acquire()
+        item = self.WorkspaceItem()
         if niri_ws:
             item.niri_ws = niri_ws
         if hypr_ws:
@@ -104,17 +108,21 @@ class Workspaces(Box):
             self.__connector = monitor.get_connector()
 
     def __on_change(self, *_):
-        children = self.child
-        self.child = []
-        for item in children:
-            if isinstance(item, Workspaces.WorkspaceItem):
-                self.__pool.release(item)
+        for item in self.__childs:
+            self.remove(item)
+            item.run_dispose()
+        self.__childs = []
+
         if self.__niri.is_available:
-            self.child = [self.__new_item(niri_ws=ws) for ws in self.__niri.workspaces if ws.output == self.__connector]
+            self.__childs = [
+                self.__new_item(niri_ws=ws) for ws in self.__niri.workspaces if ws.output == self.__connector
+            ]
         if self.__hypr.is_available:
-            self.child = [
+            self.__childs = [
                 self.__new_item(hypr_ws=ws) for ws in self.__hypr.workspaces if ws.monitor == self.__connector
             ]
+        for item in self.__childs:
+            self.append(item)
 
     def __on_scroll(self, dx: float, dy: float):
         if self.__niri.is_available:

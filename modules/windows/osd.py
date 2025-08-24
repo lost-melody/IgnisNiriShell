@@ -7,7 +7,7 @@ from ignis.utils import Timeout
 from ..constants import WindowName
 from ..services import FcitxStateService, KeyboardLedsService
 from ..useroptions import user_options
-from ..utils import gtk_template, gtk_template_child
+from ..utils import SpecsBase, gtk_template, gtk_template_child
 from ..widgets import RevealerWindow
 
 
@@ -15,7 +15,7 @@ class OnscreenDisplay(RevealerWindow):
     __gtype_name__ = "OnscreenDisplay"
 
     @gtk_template("osd")
-    class View(Gtk.Box):
+    class View(Gtk.Box, SpecsBase):
         __gtype_name__ = "OnscreenDisplayView"
 
         page_indicator = "indicator"
@@ -40,6 +40,7 @@ class OnscreenDisplay(RevealerWindow):
             self.__leds = KeyboardLedsService.get_default()
             self.__niri = NiriService.get_default()
             super().__init__()
+            SpecsBase.__init__(self)
 
             self.__options = user_options and user_options.osd
             self.__scroll_adjust = self.scroll.get_hadjustment()
@@ -58,7 +59,6 @@ class OnscreenDisplay(RevealerWindow):
                 stream.connect("notify::volume", self.__on_stream_changed)
                 stream.connect("notify::is-muted", self.__on_stream_changed)
 
-            self.__backlight_ids: list[tuple[BacklightDevice, int]] = []
             self.__backlight.connect("notify::devices", self.__on_backlight_devices_changed)
             self.__on_backlight_devices_changed()
 
@@ -166,14 +166,11 @@ class OnscreenDisplay(RevealerWindow):
             )
 
         def __on_backlight_devices_changed(self, *_):
-            for device, id in self.__backlight_ids:
-                device.disconnect(id)
-            self.__backlight_ids.clear()
+            self.clear_specs()
 
             devices = self.__backlight.devices
             for device in devices:
-                id = device.connect("notify::brightness", self.__on_backlight_changed)
-                self.__backlight_ids.append((device, id))
+                self.signal(device, "notify::brightness", self.__on_backlight_changed)
 
     def __init__(self):
         self.__view = self.View()

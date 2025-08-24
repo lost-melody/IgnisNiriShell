@@ -6,14 +6,7 @@ from ignis.widgets import Box
 from ignis.window_manager import WindowManager
 
 from ..constants import WindowName
-from ..utils import (
-    clear_dir,
-    format_time_duration,
-    gtk_template,
-    gtk_template_callback,
-    gtk_template_child,
-    set_on_click,
-)
+from ..utils import SpecsBase, clear_dir, format_time_duration, gtk_template, gtk_template_child, set_on_click
 
 wm = WindowManager.get_default()
 
@@ -25,7 +18,7 @@ class Mpris(Box):
     clear_dir(ART_URL_CACHE_DIR)
 
     @gtk_template("modules/mpris-item")
-    class MprisItem(Gtk.Box):
+    class MprisItem(Gtk.Box, SpecsBase):
         __gtype_name__ = "MprisItem"
 
         avatar: Gtk.Image = gtk_template_child()
@@ -39,18 +32,25 @@ class Mpris(Box):
         def __init__(self, player: MprisPlayer):
             self.__player = player
             super().__init__()
+            SpecsBase.__init__(self)
 
             self.previous.set_sensitive(player.can_go_previous)
             self.next.set_sensitive(player.can_go_next)
             self.pause.set_sensitive(player.can_pause and player.can_play)
 
+            self.signal(self.previous, "clicked", self.__on_previous_clicked)
+            self.signal(self.next, "clicked", self.__on_next_clicked)
+            self.signal(self.pause, "clicked", self.__on_pause_clicked)
+            self.signal(player, "closed", self.__on_closed)
+
             flags = GObject.BindingFlags.SYNC_CREATE
-            player.bind_property("art-url", self.avatar, "file", flags, transform_to=lambda _, s: s)
-            player.bind_property("title", self.title, "text", flags, transform_to=lambda _, s: s or "Unknown Title")
-            player.bind_property("title", self.title, "tooltip-text", flags, transform_to=lambda _, s: s)
-            player.bind_property("artist", self.artist, "text", flags, transform_to=lambda _, s: s or "Unknown Artist")
-            player.bind_property("artist", self.artist, "tooltip-text", flags, transform_to=lambda _, s: s)
-            player.bind_property(
+            self.bind(player, "art-url", self.avatar, "file", flags, transform_to=lambda _, s: s)
+            self.bind(player, "title", self.title, "text", flags, transform_to=lambda _, s: s or "Unknown Title")
+            self.bind(player, "title", self.title, "tooltip-text", flags, transform_to=lambda _, s: s)
+            self.bind(player, "artist", self.artist, "text", flags, transform_to=lambda _, s: s or "Unknown Artist")
+            self.bind(player, "artist", self.artist, "tooltip-text", flags, transform_to=lambda _, s: s)
+            self.bind(
+                player,
                 "playback-status",
                 self.pause,
                 "icon-name",
@@ -59,14 +59,16 @@ class Mpris(Box):
                     "media-playback-pause-symbolic" if s == "Playing" else "media-playback-start-symbolic"
                 ),
             )
-            player.bind_property(
+            self.bind(
+                player,
                 "position",
                 self.progress,
                 "fraction",
                 flags,
                 transform_to=lambda _, p: p / player.length if player.length > 0 else 0,
             )
-            player.bind_property(
+            self.bind(
+                player,
                 "position",
                 self.progress,
                 "tooltip-text",
@@ -77,25 +79,27 @@ class Mpris(Box):
                     else "--:--"
                 ),
             )
-            player.connect("closed", self.__on_closed)
 
             set_on_click(self, right=lambda _: wm.toggle_window(WindowName.control_center.value))
 
+        def do_dispose(self):
+            self.clear_specs()
+            self.dispose_template(self.__class__)
+            super().do_dispose()  # type: ignore
+
         def __on_closed(self, *_):
             self.unparent()
+            self.run_dispose()
 
-        @gtk_template_callback
-        def on_pause_clicked(self, *_):
+        def __on_pause_clicked(self, *_):
             if self.__player.can_play and self.__player.can_pause:
                 asyncio.create_task(self.__player.play_pause_async())
 
-        @gtk_template_callback
-        def on_previous_clicked(self, *_):
+        def __on_previous_clicked(self, *_):
             if self.__player.can_go_previous:
                 asyncio.create_task(self.__player.previous_async())
 
-        @gtk_template_callback
-        def on_next_clicked(self, *_):
+        def __on_next_clicked(self, *_):
             if self.__player.can_go_next:
                 asyncio.create_task(self.__player.next_async())
 

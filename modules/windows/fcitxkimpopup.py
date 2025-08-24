@@ -5,7 +5,7 @@ from ignis.widgets import Window
 from ..constants import WindowName
 from ..services import FcitxStateService
 from ..useroptions import user_options
-from ..utils import Pool, connect_option, gtk_template, gtk_template_child
+from ..utils import connect_option, gtk_template, gtk_template_child
 
 
 class FcitxKimPopup(Window):
@@ -25,6 +25,10 @@ class FcitxKimPopup(Window):
 
             def __init__(self):
                 super().__init__()
+
+            def do_dispose(self):
+                self.dispose_template(self.__class__)
+                super().do_dispose()  # type: ignore
 
             @IgnisProperty
             def label(self) -> str:
@@ -49,7 +53,6 @@ class FcitxKimPopup(Window):
             super().__init__()
 
             self.__childs: list[FcitxKimPopup.View.Candidate] = []
-            self.__pool = Pool(self.Candidate)
 
             self.__options = user_options and user_options.fcitx_kimpanel
             if self.__options:
@@ -75,12 +78,12 @@ class FcitxKimPopup(Window):
         def __on_lookup_changed(self, *_):
             for c in self.__childs:
                 self.candidates.remove(c)
-                self.__pool.release(c)
+                c.run_dispose()
             self.__childs.clear()
 
             lookup = self.__fcitx.kimpanel.lookup
             for idx, cand in enumerate(lookup.label):
-                candidate = self.__pool.acquire()
+                candidate = self.Candidate()
                 candidate.label = cand
                 candidate.text = lookup.text[idx]
                 self.candidates.append(candidate)

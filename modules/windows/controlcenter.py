@@ -19,7 +19,8 @@ from ignis.window_manager import WindowManager
 from ..constants import AudioStreamType, WindowName
 from ..useroptions import user_options
 from ..utils import (
-    Pool,
+    SpecsBase,
+    WeakMethod,
     clear_dir,
     connect_option,
     connect_window,
@@ -53,72 +54,43 @@ class AudioControlGroup(Gtk.Box):
     list_box: Gtk.ListBox = gtk_template_child()
 
     @gtk_template("controlcenter/audio-stream")
-    class AudioControlStream(Gtk.ListBoxRow):
+    class AudioControlStream(Gtk.ListBoxRow, SpecsBase):
         __gtype_name__ = "AudioControlStream"
 
         icon: Gtk.Image = gtk_template_child()
         inscription: Gtk.Inscription = gtk_template_child()
 
-        def __init__(self):
+        def __init__(self, stream: Stream, stream_type: AudioStreamType):
             self.__service = AudioService.get_default()
-            self._stream: Stream | None = None
-            self._default: Stream | None = None
-            self._stream_type: AudioStreamType | None = None
-            super().__init__()
-
-            self.__stream_signals: list[tuple[Stream, int]] = []
-            self.__default_stream_signals: list[tuple[Stream, int]] = []
-
-            set_on_click(self.icon, self.__on_mute_clicked)
-            set_on_click(self, self.__on_clicked)
-
-            self.__on_stream_changed()
-            self.__on_default_changed()
-
-        @property
-        def stream(self) -> Stream | None:
-            return self._stream
-
-        @stream.setter
-        def stream(self, stream: Stream):
-            for stream, id in self.__stream_signals:
-                stream.disconnect(id)
-            self.__stream_signals.clear()
-
             self._stream = stream
-            id = stream.connect("notify::name", self.__on_stream_changed)
-            self.__stream_signals.append((stream, id))
-            id = stream.connect("notify::icon-name", self.__on_stream_changed)
-            self.__stream_signals.append((stream, id))
-            id = stream.connect("notify::is_default", self.__on_default_changed)
-            self.__stream_signals.append((stream, id))
+            self._stream_type = stream_type
+            self._default: Stream | None = None
+            super().__init__()
+            SpecsBase.__init__(self)
+
+            set_on_click(self.icon, WeakMethod(self.__on_mute_clicked))
+            set_on_click(self, self.__class__.__on_clicked)
+
+            self.signal(stream, "notify::name", self.__on_stream_changed)
+            self.signal(stream, "notify::icon-name", self.__on_stream_changed)
+            self.signal(stream, "notify::is_default", self.__on_default_changed)
             self.__on_stream_changed()
 
-        @property
-        def stream_type(self) -> AudioStreamType | None:
-            return self._stream_type
-
-        @stream_type.setter
-        def stream_type(self, stream_type: AudioStreamType):
-            for stream, id in self.__default_stream_signals:
-                stream.disconnect(id)
-            self.__default_stream_signals.clear()
-
-            self._stream_type = stream_type
             match stream_type:
                 case AudioStreamType.speaker:
                     self._default = self.__service.speaker
                 case AudioStreamType.microphone:
                     self._default = self.__service.microphone
             if self._default:
-                id = self._default.connect("notify::id", self.__on_default_changed)
-                self.__default_stream_signals.append((self._default, id))
+                self.signal(self._default, "notify::id", self.__on_default_changed)
             self.__on_default_changed()
 
-        def __on_stream_changed(self, *_):
-            if not self._stream:
-                return
+        def do_dispose(self):
+            self.clear_specs()
+            self.dispose_template(self.__class__)
+            super().do_dispose()  # type: ignore
 
+        def __on_stream_changed(self, *_):
             icon = self._stream.icon_name
             description = self._stream.description
             self.icon.set_from_icon_name(icon)
@@ -126,7 +98,7 @@ class AudioControlGroup(Gtk.Box):
             self.inscription.set_tooltip_text(description)
 
         def __on_default_changed(self, *_):
-            if not self._stream or not self._default:
+            if not self._default:
                 return
             if self._stream.id == self._default.id:
                 self.icon.add_css_class("accent")
@@ -134,13 +106,9 @@ class AudioControlGroup(Gtk.Box):
                 self.icon.remove_css_class("accent")
 
         def __on_mute_clicked(self, *_):
-            if not self._stream:
-                return
             self._stream.is_muted = not self._stream.is_muted
 
-        def __on_clicked(self, *_):
-            if not self._stream:
-                return
+        def __on_clicked(self):
             match self._stream_type:
                 case AudioStreamType.speaker:
                     self.__service.speaker = self._stream
@@ -154,7 +122,6 @@ class AudioControlGroup(Gtk.Box):
         self._streams = Gio.ListStore()
 
         super().__init__()
-        self.__pool = Pool(self.AudioControlStream)
         self.list_box.bind_model(model=self._streams, create_widget_func=lambda item: item)
 
         set_on_click(self.icon, left=self.__on_mute_clicked)
@@ -174,12 +141,6 @@ class AudioControlGroup(Gtk.Box):
             self._default.connect("notify::icon-name", self.__on_volume_changed)
             self._default.connect("notify::volume", self.__on_volume_changed)
             self.__on_volume_changed()
-
-    def __new_stream(self, stream: Stream, stream_type: AudioStreamType) -> AudioControlStream:
-        item = self.__pool.acquire()
-        item.stream = stream
-        item.stream_type = stream_type
-        return item
 
     def __on_window_visible_change(self, window: Window, _):
         if not window.get_visible():
@@ -202,7 +163,7 @@ class AudioControlGroup(Gtk.Box):
             self.scale.set_value(volume)
 
     def __on_stream_added(self, _, stream: Stream):
-        self._streams.append(self.__new_stream(stream, self._stream_type))
+        self._streams.append(self.AudioControlStream(stream, self._stream_type))
 
         def on_removed(stream: Stream):
             found, pos = self._streams.find_with_equal_func(stream, lambda item, stream: item.stream == stream)
@@ -210,7 +171,7 @@ class AudioControlGroup(Gtk.Box):
                 item = self._streams.get_item(pos)
                 self._streams.remove(pos)
                 if isinstance(item, self.AudioControlStream):
-                    self.__pool.release(item)
+                    item.run_dispose()
 
         stream.connect("removed", on_removed)
 
@@ -262,38 +223,32 @@ class BacklightControlGroup(Gtk.ListBox):
     __gtype_name__ = "BacklightControlGroup"
 
     @gtk_template("controlcenter/backlight-item")
-    class Item(Gtk.ListBoxRow):
+    class Item(Gtk.ListBoxRow, SpecsBase):
         __gtype_name__ = "BacklightControlItem"
 
         scale: Gtk.Scale = gtk_template_child()
         label: Gtk.Label = gtk_template_child()
 
-        def __init__(self):
-            self._device: BacklightDevice | None = None
+        def __init__(self, device: BacklightDevice):
+            self._device = device
             super().__init__()
+            SpecsBase.__init__(self)
 
-            self.__device_signals: list[tuple[BacklightDevice, int]] = []
+            adjustment = self.scale.get_adjustment()
+            adjustment.set_upper(math.ceil(device.max_brightness))
+            self.signal(self.scale, "value-changed", self.__on_scale_value_changed)
+            self.signal(device, "notify::brightness", self.__on_brightness_changed)
+
+        def do_dispose(self):
+            self.clear_specs()
+            self.dispose_template(self.__class__)
+            super().do_dispose()  # type: ignore
 
         @gproperty(type=BacklightDevice)
         def device(self) -> BacklightDevice | None:
             return self._device
 
-        @device.setter
-        def device(self, device: BacklightDevice | None):
-            for device, id in self.__device_signals:
-                device.disconnect(id)
-            self.__device_signals.clear()
-
-            self._device = device
-
-            if device:
-                adjustment = self.scale.get_adjustment()
-                adjustment.set_upper(math.ceil(device.max_brightness))
-                id = device.connect("notify::brightness", self.__on_brightness_changed)
-                self.__device_signals.append((device, id))
-
-        @gtk_template_callback
-        def on_scale_value_changed(self, *_):
+        def __on_scale_value_changed(self, *_):
             if not self._device:
                 return
 
@@ -316,22 +271,18 @@ class BacklightControlGroup(Gtk.ListBox):
         self.__list = Gio.ListStore()
         self.bind_model(self.__list, lambda i: i)
 
-        self.__pool = Pool(self.Item)
         self.__service.connect("notify::devices", self.__on_devices_changed)
         self.__on_devices_changed()
 
     def __on_devices_changed(self, *_):
-        devices = self.__service.devices
-
-        for item in self.__list:
-            item.device = None
-            self.__pool.release(item)
+        items = list(self.__list)
         self.__list.remove_all()
+        for item in items:
+            if isinstance(item, self.Item):
+                item.run_dispose()
 
-        for device in devices:
-            item = self.__pool.acquire()
-            item.device = device
-            self.__list.append(item)
+        for device in self.__service.devices:
+            self.__list.append(self.Item(device))
 
 
 @gtk_template("controlcenter/switchpill")
@@ -784,7 +735,7 @@ class BluetoothStatus(Gtk.Box):
 
 
 @gtk_template("controlcenter/notification-item")
-class NotificationItem(Gtk.ListBoxRow):
+class NotificationItem(Gtk.ListBoxRow, SpecsBase):
     __gtype_name__ = "NotificationItem"
 
     revealer: Gtk.Revealer = gtk_template_child()
@@ -793,36 +744,52 @@ class NotificationItem(Gtk.ListBoxRow):
     time: Gtk.Label = gtk_template_child()
     actions: Gtk.Box = gtk_template_child()
 
-    def __init__(self):
-        self._notification: Notification | None = None
+    def __init__(self, notification: Notification):
+        self._notification = notification
         self._is_popup = False
         super().__init__()
+        SpecsBase.__init__(self)
 
-        self.__pool = Pool(Gtk.Button)
-        self.__action_signals: list[tuple[Gtk.Button, int]] = []
-        self.revealer.connect("notify::child-revealed", self.__on_child_revealed)
-        self.connect("map", lambda *_: self.revealer.set_reveal_child(True))
-        set_on_click(self.action_row, left=self.__on_clicked, right=self.__on_right_clicked)
+        self.__update_notification()
+        self.signal(notification, "closed", self.__on_closed)
+        self.signal(notification, "dismissed", self.__on_dismissed)
+        self.signal(self.revealer, "notify::child-revealed", self.__on_child_revealed)
+        self.signal(self, "map", lambda *_: self.revealer.set_reveal_child(True))
+
+        set_on_click(self.action_row, left=WeakMethod(self.__on_clicked), right=WeakMethod(self.__on_right_clicked))
+
+    def do_dispose(self):
+        self.clear_specs()
+        self.dispose_template(self.__class__)
+        super().do_dispose()  # type: ignore
 
     @property
     def notify_id(self) -> int:
-        return self.notification.id if self.notification else 0
+        return self.notification.id
 
     @property
     def notify_ts(self) -> float:
-        return self.notification.time if self.notification else 0
+        return self.notification.time
 
     @property
-    def notification(self) -> Notification | None:
+    def notification(self) -> Notification:
         return self._notification
 
-    @notification.setter
-    def notification(self, notify: Notification):
-        for button, id in self.__action_signals:
-            button.disconnect(id)
-        self.__action_signals.clear()
+    @property
+    def is_popup(self) -> bool:
+        return self._is_popup
 
-        self._notification = notify
+    @is_popup.setter
+    def is_popup(self, is_popup: bool):
+        self._is_popup = is_popup
+        css_class = "notification-popup-item"
+        if is_popup:
+            self.add_css_class(css_class)
+        else:
+            self.remove_css_class(css_class)
+
+    def __update_notification(self):
+        notify = self.notification
         self.__update_urgency(notify)
 
         summary, body = notify.summary, notify.body
@@ -849,27 +816,13 @@ class NotificationItem(Gtk.ListBoxRow):
         children: list[Gtk.Button] = list(self.actions.observe_children())
         for child in children:
             self.actions.remove(child)
-            self.__pool.release(child)
+            child.run_dispose()
 
         for action in notify.actions:
-            button = self.__pool.acquire()
+            button = Gtk.Button()
             button.set_label(action.label)
-            id = button.connect("clicked", self.__on_action(action))
-            self.__action_signals.append((button, id))
+            self.signal(button, "clicked", self.__on_action(action))
             self.actions.append(button)
-
-    @property
-    def is_popup(self) -> bool:
-        return self._is_popup
-
-    @is_popup.setter
-    def is_popup(self, is_popup):
-        self._is_popup = is_popup
-        css_class = "notification-popup-item"
-        if is_popup:
-            self.add_css_class(css_class)
-        else:
-            self.remove_css_class(css_class)
 
     def __update_urgency(self, notify: Notification):
         urgency_dict = {0: "low", 1: "normal", 2: "critical"}
@@ -879,6 +832,30 @@ class NotificationItem(Gtk.ListBoxRow):
                 self.add_css_class(css_class)
             else:
                 self.remove_css_class(css_class)
+
+    def __on_closed(self, *_):
+        def callback(*_):
+            widget = self.get_ancestor(NotificationCenter)
+            if isinstance(widget, NotificationCenter):
+                widget.on_notify_closed(self.notification)
+
+        if self.revealer.get_reveal_child():
+            self.signal(self.revealer, "notify::child-revealed", callback)
+            self.revealer.set_reveal_child(False)
+        else:
+            callback()
+
+    def __on_dismissed(self, *_):
+        def callback(*_):
+            widget = self.get_ancestor(NotificationPopups)
+            if isinstance(widget, NotificationPopups):
+                widget.on_popup_dismissed(self.notification)
+
+        if self.revealer.get_reveal_child():
+            self.signal(self.revealer, "notify::child-revealed", callback)
+            self.revealer.set_reveal_child(False)
+        else:
+            callback()
 
     def __on_child_revealed(self, *_):
         if self.revealer.get_reveal_child():
@@ -895,8 +872,6 @@ class NotificationItem(Gtk.ListBoxRow):
 
     def __on_right_clicked(self, *_):
         if not self.revealer.get_reveal_child():
-            return
-        if not self.notification:
             return
 
         if self._is_popup:
@@ -926,7 +901,6 @@ class NotificationCenter(Gtk.Box):
         self._notifications = Gio.ListStore()
         self.list_box.bind_model(model=self._notifications, create_widget_func=lambda i: i)
 
-        self.__pool = Pool(NotificationItem)
         self._notifications.connect("notify::n-items", self.__on_store_changed)
         self.__service.connect("notified", self.__on_notified)
 
@@ -948,33 +922,17 @@ class NotificationCenter(Gtk.Box):
         )
 
     def __on_notified(self, _, notify: Notification):
-        item = self.__pool.acquire()
-        item.notification = notify
+        item = NotificationItem(notify)
         item.is_popup = False
         self._notifications.insert(0, item)
-        notify.connect("closed", self.__on_notify_closed)
 
-    def __on_notify_closed(self, notify: Notification):
+    def on_notify_closed(self, notify: Notification):
         found, pos = self.__find_notify(notify)
-        if not found:
-            return
-
-        item = self._notifications.get_item(pos)
-        if not isinstance(item, NotificationItem):
-            return
-
-        if not item.revealer.get_reveal_child():
+        if found:
+            item = self._notifications.get_item(pos)
             self._notifications.remove(pos)
-            return
-
-        def on_child_folded(*_):
-            found, pos = self.__find_notify(notify)
-            if found:
-                self._notifications.remove(pos)
-                self.__pool.release(item)
-
-        item.revealer.set_reveal_child(False)
-        item.revealer.connect("notify::child-revealed", on_child_folded)
+            if isinstance(item, NotificationItem):
+                GLib.idle_add(lambda *_: item.run_dispose())
 
     @gtk_template_callback
     def on_clear_all_clicked(self, *_):
@@ -1011,7 +969,6 @@ class NotificationPopups(RevealerWindow):
         self._popups = Gio.ListStore()
         self.__view.list_box.bind_model(model=self._popups, create_widget_func=lambda i: i)
 
-        self.__pool = Pool(NotificationItem)
         self._popups.connect("notify::n-items", self.__on_store_changed)
         self.__service.connect("new_popup", self.__on_new_popup)
 
@@ -1025,33 +982,17 @@ class NotificationPopups(RevealerWindow):
         return self._popups.find_with_equal_func(popup, lambda i, p: i.notify_id == p.id and i.notify_ts == p.time)
 
     def __on_new_popup(self, _, popup: Notification):
-        item = self.__pool.acquire()
-        item.notification = popup
+        item = NotificationItem(popup)
         item.is_popup = True
         self._popups.insert(0, item)
-        popup.connect("dismissed", self.__on_popup_dismissed)
 
-    def __on_popup_dismissed(self, popup: Notification):
+    def on_popup_dismissed(self, popup: Notification):
         found, pos = self.__find_popup(popup)
-        if not found:
-            return
-
-        item = self._popups.get_item(pos)
-        if not isinstance(item, NotificationItem):
-            return
-
-        if not item.revealer.get_reveal_child():
+        if found:
+            item = self._popups.get_item(pos)
             self._popups.remove(pos)
-            return
-
-        def on_child_folded(*_):
-            found, pos = self.__find_popup(popup)
-            if found:
-                self._popups.remove(pos)
-                self.__pool.release(item)
-
-        item.revealer.set_reveal_child(False)
-        item.revealer.connect("notify::child-revealed", on_child_folded)
+            if isinstance(item, NotificationItem):
+                GLib.idle_add(lambda *_: item.run_dispose())
 
 
 class ControlCenter(RevealerWindow):

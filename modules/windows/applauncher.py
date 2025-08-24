@@ -8,7 +8,7 @@ from ignis.widgets import Window
 from ..constants import WindowName
 from ..useroptions import user_options
 from ..utils import (
-    Pool,
+    SpecsBase,
     connect_option,
     connect_window,
     get_app_icon_name,
@@ -23,7 +23,7 @@ from .backdrop import overlay_window
 
 
 @gtk_template(filename="applauncher-item")
-class AppLauncherGridItem(Gtk.Box):
+class AppLauncherGridItem(Gtk.Box, SpecsBase):
     __gtype_name__ = "IgnisAppLauncherGridItem"
 
     pinned: Gtk.Image = gtk_template_child()
@@ -33,25 +33,16 @@ class AppLauncherGridItem(Gtk.Box):
 
     def __init__(self):
         super().__init__()
+        SpecsBase.__init__(self)
 
         self._app: Application | None = None
         self._menu = IgnisMenuModel()
-        self.__app_signals: list[tuple[Application, int]] = []
 
-        set_on_click(self, left=self.__on_left_click, right=self.__on_right_click)
-
-    def __on_left_click(self, *_):
-        self.__launch_app()
-
-    def __on_right_click(self, *_):
-        self.menu.popup()
+        set_on_click(self, left=lambda s: s.__launch_app(), right=lambda s: s.menu.popup())
 
     def __launch_app(self):
-        if not self.application:
-            return
-
         view = self.get_ancestor(AppLauncherView)
-        if isinstance(view, AppLauncherView):
+        if self.application and isinstance(view, AppLauncherView):
             view.launch_application(self.application)
             view.on_search_stop()
 
@@ -61,14 +52,7 @@ class AppLauncherGridItem(Gtk.Box):
         if isinstance(view, AppLauncherView):
             view.on_search_stop()
 
-    def __rebuild_menu(self):
-        self.menu.set_menu_model()
-        self._menu.clean_gmenu()
-
-        if not self.application:
-            return
-
-        app = self.application
+    def __build_menu(self, app: Application):
         items: ItemsType = []
         items.append(IgnisMenuItem("Launch", True, lambda _: self.__launch_app()))
         items.append(
@@ -87,19 +71,30 @@ class AppLauncherGridItem(Gtk.Box):
         self._menu.items = items
         self.menu.set_menu_model(self._menu.gmenu)
 
-    def __connect_app_signals(self):
-        for obj, id in self.__app_signals:
-            obj.disconnect(id)
-        self.__app_signals.clear()
+    def __connect_signals(self, app: Application):
+        self.signal(app, "notify::is-pinned", lambda *_: self.__build_menu(app))
+        self.signal(app, "notify::is-pinned", lambda *_: self.pinned.set_visible(app.is_pinned))
 
-        if not self.application:
-            return
+    def __clear(self):
+        """
+        Clears all menus, signals, bindings to ``Application``.
+        """
+        self.menu.set_menu_model()
+        self._menu.clean_gmenu()
+        self.clear_specs()
 
-        app = self.application
-        id = app.connect("notify::is-pinned", lambda *_: self.__rebuild_menu())
-        self.__app_signals.append((app, id))
-        id = app.connect("notify::is-pinned", lambda *_: self.pinned.set_visible(app.is_pinned))
-        self.__app_signals.append((app, id))
+    def __refresh(self, app: Application):
+        self.__build_menu(app)
+        self.__connect_signals(app)
+        self.pinned.set_visible(app.is_pinned)
+        self.icon.set_from_icon_name(get_app_icon_name(app_info=app))
+        self.label.set_text(app.name)
+        self.set_tooltip_text(app.description)
+
+    def do_dispose(self):
+        self.__clear()
+        self.dispose_template(self.__class__)
+        super().do_dispose()  # type: ignore
 
     @property
     def application(self) -> Application | None:
@@ -108,16 +103,9 @@ class AppLauncherGridItem(Gtk.Box):
     @application.setter
     def application(self, app: Application | None):
         self._app = app
-        self.__rebuild_menu()
-        self.__connect_app_signals()
-
-        if app is None:
-            return
-
-        self.pinned.set_visible(app.is_pinned)
-        self.icon.set_from_icon_name(get_app_icon_name(app_info=app))
-        self.label.set_text(app.name)
-        self.set_tooltip_text(app.description)
+        self.__clear()
+        if app:
+            self.__refresh(app)
 
 
 @gtk_template(filename="applauncher")
@@ -137,26 +125,30 @@ class AppLauncherView(Gtk.Box):
         def __init__(self):
             super().__init__()
 
-            self.__pool = Pool(AppLauncherGridItem)
-            # we don't connect to "setup" or "teardown" signals
-            # instead we acquire and release childs in "bind" and "unbind"
+            self.connect("setup", self.__class__.__item_setup)
             self.connect("bind", self.__class__.__item_bind)
             self.connect("unbind", self.__class__.__item_unbind)
+            self.connect("teardown", self.__class__.__item_teardown)
+
+        def __item_setup(self, item: Gtk.ListItem):
+            item.set_child(AppLauncherGridItem())
 
         def __item_bind(self, item: Gtk.ListItem):
-            self.__item_unbind(item)
-
-            grid_item = self.__pool.acquire()
             app = item.get_item()
-            if isinstance(app, Application):
+            grid_item = item.get_child()
+            if isinstance(app, Application) and isinstance(grid_item, AppLauncherGridItem):
                 grid_item.application = app
-                item.set_child(grid_item)
 
         def __item_unbind(self, item: Gtk.ListItem):
             grid_item = item.get_child()
             if isinstance(grid_item, AppLauncherGridItem):
                 grid_item.application = None
-                self.__pool.release(grid_item)
+
+        def __item_teardown(self, item: Gtk.ListItem):
+            grid_item = item.get_child()
+            item.set_child()
+            if isinstance(grid_item, AppLauncherGridItem):
+                grid_item.run_dispose()
 
     def __init__(self):
         self.__service = ApplicationsService.get_default()

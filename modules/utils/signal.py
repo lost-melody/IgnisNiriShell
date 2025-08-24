@@ -1,9 +1,12 @@
 import weakref
-from typing import Any, Callable
+from typing import Any, Callable, TypeAlias
 
 from gi.repository import GObject
 
 from .misc import is_instance_method, unpack_instance_method
+
+
+SpecType: TypeAlias = "SignalSpec | BindingSpec"
 
 
 class SignalSpec:
@@ -18,11 +21,78 @@ class SignalSpec:
     def __del__(self):
         self.disconnect()
 
+    @classmethod
+    def new(cls, gobject: GObject.Object, signal: str, callback: Callable, *args):
+        """
+        Connects to a signal and returns a ``SignalSpec``.
+        """
+        spec = gobject.connect(signal, callback, *args)
+        return cls(gobject, spec)
+
     def disconnect(self):
         if self.__gobject and self.__spec:
             self.__gobject.disconnect(self.__spec)
             self.__gobject = None
             self.__spec = None
+
+
+class BindingSpec:
+    def __init__(self, binding: GObject.Binding):
+        self.__binding = binding
+
+    def __del__(self):
+        self.unbind()
+
+    @classmethod
+    def new(
+        cls,
+        source: GObject.Object,
+        source_prop: str,
+        target: GObject.Object,
+        target_prop: str,
+        flags: GObject.BindingFlags = GObject.BindingFlags.DEFAULT,
+        transform_to: Callable | None = None,
+        transform_from: Callable | None = None,
+        user_data: Any = None,
+    ):
+        binding = source.bind_property(source_prop, target, target_prop, flags, transform_to, transform_from, user_data)
+        return cls(binding)
+
+    def unbind(self):
+        if self.__binding:
+            self.__binding.unbind()
+            self.__binding = None
+
+
+class SpecsBase:
+    def __init__(self):
+        self._specs: list[SpecType] = []
+
+    def __del__(self):
+        self.clear_specs()
+
+    def clear_specs(self):
+        self._specs.clear()
+
+    def bind(
+        self,
+        source: GObject.Object,
+        source_prop: str,
+        target: GObject.Object,
+        target_prop: str,
+        flags: GObject.BindingFlags = GObject.BindingFlags.DEFAULT,
+        transform_to: Callable | None = None,
+        transform_from: Callable | None = None,
+        user_data: Any = None,
+    ):
+        spec = BindingSpec.new(source, source_prop, target, target_prop, flags, transform_to, transform_from, user_data)
+        self._specs.append(spec)
+        return spec
+
+    def signal(self, gobject: GObject.Object, signal: str, callback: Callable, *args):
+        spec = SignalSpec.new(gobject, signal, callback, *args)
+        self._specs.append(spec)
+        return spec
 
 
 class WeakCallback:
@@ -31,8 +101,8 @@ class WeakCallback:
 
     Args:
         obj: A class instance.
-        func: A callback function, with ``obj`` and ``gobject`` as the first two arguments.
-        swap: Whether to swap positions of ``obj`` and ``gobject``.
+        func: A callback function, with ``gobject`` and ``obj`` as the first two arguments.
+        swap: Whether to swap positions of ``gobject`` and ``obj``.
         default_callback: Invoked when ``obj`` is lost.
 
     Example:
@@ -59,7 +129,7 @@ class WeakCallback:
         # If ``obj`` lost, disconnect from signal on invoked.
         obj = self.__obj()
         if obj:
-            if self.__swap:
+            if not self.__swap:
                 return self.__func(gobject, obj, *args)
             else:
                 return self.__func(obj, gobject, *args)
@@ -68,6 +138,10 @@ class WeakCallback:
             if self.__default:
                 return self.__default(gobject, *args)
 
+    @property
+    def spec(self) -> int | None:
+        return self.__spec
+
     def connect(self, gobject: GObject.Object, signal: str, *args: Any):
         """
         Connects to the signal ``signal`` of object ``gobject``,
@@ -75,6 +149,7 @@ class WeakCallback:
         """
         if not self.__spec and self.__obj():
             self.__spec = gobject.connect(signal, self, *args)
+            return self
         else:
             raise Exception("weak method already connected")
 
@@ -112,14 +187,6 @@ class WeakMethod(WeakCallback):
         super().__init__(obj, func, True)
 
 
-def connect_signal(gobject: GObject.Object, signal: str, callback: Callable, *args: Any):
-    """
-    Connects to a signal and returns a ``SignalSpec``.
-    """
-    spec = gobject.connect(signal, callback, *args)
-    return SignalSpec(gobject, spec)
-
-
 def weak_connect_callback(gobject: GObject.Object, signal: str, obj: Any, callback: Callable, *args: Any):
     """
     A wrapper to ``WeakCallback``.
@@ -131,9 +198,7 @@ def weak_connect_callback(gobject: GObject.Object, signal: str, obj: Any, callba
 
         weak_connect_callback(stream, "notify::change", self, lambda stream, self, *_: self.on_change())
     """
-    weak = WeakCallback(obj, callback)
-    weak.connect(gobject, signal, *args)
-    return weak
+    return WeakCallback(obj, callback).connect(gobject, signal, *args)
 
 
 def weak_connect_method(gobject: GObject.Object, signal: str, method: Callable, *args: Any):
@@ -147,9 +212,7 @@ def weak_connect_method(gobject: GObject.Object, signal: str, method: Callable, 
 
         weak_connect_method(stream, "notify::change", self.on_change)
     """
-    weak = WeakMethod(method)
-    weak.connect(gobject, signal, *args)
-    return weak
+    return WeakMethod(method).connect(gobject, signal, *args)
 
 
 def weak_connect(gobject: GObject.Object, signal: str, callback: Callable, *args):

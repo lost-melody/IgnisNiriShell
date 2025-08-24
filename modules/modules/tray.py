@@ -6,20 +6,21 @@ from ignis.dbus_menu import DBusMenu
 from ignis.services.system_tray import SystemTrayItem, SystemTrayService
 from ignis.widgets import Icon
 
-from ..utils import Pool, set_on_click, set_on_scroll
+from ..utils import SpecsBase, set_on_click, set_on_scroll
 
 
 class Tray(Gtk.FlowBox):
     __gtype_name__ = "IgnisTray"
 
-    class TrayItem(Gtk.FlowBoxChild):
+    class TrayItem(Gtk.FlowBoxChild, SpecsBase):
         __gtype_name__ = "IgnisTrayItem"
 
-        def __init__(self):
+        def __init__(self, item: SystemTrayItem):
             self.__icon = Icon()
             self.__box = Gtk.Box()
             self.__box.append(self.__icon)
             super().__init__(css_classes=["px-1"], child=self.__box)
+            SpecsBase.__init__(self)
             set_on_click(
                 self,
                 left=self.__class__.__on_clicked,
@@ -27,33 +28,24 @@ class Tray(Gtk.FlowBox):
                 right=self.__class__.__on_right_clicked,
             )
             set_on_scroll(self, self.__class__.__on_scroll)
-            self.__tooltip_id: int = 0
-            self.__icon_id: int = 0
 
-            self.__item: SystemTrayItem | None = None
+            self.__item: SystemTrayItem = item
+            self.signal(item, "notify::tooltip", self.__on_changed)
+            self.signal(item, "notify::icon", self.__on_changed)
+            self.__on_changed()
+
             self.__menu: DBusMenu | None = None
+            if item.menu:
+                self.__menu = item.menu.copy()
+                self.__box.append(self.__menu)
+
+        def do_dispose(self):
+            self.clear_specs()
+            super().do_dispose()  # type: ignore
 
         @property
         def tray_item(self) -> SystemTrayItem | None:
             return self.__item
-
-        @tray_item.setter
-        def tray_item(self, item: SystemTrayItem):
-            if self.__item:
-                self.__item.disconnect(self.__tooltip_id)
-                self.__item.disconnect(self.__icon_id)
-            if self.__menu:
-                self.__box.remove(self.__menu)
-
-            self.__item = item
-            self.__menu = item.menu
-            self.__tooltip_id = item.connect("notify::tooltip", self.__on_changed)
-            self.__icon_id = item.connect("notify::icon", self.__on_changed)
-            if self.__menu:
-                self.__menu = self.__menu.copy()
-                self.__box.append(self.__menu)
-
-            self.__on_changed()
 
         @classmethod
         async def try_async(cls, coro: Coroutine):
@@ -107,7 +99,6 @@ class Tray(Gtk.FlowBox):
         self.add_css_class("hover")
         self.add_css_class("rounded")
 
-        self.__pool = Pool(self.TrayItem)
         self.__service.connect("added", self.__on_item_added)
         self.__list_store = Gio.ListStore()
         self.bind_model(self.__list_store, lambda item: item)
@@ -115,13 +106,8 @@ class Tray(Gtk.FlowBox):
         self.set_min_children_per_line(100)
         self.set_max_children_per_line(100)
 
-    def __new_item(self, tray_item: SystemTrayItem):
-        item = self.__pool.acquire()
-        item.tray_item = tray_item
-        return item
-
     def __on_item_added(self, _, tray_item: SystemTrayItem):
-        item = self.__new_item(tray_item)
+        item = self.TrayItem(tray_item)
         self.__list_store.insert(0, item)
         tray_item.connect("removed", self.__on_item_removed)
 
@@ -130,5 +116,5 @@ class Tray(Gtk.FlowBox):
         if found:
             item = self.__list_store.get_item(pos)
             self.__list_store.remove(pos)
-            if isinstance(item, Tray.TrayItem):
-                self.__pool.release(item)
+            if isinstance(item, self.TrayItem):
+                item.run_dispose()

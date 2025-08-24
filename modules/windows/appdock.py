@@ -9,13 +9,15 @@ from ignis.widgets import Window
 from ..constants import WindowName
 from ..useroptions import user_options
 from ..utils import (
-    Pool,
+    SpecsBase,
+    WeakMethod,
     connect_option,
     get_app_icon_name,
     get_app_id,
     get_widget_monitor,
     gtk_template,
     gtk_template_child,
+    hypr_command,
     launch_application,
     niri_action,
     set_on_click,
@@ -23,34 +25,105 @@ from ..utils import (
 )
 
 
+class WindowInfo:
+    """
+    A wrapper to unify queries on ``NiriWindow`` and ``HyprlandWindow``.
+    """
+
+    def __init__(self, window: NiriWindow | HyprlandWindow):
+        self.window = window
+
+        self.id = 0
+        self.pid = window.pid
+        self.app_id = ""
+        self.workspace_id = window.workspace_id
+        self.title = window.title
+
+        if isinstance(window, NiriWindow):
+            self.id = window.id
+            self.app_id = window.app_id
+        else:
+            self.id = window.pid
+            self.app_id = window.class_name
+
+    def focus(self):
+        if isinstance(self.window, NiriWindow):
+            self.window.focus()
+        elif isinstance(self.window, HyprlandWindow):
+            hypr_command(f"dispatch focuswindow pid:{self.window.pid}")
+            hypr_command("dispatch alterzorder top")
+
+    def maximize(self):
+        self.focus()
+        if isinstance(self.window, NiriWindow):
+            if not self.window.is_floating:
+                niri_action("MaximizeColumn")
+        elif isinstance(self.window, HyprlandWindow):
+            hypr_command("dispatch fullscreen 1")
+
+    def fullscreen(self):
+        self.focus()
+        if isinstance(self.window, NiriWindow):
+            niri_action("FullscreenWindow", {"id": self.window.id})
+        elif isinstance(self.window, HyprlandWindow):
+            hypr_command("dispatch fullscreen 0")
+
+    def toggle_floating(self):
+        self.focus()
+        if isinstance(self.window, NiriWindow):
+            niri_action("ToggleWindowFloating", {"id": self.window.id})
+        elif isinstance(self.window, HyprlandWindow):
+            hypr_command(f"dispatch togglefloating pid:{self.window.pid}")
+
+    def close(self):
+        if isinstance(self.window, NiriWindow):
+            niri_action("CloseWindow", {"id": self.window.id})
+        elif isinstance(self.window, HyprlandWindow):
+            hypr_command(f"dispatch closewindow pid:{self.window.pid}")
+
+
 class WindowFocusHistory:
+    """
+    Manages windows focus history.
+    Every time a new window is focused, ``sequence`` is increased by one,
+    and the window is assigned to the sequence.
+    """
+
     initialized: bool = False
-    increment: int = 0
+    sequence: int = 0
     focused_window_id: int = 0
     # dict[win_id, hist_id]
     focus_hist: dict[int, int] = {}
 
     @classmethod
     def get_focus_hist(cls, window_id: int):
+        """
+        Queries the focus sequence of the window.
+        """
         return cls.focus_hist.get(window_id, 0)
 
     @classmethod
     def focus_window(cls, window_id: int):
+        """
+        Updates the current focused window id.
+        """
         if cls.focused_window_id == window_id:
             return
 
-        cls.increment += 1
-        cls.focus_hist[window_id] = cls.increment
+        cls.sequence += 1
+        cls.focus_hist[window_id] = cls.sequence
 
     @classmethod
-    def find_latest_index(
-        cls, niri_windows: list[NiriWindow] | None = None, hypr_windows: list[HyprlandWindow] | None = None
-    ):
+    def find_latest_index(cls, windows: list[WindowInfo] | None = None):
+        """
+        Finds the index of the latest focused window in ``windows``.
+        Returns ``-1`` if not found.
+        """
         i = 0
         idx = -1
         latest = 0
-        for win in niri_windows or hypr_windows or []:
-            id = win.id if isinstance(win, NiriWindow) else win.pid
+        for win in windows or []:
+            id = win.id
             hist = cls.get_focus_hist(id)
             if hist > latest:
                 idx = i
@@ -59,30 +132,23 @@ class WindowFocusHistory:
         return idx
 
     @classmethod
-    def sync_windows(
-        cls, niri_windows: list[NiriWindow] | None = None, hypr_windows: list[HyprlandWindow] | None = None
-    ):
-        if not niri_windows and not hypr_windows:
+    def sync_windows(cls, windows: list[WindowInfo] | None = None):
+        if not windows:
             cls.initialized = True
             return
 
         if cls.initialized:
             id_set = None
-            if niri_windows and len(niri_windows) != len(cls.focus_hist):
-                id_set = set(w.id for w in niri_windows)
-            elif hypr_windows and len(hypr_windows) != len(cls.focus_hist):
-                id_set = set(w.pid for w in hypr_windows)
+            if windows and len(windows) != len(cls.focus_hist):
+                id_set = set(w.id for w in windows)
             if id_set:
                 for id in id_set:
                     cls.focus_hist.pop(id, None)
         else:
             cls.initialized = True
-            if niri_windows:
-                for id in [w.id for w in sorted(niri_windows, key=lambda w: w.id)]:
+            if windows:
+                for id in [w.id for w in sorted(windows, key=lambda w: w.id)]:
                     cls.focus_window(id)
-            elif hypr_windows:
-                for pid in [w.pid for w in sorted(hypr_windows, key=lambda w: -w.focus_history_id)]:
-                    cls.focus_window(pid)
 
 
 @gtk_template("appdock")
@@ -90,7 +156,7 @@ class AppDockView(Gtk.Box):
     __gtype_name__ = "IgnisAppDockView"
 
     @gtk_template("appdock-item")
-    class Item(Gtk.FlowBoxChild):
+    class Item(Gtk.FlowBoxChild, SpecsBase):
         __gtype_name__ = "IgnisAppDockItem"
 
         class Dot(Gtk.FlowBoxChild):
@@ -126,24 +192,30 @@ class AppDockView(Gtk.Box):
         dots: Gtk.FlowBox = gtk_template_child()
 
         def __init__(self):
-            self.__hypr = HyprlandService.get_default()
             self.__app_options = user_options and user_options.applauncher
             self.__app_id: str = ""
             self.__app_info: Application | None = None
-            self.__niri_wins: list[NiriWindow] | None = None
-            self.__hypr_wins: list[HyprlandWindow] | None = None
+            self.__windows: list[WindowInfo] = []
             super().__init__()
+            SpecsBase.__init__(self)
 
             self.__idx: int = 0
             self.__menu = IgnisMenuModel()
             self.__dots_store = Gio.ListStore()
             self.dots.bind_model(self.__dots_store, lambda i: i)
-            set_on_click(self.icon, left=self.__on_clicked, right=self.__on_right_clicked)
-            set_on_scroll(self.icon, self.__on_scrolled)
+            set_on_click(self.icon, left=WeakMethod(self.__on_clicked), right=WeakMethod(self.__on_right_clicked))
+            set_on_scroll(self.icon, WeakMethod(self.__on_scrolled))
 
             drop_target = Gtk.DropTarget.new(str, Gdk.DragAction.COPY | Gdk.DragAction.MOVE)
-            drop_target.connect("drop", self.__on_drop_target)
+            self.signal(drop_target, "drop", self.__on_drop_target)
             self.add_controller(drop_target)
+
+        def do_dispose(self):
+            self.menu.set_menu_model(None)
+            self.__menu.clean_gmenu()
+            self.clear_specs()
+            self.dispose_template(self.__class__)
+            super().do_dispose()  # type: ignore
 
         @property
         def app_id(self) -> str:
@@ -151,9 +223,6 @@ class AppDockView(Gtk.Box):
 
         @app_id.setter
         def app_id(self, app_id: str):
-            if self.__app_id == app_id:
-                return
-
             self.__app_id = app_id
             self.icon.set_from_icon_name(get_app_icon_name(self.app_id))
 
@@ -167,46 +236,26 @@ class AppDockView(Gtk.Box):
             self.pin_icon.set_visible(True if app_info and app_info.is_pinned else False)
 
         @property
-        def niri_windows(self) -> list[NiriWindow] | None:
-            return self.__niri_wins
+        def windows(self) -> list[WindowInfo]:
+            return self.__windows
 
-        @niri_windows.setter
-        def niri_windows(self, wins: list[NiriWindow] | None):
+        @windows.setter
+        def windows(self, windows: list[WindowInfo]):
             self.__dots_store.remove_all()
-            if wins:
-                wins = sorted(wins, key=lambda w: w.id)
-                self.__niri_wins = wins
-                idx = WindowFocusHistory.find_latest_index(niri_windows=wins)
+            if windows:
+                windows = sorted(windows, key=lambda w: w.id)
+                self.__windows = windows
+
+                idx = WindowFocusHistory.find_latest_index(windows)
                 if idx < 0:
                     idx = 0
-                self.set_tooltip_text(f"{self.app_id} - {wins[idx].title}")
-                self.__update_dots(idx, len(wins))
-                self.__idx = idx
-            else:
-                self.__niri_wins = None
-                if self.app_info:
-                    self.set_tooltip_text(f"{self.app_id} - {self.app_info.name}\n{self.app_info.description}")
-                else:
-                    self.set_tooltip_text(self.app_id)
 
-        @property
-        def hypr_windows(self) -> list[HyprlandWindow] | None:
-            return self.__hypr_wins
-
-        @hypr_windows.setter
-        def hypr_windows(self, wins: list[HyprlandWindow] | None):
-            self.__dots_store.remove_all()
-            if wins:
-                wins = sorted(wins, key=lambda w: w.pid)
-                self.__hypr_wins = wins
-                idx = WindowFocusHistory.find_latest_index(hypr_windows=wins)
-                if idx < 0:
-                    idx = 0
-                self.set_tooltip_text(f"{self.app_id} - {wins[idx].title}")
-                self.__update_dots(idx, len(wins))
+                self.set_tooltip_text(f"{self.app_id} - {windows[idx].title}")
+                self.__update_dots(idx, len(windows))
                 self.__idx = idx
+
             else:
-                self.__hypr_wins = None
+                self.__windows = []
                 if self.app_info:
                     self.set_tooltip_text(f"{self.app_id} - {self.app_info.name}\n{self.app_info.description}")
                 else:
@@ -235,7 +284,7 @@ class AppDockView(Gtk.Box):
                 self.__menu_application(items, app)
 
             # active windows menu
-            windows = self.niri_windows or self.hypr_windows
+            windows = self.windows
             if windows:
                 if items:
                     items.append(IgnisMenuSeparator())
@@ -261,7 +310,7 @@ class AppDockView(Gtk.Box):
             for action in app.actions:
                 items.append(IgnisMenuItem(action.name, True, lambda _, act=action: act.launch()))
 
-        def __menu_windows(self, items: ItemsType, windows: list[NiriWindow] | list[HyprlandWindow]):
+        def __menu_windows(self, items: ItemsType, windows: list[WindowInfo]):
             # windows actions
             items.append(IgnisMenuItem("Active Windows", False))
             for win in windows:
@@ -270,76 +319,36 @@ class AppDockView(Gtk.Box):
                 items.append(
                     IgnisMenuModel(
                         IgnisMenuItem(f"pid: {win.pid}", False),
-                        IgnisMenuItem("Focus", True, lambda _, win=win: self.__focus_window(win)),
-                        IgnisMenuItem("Maximize", True, lambda _, win=win: self.__maximize_window(win)),
-                        IgnisMenuItem("Fullscreen", True, lambda _, win=win: self.__fullscreen_window(win)),
-                        IgnisMenuItem("Toggle Floating", True, lambda _, win=win: self.__toggle_floating_window(win)),
-                        IgnisMenuItem("Close", True, lambda _, win=win: self.__close_window(win)),
+                        IgnisMenuItem("Focus", True, lambda _, win=win: win.focus()),
+                        IgnisMenuItem("Maximize", True, lambda _, win=win: win.maximize()),
+                        IgnisMenuItem("Fullscreen", True, lambda _, win=win: win.fullscreen()),
+                        IgnisMenuItem("Toggle Floating", True, lambda _, win=win: win.toggle_floating()),
+                        IgnisMenuItem("Close", True, lambda _, win=win: win.close()),
                         label=title,
                     )
                 )
 
             # close all windows
-            def close_all_windows(wins: list[NiriWindow] | list[HyprlandWindow]):
+            def close_all_windows(wins: list[WindowInfo]):
                 for win in wins:
-                    self.__close_window(win)
+                    win.close()
 
             items.append(IgnisMenuItem("Close All Windows", True, lambda _: close_all_windows(windows)))
-
-        def __focus_window(self, window: NiriWindow | HyprlandWindow):
-            if isinstance(window, NiriWindow):
-                window.focus()
-            elif isinstance(window, HyprlandWindow):
-                self.__hypr.send_command(f"dispatch focuswindow pid:{window.pid}")
-                self.__hypr.send_command("dispatch alterzorder top")
-
-        def __maximize_window(self, window: NiriWindow | HyprlandWindow):
-            if isinstance(window, NiriWindow):
-                window.focus()
-                if not window.is_floating:
-                    niri_action("MaximizeColumn")
-            elif isinstance(window, HyprlandWindow):
-                self.__focus_window(window)
-                self.__hypr.send_command("dispatch fullscreen 1")
-
-        def __fullscreen_window(self, window: NiriWindow | HyprlandWindow):
-            if isinstance(window, NiriWindow):
-                window.focus()
-                niri_action("FullscreenWindow", {"id": window.id})
-            elif isinstance(window, HyprlandWindow):
-                self.__focus_window(window)
-                self.__hypr.send_command("dispatch fullscreen 0")
-
-        def __toggle_floating_window(self, window: NiriWindow | HyprlandWindow):
-            if isinstance(window, NiriWindow):
-                window.focus()
-                niri_action("ToggleWindowFloating", {"id": window.id})
-            elif isinstance(window, HyprlandWindow):
-                self.__focus_window(window)
-                self.__hypr.send_command(f"dispatch togglefloating pid:{window.pid}")
-
-        def __close_window(self, window: NiriWindow | HyprlandWindow):
-            if isinstance(window, NiriWindow):
-                niri_action("CloseWindow", {"id": window.id})
-            elif isinstance(window, HyprlandWindow):
-                self.__hypr.send_command(f"dispatch closewindow pid:{window.pid}")
 
         def __launch_app(self, files: list[str] | None = None):
             if not self.app_info:
                 return
 
-            command_format = self.__app_options and self.__app_options.command_format
-            terminal_format = self.__app_options and self.__app_options.terminal_format
+            command_format = self.__app_options.command_format
+            terminal_format = self.__app_options.terminal_format
 
             launch_application(
                 self.app_info, files=files, command_format=command_format, terminal_format=terminal_format
             )
 
         def __on_clicked(self, *_):
-            if self.niri_windows:
-                self.__focus_window(self.niri_windows[self.__idx])
-            elif self.hypr_windows:
-                self.__focus_window(self.hypr_windows[self.__idx])
+            if self.windows:
+                self.windows[self.__idx].focus()
             elif self.app_info:
                 self.__launch_app()
 
@@ -348,22 +357,13 @@ class AppDockView(Gtk.Box):
 
         def __on_scrolled(self, _, dx: float, dy: float):
             delta = 1 if dx + dy > 0 else -1
-            if self.niri_windows:
-                idx = WindowFocusHistory.find_latest_index(niri_windows=self.niri_windows)
+            if self.windows:
+                idx = WindowFocusHistory.find_latest_index(self.windows)
                 if idx >= 0:
-                    idx = (idx + delta) % len(self.niri_windows)
+                    idx = (idx + delta) % len(self.windows)
                 else:
                     idx = 0
-                self.niri_windows[idx].focus()
-            elif self.hypr_windows:
-                idx = WindowFocusHistory.find_latest_index(hypr_windows=self.hypr_windows)
-                if idx >= 0:
-                    idx = (idx + delta) % len(self.hypr_windows)
-                else:
-                    idx = 0
-                pid = self.hypr_windows[idx].pid
-                self.__hypr.send_command(f"dispatch focuswindow pid:{pid}")
-                self.__hypr.send_command("dispatch alterzorder top")
+                self.windows[idx].focus()
 
         def __on_drop_target(self, controller: Gtk.DropTarget, value: str, x: float, y: float):
             files = value.split("\n")
@@ -375,23 +375,24 @@ class AppDockView(Gtk.Box):
     flow_box: Gtk.FlowBox = gtk_template_child()
 
     def __init__(self):
-        self.__dock_options = user_options and user_options.appdock
+        self.__dock_options = user_options.appdock
         self.__apps = ApplicationsService.get_default()
         self.__niri = NiriService.get_default()
         self.__hypr = HyprlandService.get_default()
-        self.__niri_wins: list[NiriWindow] = []
-        self.__hypr_wins: list[HyprlandWindow] = []
-        # dict[app_id, DockItem]
+
+        self.__windows: list[WindowInfo] = []
+        """Windows to display in dock."""
         self.__items: dict[str, AppDockView.Item] = {}
-        # workspaces in the current monitor
-        self.__monitor_ws: list[int] = []
-        # focused workspace in the current monitor
-        self.__active_ws: list[int] = []
-        # current monitor connector/name
+        """Maps ``app_id`` to ``DockItem``."""
+        self.__monitor_ws: set[int] = set()
+        """Workspace ids in the current monitor."""
+        self.__active_ws: set[int] = set()
+        """Focused workspace ids in any monitors."""
         self.__connector: str | None = None
+        """Currently focused monitor connector/name."""
+
         super().__init__()
 
-        self.__pool = Pool(self.Item)
         self.flow_box.set_sort_func(self.__dock_item_sorter)
 
         self.__defer_conceal: Timeout | None = None
@@ -406,7 +407,7 @@ class AppDockView(Gtk.Box):
 
         self.__apps.connect("notify::pinned", self.__on_pinned_changed)
         if self.__niri.is_available:
-            WindowFocusHistory.sync_windows(niri_windows=self.__niri.windows)
+            WindowFocusHistory.sync_windows([WindowInfo(w) for w in self.__niri.windows])
             self.__niri.connect("notify::workspaces", self.__on_workspaces_changed)
             self.__niri.connect("notify::windows", self.__on_windows_changed)
             self.__niri.connect(
@@ -415,7 +416,7 @@ class AppDockView(Gtk.Box):
             self.__niri.connect("notify::active-window", self.__on_windows_changed)
             self.__niri.connect("notify::overview-opened", self.__on_overview_changed)
         if self.__hypr.is_available:
-            WindowFocusHistory.sync_windows(hypr_windows=self.__hypr.windows)
+            WindowFocusHistory.sync_windows([WindowInfo(w) for w in self.__hypr.windows])
             self.__hypr.connect("notify::workspaces", self.__on_workspaces_changed)
             self.__hypr.connect("notify::windows", self.__on_windows_changed)
             self.__hypr.connect(
@@ -503,76 +504,58 @@ class AppDockView(Gtk.Box):
 
     def __on_workspaces_changed(self, *_):
         if self.__niri.is_available:
-            niri_ws = self.__niri.workspaces
-            self.__monitor_ws = [ws.id for ws in niri_ws if ws.output == self.__connector]
-            self.__active_ws = [ws.id for ws in niri_ws if ws.output == self.__connector and ws.is_active]
-        if self.__hypr.is_available:
-            hypr_monitors = self.__hypr.monitors
-            ws_of_monitor = [m.active_workspace_id for m in hypr_monitors if m.name == self.__connector]
-            hypr_ws = self.__hypr.workspaces
-            self.__monitor_ws = [ws.id for ws in hypr_ws if ws.monitor == self.__connector]
-            self.__active_ws = [ws.id for ws in hypr_ws if ws.monitor == self.__connector and ws.id in ws_of_monitor]
+            self.__monitor_ws = set(ws.id for ws in self.__niri.workspaces if ws.output == self.__connector)
+            self.__active_ws = set(ws.id for ws in self.__niri.workspaces if ws.is_active)
+        elif self.__hypr.is_available:
+            self.__monitor_ws = set(ws.id for ws in self.__hypr.workspaces if ws.monitor == self.__connector)
+            self.__active_ws = set(m.active_workspace_id for m in self.__hypr.monitors)
+        else:
+            return
+
         self.__on_windows_changed()
 
     def __on_windows_changed(self, *_):
-        if self.__niri.is_available:
-            self.__niri_wins = self.__niri.windows
-            if self.__dock_options:
-                if self.__dock_options.workspace_only:
-                    self.__niri_wins = [win for win in self.__niri_wins if win.workspace_id in self.__active_ws]
-                elif self.__dock_options.monitor_only:
-                    self.__niri_wins = [win for win in self.__niri_wins if win.workspace_id in self.__monitor_ws]
-        if self.__hypr.is_available:
-            self.__hypr_wins = self.__hypr.windows
-            if self.__dock_options:
-                if self.__dock_options.workspace_only:
-                    self.__hypr_wins = [win for win in self.__hypr_wins if win.workspace_id in self.__active_ws]
-                elif self.__dock_options.monitor_only:
-                    self.__hypr_wins = [win for win in self.__hypr_wins if win.workspace_id in self.__monitor_ws]
+        self.__windows = [
+            WindowInfo(win) for win in (self.__niri.windows if self.__niri.is_available else self.__hypr.windows)
+        ]
+        if self.__dock_options.monitor_only:
+            self.__windows = [win for win in self.__windows if win.workspace_id in self.__monitor_ws]
+        elif self.__dock_options.workspace_only:
+            self.__windows = [win for win in self.__windows if win.workspace_id in self.__monitor_ws & self.__active_ws]
+
         self.__refresh()
 
     def __refresh(self):
         pinned_set = {get_app_id(app.id) for app in self.__apps.pinned if app.id}
         # all the items to display: pinned apps and open windows
-        app_id_set = pinned_set
-        if self.__niri.is_available:
-            app_id_set = app_id_set | ({get_app_id(win.app_id) for win in self.__niri_wins})
-        if self.__hypr.is_available:
-            app_id_set = app_id_set | ({get_app_id(win.class_name) for win in self.__hypr_wins})
-
-        # sync items to display
+        app_id_set = pinned_set | ({get_app_id(win.app_id) for win in self.__windows})
+        # map app id to app info
         app_dict = {get_app_id(app.id): app for app in self.__apps.apps if app.id}
+
+        # remove dock items that are not in app_id_set
         for app_id in [app_id for app_id in self.__items if app_id not in app_id_set]:
-            self.flow_box.remove(self.__items[app_id])
-            self.__pool.release(self.__items.pop(app_id))
+            dock_item = self.__items.pop(app_id)
+            self.flow_box.remove(dock_item)
+            dock_item.run_dispose()
+        # create missing dock items from app_id_set
         for app_id in app_id_set:
             dock_item = self.__items.get(app_id)
             if not dock_item:
-                dock_item = self.__pool.acquire()
+                dock_item = self.Item()
                 self.__items[app_id] = dock_item
                 self.flow_box.append(dock_item)
             dock_item.app_id = app_id
             dock_item.app_info = app_dict.get(app_id)
 
-        # sync open windows to items
-        if self.__niri.is_available:
-            niri_map: dict[str, list[NiriWindow]] = {}
-            for win in self.__niri_wins:
-                app_id = get_app_id(win.app_id)
-                if app_id not in niri_map:
-                    niri_map[app_id] = []
-                niri_map[app_id].append(win)
-            for app_id, item in self.__items.items():
-                item.niri_windows = niri_map.get(app_id)
-        if self.__hypr.is_available:
-            hypr_map: dict[str, list[HyprlandWindow]] = {}
-            for win in self.__hypr_wins:
-                app_id = get_app_id(win.class_name)
-                if app_id not in hypr_map:
-                    hypr_map[app_id] = []
-                hypr_map[app_id].append(win)
-            for app_id, item in self.__items.items():
-                item.hypr_windows = hypr_map.get(app_id)
+        # sync open windows to dock items
+        app_windows: dict[str, list[WindowInfo]] = {}
+        for window in self.__windows:
+            app_id = get_app_id(window.app_id)
+            if app_id not in app_windows:
+                app_windows[app_id] = []
+            app_windows[app_id].append(window)
+        for app_id, item in self.__items.items():
+            item.windows = app_windows.get(app_id, [])
 
         # refresh flow_box
         for item in self.__items.values():

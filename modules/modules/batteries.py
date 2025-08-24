@@ -7,7 +7,15 @@ from ignis.services.upower import UPowerDevice, UPowerService
 from ignis.window_manager import WindowManager
 
 from ..constants import WindowName
-from ..utils import get_widget_monitor_id, gtk_template, gtk_template_child, niri_action, run_cmd_async, set_on_click
+from ..utils import (
+    SpecsBase,
+    get_widget_monitor_id,
+    gtk_template,
+    gtk_template_child,
+    niri_action,
+    run_cmd_async,
+    set_on_click,
+)
 
 wm = WindowManager.get_default()
 
@@ -17,7 +25,7 @@ class Batteries(Gtk.Box):
     __gtype_name__ = "IgnisBatteries"
 
     @gtk_template("modules/batteries-item")
-    class Item(Gtk.Box):
+    class Item(Gtk.Box, SpecsBase):
         __gtype_name__ = "IgnisBatteriesItem"
 
         icon: Gtk.Image = gtk_template_child()
@@ -29,14 +37,20 @@ class Batteries(Gtk.Box):
             self.__battery = battery
             self.__percent: int = 0
 
-            battery.connect("removed", self.__on_removed)
-            battery.connect("notify::percent", self.__on_change)
-            battery.connect("notify::charging", self.__on_change)
+            self.signal(battery, "removed", self.__on_removed)
+            self.signal(battery, "notify::percent", self.__on_change)
+            self.signal(battery, "notify::charging", self.__on_change)
 
             self.__on_change()
 
+        def do_dispose(self):
+            self.clear_specs()
+            self.dispose_template(self.__class__)
+            super().do_dispose()  # type: ignore
+
         def __on_removed(self, *_):
             self.unparent()
+            self.run_dispose()
 
         def __on_change(self, *_):
             time_remaining = self.__battery.time_remaining // 60
