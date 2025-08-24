@@ -1,6 +1,8 @@
 from ignis.base_service import BaseService
-from ignis.gobject import IgnisProperty
 from ignis.utils import Poll
+
+from ..utils import GProperty
+
 
 class CpuLoadService(BaseService):
     def __init__(self):
@@ -26,25 +28,25 @@ class CpuLoadService(BaseService):
             line = stat.readline().split()[1:]
             return list(map(int, line[: min(7, len(line))]))
 
-    @IgnisProperty
+    @GProperty
     def cpu_count(self) -> int:
         return self._cpu_count
 
-    @IgnisProperty
+    @GProperty
     def idle_time(self) -> int:
         """
         idle cpu time during last polling interval
         """
         return self._idle_time
 
-    @IgnisProperty
+    @GProperty
     def total_time(self) -> int:
         """
         total cpu time during last polling interval
         """
         return self._total_time
 
-    @IgnisProperty
+    @GProperty
     def interval(self) -> int:
         """
         sample interval in milliseconds

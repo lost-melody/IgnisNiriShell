@@ -1,6 +1,6 @@
 from gi.repository import Gtk
 
-from ..utils import gproperty, run_cmd_async
+from ..utils import GProperty, run_cmd_async
 
 
 class CommandPill(Gtk.Button):
@@ -16,7 +16,7 @@ class CommandPill(Gtk.Button):
         if self._click_cmd != "":
             run_cmd_async(self._click_cmd)
 
-    @gproperty(type=str)
+    @GProperty(type=str)
     def click_command(self) -> str:
         return self._click_cmd
 

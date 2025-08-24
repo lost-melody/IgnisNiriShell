@@ -1,7 +1,8 @@
 from gi.repository import Adw
 from ignis.exceptions import WindowNotFoundError
-from ignis.gobject import IgnisProperty
 from ignis.window_manager import WindowManager
+
+from ..utils import GProperty
 
 wm = WindowManager.get_default()
 
@@ -17,7 +18,7 @@ class AdwRegularWindow(Adw.Window):
 
         self.connect("close-request", self.__class__.__on_close_request)
 
-    @IgnisProperty
+    @GProperty
     def namespace(self) -> str:
         return self._namespace
 

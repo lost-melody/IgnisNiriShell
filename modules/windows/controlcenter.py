@@ -10,7 +10,6 @@ from ignis.services.audio import AudioService, Stream
 from ignis.services.backlight import BacklightDevice, BacklightService
 from ignis.services.bluetooth import BluetoothDevice, BluetoothService
 from ignis.services.network import NetworkService
-from ignis.services.niri import NiriService
 from ignis.services.notifications import NOTIFICATIONS_IMAGE_DATA, Notification, NotificationAction, NotificationService
 from ignis.services.recorder import RecorderConfig, RecorderService
 from ignis.widgets import Icon, Window
@@ -25,7 +24,7 @@ from ..utils import (
     connect_option,
     connect_window,
     escape_pango_markup,
-    gproperty,
+    GProperty,
     gtk_template,
     gtk_template_callback,
     gtk_template_child,
@@ -244,7 +243,7 @@ class BacklightControlGroup(Gtk.ListBox):
             self.dispose_template(self.__class__)
             super().do_dispose()  # type: ignore
 
-        @gproperty(type=BacklightDevice)
+        @GProperty(type=BacklightDevice)
         def device(self) -> BacklightDevice | None:
             return self._device
 
@@ -336,7 +335,7 @@ class ControlSwitchCmd(Gtk.Box):
         self.append(self.__pill)
         set_on_click(self, self.__on_clicked)
 
-    @gproperty(type=str)
+    @GProperty(type=str)
     def title(self) -> str:
         return self.__pill.title.get_text() or ""
 
@@ -344,7 +343,7 @@ class ControlSwitchCmd(Gtk.Box):
     def title(self, title: str):
         self.__pill.set_title(title)
 
-    @gproperty(type=str)
+    @GProperty(type=str)
     def icon_name(self) -> str:
         return self.__pill.icon.get_icon_name() or ""
 
@@ -352,7 +351,7 @@ class ControlSwitchCmd(Gtk.Box):
     def icon_name(self, icon: str):
         self.__pill.icon.set_from_icon_name(icon)
 
-    @gproperty(type=str)
+    @GProperty(type=str)
     def status_cmd(self) -> str:
         return self._status_cmd
 
@@ -369,7 +368,7 @@ class ControlSwitchCmd(Gtk.Box):
             task = run_cmd_async(cmd)
             task.add_done_callback(lambda x, *_: on_cmd_done(x.result().returncode))
 
-    @gproperty(type=str)
+    @GProperty(type=str)
     def enable_cmd(self) -> str:
         return self._enable_cmd
 
@@ -377,7 +376,7 @@ class ControlSwitchCmd(Gtk.Box):
     def enable_cmd(self, cmd: str):
         self._enable_cmd = cmd
 
-    @gproperty(type=str)
+    @GProperty(type=str)
     def disable_cmd(self) -> str:
         return self._disable_cmd
 
@@ -385,7 +384,7 @@ class ControlSwitchCmd(Gtk.Box):
     def disable_cmd(self, cmd: str):
         self._disable_cmd = cmd
 
-    @gproperty(type=str)
+    @GProperty(type=str)
     def action_icon(self) -> str:
         return self._action_icon
 
@@ -398,7 +397,7 @@ class ControlSwitchCmd(Gtk.Box):
         else:
             self.__pill.action.set_visible(False)
 
-    @gproperty(type=str)
+    @GProperty(type=str)
     def action_cmd(self) -> str:
         return self._action_cmd
 
@@ -489,7 +488,6 @@ class IgnisRecorder(Gtk.Box):
     __gtype_name__ = "IgnisRecorder"
 
     def __init__(self):
-        self.__niri = NiriService.get_default()
         self.__service = RecorderService.get_default()
         super().__init__()
 

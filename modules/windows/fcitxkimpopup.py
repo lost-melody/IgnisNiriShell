@@ -1,11 +1,10 @@
 from gi.repository import Gtk
-from ignis.gobject import IgnisProperty
 from ignis.widgets import Window
 
 from ..constants import WindowName
 from ..services import FcitxStateService
 from ..useroptions import user_options
-from ..utils import connect_option, gtk_template, gtk_template_child
+from ..utils import GProperty, connect_option, gtk_template, gtk_template_child
 
 
 class FcitxKimPopup(Window):
@@ -30,7 +29,7 @@ class FcitxKimPopup(Window):
                 self.dispose_template(self.__class__)
                 super().do_dispose()  # type: ignore
 
-            @IgnisProperty
+            @GProperty
             def label(self) -> str:
                 return self.index_label.get_label()
 
@@ -38,7 +37,7 @@ class FcitxKimPopup(Window):
             def label(self, label: str):
                 self.index_label.set_label(label)
 
-            @IgnisProperty
+            @GProperty
             def text(self) -> str:
                 return self.text_label.get_label()
 

@@ -25,11 +25,11 @@ from .signal import (
     weak_connect_method,
 )
 from .template import gtk_template, gtk_template_callback, gtk_template_child
-from .widget import Property, connect_window, get_widget_monitor, get_widget_monitor_id, gproperty
+from .widget import GProperty, connect_window, get_widget_monitor, get_widget_monitor_id
 
 __all__ = [
     BindingSpec,
-    Property,
+    GProperty,
     SignalSpec,
     SpecsBase,
     SpecType,
@@ -49,7 +49,6 @@ __all__ = [
     get_app_id,
     get_widget_monitor,
     get_widget_monitor_id,
-    gproperty,
     gtk_template,
     gtk_template_callback,
     gtk_template_child,

@@ -5,12 +5,12 @@ import os
 from gi.repository import GLib
 from ignis.base_service import BaseService
 from ignis.dbus import DBusProxy, DBusService
-from ignis.gobject import IgnisGObject, IgnisProperty, IgnisSignal
+from ignis.gobject import IgnisGObject, IgnisSignal
 from ignis.utils import load_interface_xml
 from ignis.variable import Variable
 
 from ..useroptions import user_options
-from ..utils import dbus_info_file
+from ..utils import GProperty, dbus_info_file
 
 
 class FcitxStateService(BaseService):
@@ -102,43 +102,43 @@ class FcitxStateService(BaseService):
         def exec_menu(self, properties: Variable):
             return
 
-        @IgnisProperty
+        @GProperty
         def enabled(self) -> bool:
             return self._enabled
 
-        @IgnisProperty
+        @GProperty
         def show_aux(self) -> bool:
             return self._show_aux
 
-        @IgnisProperty
+        @GProperty
         def show_lookup(self) -> bool:
             return self._show_lookup
 
-        @IgnisProperty
+        @GProperty
         def show_preedit(self) -> bool:
             return self._show_preedit
 
-        @IgnisProperty
+        @GProperty
         def aux(self) -> str:
             return self._aux
 
-        @IgnisProperty
+        @GProperty
         def preedit(self) -> str:
             return self._preedit
 
-        @IgnisProperty
+        @GProperty
         def fcitx_im(self) -> Property:
             return self._fcitx_im
 
-        @IgnisProperty
+        @GProperty
         def fcitx_properties(self) -> list[Property]:
             return self._properties
 
-        @IgnisProperty
+        @GProperty
         def spot(self) -> Rect:
             return self._spot
 
-        @IgnisProperty
+        @GProperty
         def lookup(self) -> Lookup:
             return self._lookup
 
@@ -247,7 +247,7 @@ class FcitxStateService(BaseService):
 
         self._kimpanel = self.KIMPanel()
 
-    @IgnisProperty
+    @GProperty
     def kimpanel(self) -> KIMPanel:
         return self._kimpanel
 

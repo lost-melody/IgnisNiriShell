@@ -3,9 +3,10 @@ from typing import Any
 
 from gi.repository import GLib
 from ignis.base_service import BaseService
-from ignis.gobject import IgnisProperty
 from ignis.utils import thread
 from loguru import logger
+
+from ..utils import GProperty
 
 try:
     import libevdev
@@ -41,15 +42,15 @@ class KeyboardLedsService(BaseService):
 
         self.__sync_devices()
 
-    @IgnisProperty
+    @GProperty
     def numlock(self) -> bool | None:
         return self._numlock
 
-    @IgnisProperty
+    @GProperty
     def capslock(self) -> bool | None:
         return self._capslock
 
-    @IgnisProperty
+    @GProperty
     def scrolllock(self) -> bool | None:
         return self._scrolllock
 

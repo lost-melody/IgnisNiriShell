@@ -1,7 +1,7 @@
 from gi.repository import Gtk
 
 from ..services import CpuLoadService
-from ..utils import gproperty
+from ..utils import GProperty
 from .command_pill import CommandPill
 
 
@@ -16,7 +16,7 @@ class CpuUsagePill(CommandPill):
         self.__processors = self.__cpu.cpu_count
         self.__cpu.connect("notify::total-time", self.__on_updated)
 
-    @gproperty(type=int)
+    @GProperty(type=int)
     def interval(self) -> int:
         return self.__cpu.interval
 
@@ -24,7 +24,7 @@ class CpuUsagePill(CommandPill):
     def interval(self, interval: int):
         self.__cpu.interval = interval
 
-    @gproperty(type=Gtk.Label)
+    @GProperty(type=Gtk.Label)
     def labeler(self) -> Gtk.Label | None:
         return self._label
 

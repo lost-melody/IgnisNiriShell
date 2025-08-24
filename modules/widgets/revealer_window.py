@@ -3,7 +3,7 @@ from typing import Any
 from gi.repository import Gtk
 from ignis.widgets import Window
 
-from ..utils import gproperty
+from ..utils import GProperty
 
 
 class RevealerWindow(Window):
@@ -32,7 +32,7 @@ class RevealerWindow(Window):
         else:
             super().set_property(property_name, value)
 
-    @gproperty(type=bool, default=False)
+    @GProperty(type=bool, default=False)
     def visible(self) -> bool:
         return self._revealer.get_reveal_child()
 
