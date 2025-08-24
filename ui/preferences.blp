@@ -17,6 +17,8 @@ template $PreferencesView: Gtk.Box {
         }
 
         Adw.ViewStack stack {
+            enable-transitions: true;
+
             Adw.ViewStackPage {
                 name: "panels";
                 icon-name: "panel-left-symbolic";
