@@ -33,6 +33,7 @@ class Batteries(Gtk.Box):
 
         def __init__(self, battery: UPowerDevice):
             super().__init__()
+            SpecsBase.__init__(self)
 
             self.__battery = battery
             self.__percent: int = 0
