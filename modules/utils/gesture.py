@@ -12,9 +12,9 @@ def set_on_click[Widget: Gtk.Widget](
     middle: Callable[[Widget], Any] | None = None,
     right: Callable[[Widget], Any] | None = None,
 ) -> Widget:
-    def on_released(widget: Widget, callback: Callable[[Widget], Any]):
-        ref = weakref.ref(widget)
+    ref = weakref.ref(widget)
 
+    def on_released(callback: Callable[[Widget], Any]):
         def handler(gesture_click: Gtk.GestureClick, n_press: int, x: int, y: int):
             widget = ref()
             if widget and widget.contains(x, y):
@@ -27,7 +27,7 @@ def set_on_click[Widget: Gtk.Widget](
         if callback:
             controller = Gtk.GestureClick(button=button)
             widget.add_controller(controller)
-            controller.connect("released", on_released(widget, callback))
+            controller.connect("released", on_released(callback))
 
     for button, callback in [(Gdk.BUTTON_PRIMARY, left), (Gdk.BUTTON_MIDDLE, middle), (Gdk.BUTTON_SECONDARY, right)]:
         set_controller(widget, button, callback)
@@ -63,10 +63,9 @@ def set_on_motion[Widget: Gtk.Widget](
 ) -> Widget:
     controller = Gtk.EventControllerMotion()
     widget.add_controller(controller)
+    ref = weakref.ref(widget)
 
-    def callback(widget: Widget, cb: Callable[[Widget], Any]):
-        ref = weakref.ref(widget)
-
+    def callback(cb: Callable[[Widget], Any]):
         def handler():
             widget = ref()
             if widget:
@@ -74,9 +73,7 @@ def set_on_motion[Widget: Gtk.Widget](
 
         return handler
 
-    def callback_xy(widget: Widget, cb: Callable[[Widget, float, float], Any]):
-        ref = weakref.ref(widget)
-
+    def callback_xy(cb: Callable[[Widget, float, float], Any]):
         def handler(controller: Gtk.EventControllerMotion, x: float, y: float):
             widget = ref()
             if widget:
@@ -85,10 +82,10 @@ def set_on_motion[Widget: Gtk.Widget](
         return handler
 
     if enter:
-        controller.connect("enter", callback_xy(widget, enter))
+        controller.connect("enter", callback_xy(enter))
     if leave:
-        controller.connect("leave", callback(widget, leave))
+        controller.connect("leave", callback(leave))
     if motion:
-        controller.connect("motion", callback_xy(widget, motion))
+        controller.connect("motion", callback_xy(motion))
 
     return widget
