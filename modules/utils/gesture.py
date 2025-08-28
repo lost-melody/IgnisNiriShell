@@ -6,6 +6,22 @@ from gi.repository import Gdk, Gtk
 ScrollFlags = Gtk.EventControllerScrollFlags
 
 
+def set_on_key_pressed[Widget: Gtk.Widget](
+    widget: Widget, callback: Callable[[Widget, int, int, Gdk.ModifierType], Any]
+):
+    controller = Gtk.EventControllerKey()
+    widget.add_controller(controller)
+    ref = weakref.ref(widget)
+
+    def on_key_pressed(controller: Gtk.EventControllerKey, keyval: int, keycode: int, state: Gdk.ModifierType):
+        widget = ref()
+        if widget:
+            return callback(widget, keyval, keycode, state)
+
+    controller.connect("key-pressed", on_key_pressed)
+    return widget
+
+
 def set_on_click[Widget: Gtk.Widget](
     widget: Widget,
     left: Callable[[Widget], Any] | None = None,

@@ -1,5 +1,5 @@
 from .desktop import app_icon_overrides, app_id_overrides, get_app_icon_name, get_app_id, launch_application
-from .gesture import set_on_click, set_on_motion, set_on_scroll
+from .gesture import set_on_click, set_on_key_pressed, set_on_motion, set_on_scroll
 from .hypr import hypr_command
 from .misc import (
     b64enc,
@@ -59,6 +59,7 @@ __all__ = [
     niri_action,
     run_cmd_async,
     set_on_click,
+    set_on_key_pressed,
     set_on_motion,
     set_on_scroll,
     verify_pango_markup,
