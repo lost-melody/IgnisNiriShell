@@ -18,13 +18,13 @@ from ignis.window_manager import WindowManager
 from ..constants import AudioStreamType, WindowName
 from ..useroptions import user_options
 from ..utils import (
+    GProperty,
     SpecsBase,
     WeakMethod,
     clear_dir,
     connect_option,
     connect_window,
     escape_pango_markup,
-    GProperty,
     gtk_template,
     gtk_template_callback,
     gtk_template_child,
@@ -245,6 +245,7 @@ class BacklightControlGroup(Gtk.ListBox):
             adjustment.set_upper(math.ceil(device.max_brightness))
             self.signal(self.scale, "value-changed", self.__on_scale_value_changed)
             self.signal(device, "notify::brightness", self.__on_brightness_changed)
+            self.__on_brightness_changed()
 
         def do_dispose(self):
             self.clear_specs()
