@@ -11,6 +11,7 @@ from ignis.services.backlight import BacklightDevice, BacklightService
 from ignis.services.bluetooth import BluetoothDevice, BluetoothService
 from ignis.services.network import NetworkService
 from ignis.services.notifications import NOTIFICATIONS_IMAGE_DATA, Notification, NotificationAction, NotificationService
+from ignis.services.power_profiles import PowerProfilesService
 from ignis.services.recorder import RecorderConfig, RecorderService
 from ignis.widgets import Icon, Window
 from ignis.window_manager import WindowManager
@@ -605,6 +606,41 @@ class CaffeineSwitch(Gtk.Box):
 
     def __on_clicked(self, *_):
         self.__state.value = not self.__state.value
+
+
+class PowerProfilesSwitch(Gtk.Box):
+    __gtype_name__ = "PowerProfilesSwitch"
+
+    def __init__(self):
+        super().__init__()
+
+        self.__pill = ControlSwitchPill()
+        self.append(self.__pill)
+        self.__pill.set_title("Power Profile")
+        self.__pill.set_subtitle("Unavailable")
+        self.__pill.set_icon("dialog-question-symbolic")
+
+        self.__service = PowerProfilesService.get_default()
+        if self.__service.is_available:
+            self.__pill.set_style_accent(True)
+            self.__service.connect("notify::active-profile", self.__on_changed)
+            self.__on_changed()
+            set_on_click(self, left=self.__on_clicked, right=self.__on_right_clicked)
+
+    def __on_changed(self, *_):
+        self.__pill.set_subtitle(self.__service.active_profile)
+        self.__pill.set_icon(self.__service.icon_name)
+
+    def __switch_profile(self, delta: int):
+        profiles: list[str] = self.__service.get_profiles()
+        index = profiles.index(self.__service.get_active_profile())
+        self.__service.set_active_profile(profiles[(index + delta) % len(profiles)])
+
+    def __on_clicked(self, *_):
+        self.__switch_profile(1)
+
+    def __on_right_clicked(self, *_):
+        self.__switch_profile(-1)
 
 
 class EthernetStatus(Gtk.Box):
