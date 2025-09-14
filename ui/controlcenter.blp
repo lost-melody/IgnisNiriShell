@@ -55,57 +55,22 @@ template $ControlCenterView: Box {
 
             $BacklightControlGroup {}
 
-            Grid {
+            Grid grid {
                 column-homogeneous: true;
 
-                $ColorSchemeSwitcher {
-                    layout {
-                        row: 1;
-                        column: 1;
-                    }
-                }
+                $ColorSchemeSwitcher {}
 
-                $IgnisRecorder {
-                    layout {
-                        row: 1;
-                        column: 2;
-                    }
-                }
+                $IgnisRecorder {}
 
-                $DndSwitch {
-                    layout {
-                        row: 2;
-                        column: 1;
-                    }
-                }
+                $DndSwitch {}
 
-                $EthernetStatus {
-                    layout {
-                        row: 2;
-                        column: 2;
-                    }
-                }
+                $EthernetStatus {}
 
-                $WifiStatus {
-                    layout {
-                        row: 3;
-                        column: 1;
-                    }
-                }
+                $WifiStatus {}
 
-                $BluetoothStatus {
-                    layout {
-                        row: 3;
-                        column: 2;
-                    }
-                }
+                $BluetoothStatus {}
 
-                $CaffeineSwitch {
-                    layout {
-                        row: 4;
-                        column: 1;
-                    }
-                }
+                $CaffeineSwitch {}
 
                 $ControlSwitchCmd {
                     icon-name: "night-light-symbolic";
@@ -113,11 +78,6 @@ template $ControlCenterView: Box {
                     status-cmd: "pidof wlsunset";
                     enable-cmd: "wlsunset -l 39.9 -L 116.4 -t 4000 -T 6000 -d 1800 -g 0.95";
                     disable-cmd: "pkill wlsunset";
-
-                    layout {
-                        row: 4;
-                        column: 2;
-                    }
                 }
             }
 

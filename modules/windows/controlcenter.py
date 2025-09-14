@@ -1010,6 +1010,18 @@ class ControlCenter(RevealerWindow):
         __gtype_name__ = "ControlCenterView"
 
         revealer: Gtk.Revealer = gtk_template_child()
+        grid: Gtk.Grid = gtk_template_child()
+
+        def __init__(self):
+            super().__init__()
+            self.__arrange_children()
+
+        def __arrange_children(self, columns: int = 2):
+            children: list[Gtk.Widget] = [child for child in self.grid.observe_children()]
+            for child in children:
+                self.grid.remove(child)
+            for i, child in enumerate(children):
+                self.grid.attach(child, i % columns + 1, i // columns + 1, 1, 1)
 
     def __init__(self):
         self.__view = self.View()
