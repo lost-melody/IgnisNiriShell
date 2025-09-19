@@ -83,7 +83,10 @@ class Workspaces(Gtk.Box):
         self.__hypr = HyprlandService.get_default()
         self.__connector: str | None = None
         self.__childs: list[Workspaces.WorkspaceItem] = []
-        super().__init__(css_classes=["hover", "rounded", "p-2"])
+        super().__init__()
+
+        for css_class in ["hover", "rounded", "p-2"]:
+            self.add_css_class(css_class)
 
         self.connect("realize", self.__class__.__on_realize)
         set_on_scroll(self, self.__class__.__on_scroll)
