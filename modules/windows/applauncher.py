@@ -1,6 +1,6 @@
 from typing import Any, Callable
 
-from gi.repository import Gio, GObject, Gtk
+from gi.repository import Gdk, Gio, GObject, Gtk
 from ignis.menu_model import IgnisMenuItem, IgnisMenuModel, IgnisMenuSeparator, ItemsType
 from ignis.services.applications import Application, ApplicationAction, ApplicationsService
 from ignis.widgets import Window
@@ -273,19 +273,35 @@ class AppLauncher(RevealerWindow):
 
         self.set_child(self.__view)
 
+        self.__search_entry_capture_tab()
         self.__view.search_bar.set_key_capture_widget(self)
         self.__add_shortcut("<Control>f", self.__toggle_search_mode)
         self.__add_shortcut("<Control>bracketleft", self.__on_search_stop)
-        self.__add_shortcut("<Control>n", self.__view.on_search_next)
-        self.__add_shortcut("<Control>p", self.__view.on_search_previous)
-        self.__add_shortcut("<Control>j", self.__view.on_search_next)
-        self.__add_shortcut("<Control>k", self.__view.on_search_previous)
+        self.__add_shortcut("<Control>j|<Control>n", self.__view.on_search_next)
+        self.__add_shortcut("<Control>k|<Control>p", self.__view.on_search_previous)
 
         self.__view.connect("search-stop", self.__on_search_stop)
 
         if user_options and user_options.applauncher:
             connect_option(user_options.applauncher, "exclusive_focus", self.__on_exclusive_focus_changed)
         self.__on_exclusive_focus_changed()
+
+    def __search_entry_capture_tab(self):
+        # capture tab and shift-tab keys.
+        def on_key_pressed(controller, keyval: int, keycode: int, state: Gdk.ModifierType):
+            if keyval == Gdk.KEY_Tab or keyval == Gdk.KEY_ISO_Left_Tab:
+                if state == 0:
+                    self.__view.on_search_next()
+                    return True
+                elif state == Gdk.ModifierType.SHIFT_MASK:
+                    self.__view.on_search_previous()
+                    return True
+            return False
+
+        controller = Gtk.EventControllerKey(name="ignis-tab-capture", propagation_phase=Gtk.PropagationPhase.CAPTURE)
+        controller.connect("key-pressed", on_key_pressed)
+        # capture keys for search entry only.
+        self.__view.search_entry.add_controller(controller)
 
     def set_property(self, property_name: str, value: Any):
         if property_name == "visible":

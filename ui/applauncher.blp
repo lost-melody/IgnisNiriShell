@@ -22,6 +22,7 @@ template $IgnisAppLauncherView: Box {
 
                     SearchEntry search_entry {
                         width-request: 512;
+                        search-delay: 50;
                         activate => $on_search_activate();
                         search-changed => $on_search_changed();
                         next-match => $on_search_next();
