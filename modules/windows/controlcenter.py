@@ -1,6 +1,6 @@
 import math
 import urllib.parse
-from asyncio import create_task
+from asyncio import Task, create_task
 from datetime import datetime
 from typing import Any
 
@@ -13,6 +13,7 @@ from ignis.services.network import NetworkService
 from ignis.services.notifications import NOTIFICATIONS_IMAGE_DATA, Notification, NotificationAction, NotificationService
 from ignis.services.power_profiles import PowerProfilesService
 from ignis.services.recorder import RecorderConfig, RecorderService
+from ignis.utils import AsyncCompletedProcess, Poll
 from ignis.widgets import Icon, Window
 from ignis.window_manager import WindowManager
 
@@ -334,6 +335,8 @@ class ControlSwitchCmd(Gtk.Box):
 
     def __init__(self):
         self._enabled: bool = False
+        self._poll: Poll | None = None
+        self._poll_interval: int = 0
         self._status_cmd: str = ""
         self._enable_cmd: str = ""
         self._disable_cmd: str = ""
@@ -361,25 +364,44 @@ class ControlSwitchCmd(Gtk.Box):
     def icon_name(self, icon: str):
         self.__pill.icon.set_from_icon_name(icon)
 
+    @GProperty(type=int)
+    def poll_interval(self):
+        """
+        Run ``status_cmd`` every ``poll_interval`` milliseconds and update the status.
+        Disabled if set to 0.
+        """
+        return self._poll_interval
+
+    @poll_interval.setter
+    def poll_interval(self, interval: int):
+        self._poll_interval = interval
+
+        if self._poll:
+            self._poll.cancel()
+            self._poll = None
+
+        if interval != 0:
+            self._poll = Poll(timeout=interval, callback=self.__run_status_cmd)
+
     @GProperty(type=str)
     def status_cmd(self) -> str:
+        """
+        Command to run for setting status of ``ControlSwitchCmd``.
+        Status is assumed enabled if command exits with return code 0,
+        and disabled otherwise.
+        """
         return self._status_cmd
 
     @status_cmd.setter
     def status_cmd(self, cmd: str):
         self._status_cmd = cmd
-
-        if cmd != "":
-
-            def on_cmd_done(status: int):
-                self._enabled = status == 0
-                self.__on_status_changed()
-
-            task = run_cmd_async(cmd)
-            task.add_done_callback(lambda x, *_: on_cmd_done(x.result().returncode))
+        self.__run_status_cmd()
 
     @GProperty(type=str)
     def enable_cmd(self) -> str:
+        """
+        Command to run for "enabling" ``ControlSwitchCmd``.
+        """
         return self._enable_cmd
 
     @enable_cmd.setter
@@ -388,6 +410,9 @@ class ControlSwitchCmd(Gtk.Box):
 
     @GProperty(type=str)
     def disable_cmd(self) -> str:
+        """
+        Command to run for "disabling" ``ControlSwitchCmd``.
+        """
         return self._disable_cmd
 
     @disable_cmd.setter
@@ -396,6 +421,9 @@ class ControlSwitchCmd(Gtk.Box):
 
     @GProperty(type=str)
     def action_icon(self) -> str:
+        """
+        An extra action button.
+        """
         return self._action_icon
 
     @action_icon.setter
@@ -409,6 +437,9 @@ class ControlSwitchCmd(Gtk.Box):
 
     @GProperty(type=str)
     def action_cmd(self) -> str:
+        """
+        Command to run on ``action_icon`` clicked.
+        """
         return self._action_cmd
 
     @action_cmd.setter
@@ -418,13 +449,10 @@ class ControlSwitchCmd(Gtk.Box):
             self.__pill.action.connect("clicked", lambda *_: run_cmd_async(cmd))
 
     def __on_clicked(self, *_):
-        self._enabled = not self._enabled
-        self.__on_status_changed()
-
         if self._enabled and self.enable_cmd != "":
-            run_cmd_async(self.enable_cmd)
+            run_cmd_async(self.disable_cmd, on_done=self.__run_status_cmd)
         elif not self._enabled and self.disable_cmd != "":
-            run_cmd_async(self.disable_cmd)
+            run_cmd_async(self.enable_cmd, on_done=self.__run_status_cmd)
 
     def __on_status_changed(self):
         if self._enabled:
@@ -433,6 +461,15 @@ class ControlSwitchCmd(Gtk.Box):
         else:
             self.__pill.set_subtitle("disabled")
             self.__pill.set_style_accent(False)
+
+    def __run_status_cmd(self, *_):
+        if self.status_cmd != "":
+
+            def on_cmd_done(task: Task[AsyncCompletedProcess]):
+                self._enabled = task.result().returncode == 0
+                self.__on_status_changed()
+
+            run_cmd_async(self.status_cmd, on_done=on_cmd_done)
 
 
 class ColorSchemeSwitcher(Gtk.Box):

@@ -1,9 +1,9 @@
 import base64
 import os
-from asyncio import create_task
+from asyncio import Task, create_subprocess_shell, create_task
 from typing import Any, Callable
 
-from ignis.utils import exec_sh_async
+from ignis.utils import AsyncCompletedProcess, exec_sh_async
 
 from ..constants import CONFIG_DIR
 
@@ -53,5 +53,23 @@ def unpack_instance_method(callback: Callable):
     return obj, func
 
 
-def run_cmd_async(cmd: str):
-    return create_task(exec_sh_async(cmd))
+async def exec_sh_async_nopipe(cmd: str):
+    """
+    Similar to ``ignis.utils.exec_sh_async``, but without piping stdout/stderr.
+    """
+    process = await create_subprocess_shell(cmd)
+    returncode = await process.wait()
+    return AsyncCompletedProcess("", "", returncode)
+
+
+def run_cmd_async(cmd: str, pipe: bool = False, on_done: Callable[[Task[AsyncCompletedProcess]], object] | None = None):
+    if pipe:
+        coro = exec_sh_async(cmd)
+    else:
+        coro = exec_sh_async_nopipe(cmd)
+    task = create_task(coro)
+
+    if on_done:
+        task.add_done_callback(on_done)
+
+    return task

@@ -75,8 +75,9 @@ template $ControlCenterView: Box {
                 $ControlSwitchCmd {
                     icon-name: "night-light-symbolic";
                     title: "WlSunset";
+                    poll-interval: 5000;
                     status-cmd: "pidof wlsunset";
-                    enable-cmd: "wlsunset -l 39.9 -L 116.4 -t 4000 -T 6000 -d 1800 -g 0.95";
+                    enable-cmd: "bash -c 'wlsunset -l 39.9 -L 116.4 -t 4000 -T 6000 -d 1800 -g 0.95 & disown'";
                     disable-cmd: "pkill wlsunset";
                 }
 
