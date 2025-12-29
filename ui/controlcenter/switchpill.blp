@@ -1,65 +1,55 @@
 using Gtk 4.0;
 
-template $ControlSwitchPill: Box {
+Box pill {
     styles [
-        "card",
-        "view-bg",
-        "m-1",
+        "p-1",
         "rounded",
-        "transition",
     ]
 
-    Box pill {
+    Image icon {
+        valign: center;
+        icon-name: "media-eq-symbolic";
+
         styles [
+            "m-1",
             "p-1",
+        ]
+    }
+
+    Box {
+        valign: center;
+        orientation: vertical;
+        hexpand: true;
+
+        Inscription title {
+            text: "Title";
+            halign: fill;
+            text-overflow: ellipsize_end;
+
+            styles [
+                "caption-heading",
+            ]
+        }
+
+        Inscription subtitle {
+            text: "subtitle";
+            halign: fill;
+            text-overflow: ellipsize_end;
+
+            styles [
+                "caption",
+                "dimmed",
+            ]
+        }
+    }
+
+    Button action {
+        valign: center;
+        icon-name: "system-settings-symbolic";
+        visible: false;
+
+        styles [
             "rounded",
         ]
-
-        Image icon {
-            valign: center;
-            icon-name: "media-eq-symbolic";
-
-            styles [
-                "m-1",
-                "p-1",
-            ]
-        }
-
-        Box {
-            valign: center;
-            orientation: vertical;
-            hexpand: true;
-
-            Inscription title {
-                text: "Title";
-                halign: fill;
-                text-overflow: ellipsize_end;
-
-                styles [
-                    "caption-heading",
-                ]
-            }
-
-            Inscription subtitle {
-                text: "subtitle";
-                halign: fill;
-                text-overflow: ellipsize_end;
-
-                styles [
-                    "caption",
-                    "dimmed",
-                ]
-            }
-        }
-
-        Button action {
-            valign: center;
-            icon-name: "system-settings-symbolic";
-            visible: false;
-
-            styles [
-                "rounded",
-            ]
-        }
     }
 }

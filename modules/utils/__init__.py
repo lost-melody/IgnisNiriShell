@@ -24,7 +24,7 @@ from .signal import (
     weak_connect_callback,
     weak_connect_method,
 )
-from .template import gtk_template, gtk_template_callback, gtk_template_child
+from .template import ensure_ui_file, gtk_template, gtk_template_callback, gtk_template_child
 from .widget import GProperty, connect_window, get_widget_monitor, get_widget_monitor_id
 
 __all__ = [
@@ -43,6 +43,7 @@ __all__ = [
     connect_option,
     connect_window,
     dbus_info_file,
+    ensure_ui_file,
     escape_pango_markup,
     format_time_duration,
     get_app_icon_name,
