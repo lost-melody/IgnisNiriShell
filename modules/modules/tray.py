@@ -24,7 +24,7 @@ class Tray(Gtk.FlowBox):
             set_on_click(
                 self,
                 left=self.__class__.__on_clicked,
-                middle=self.__class__.__on_middlet_clicked,
+                middle=self.__class__.__on_middle_clicked,
                 right=self.__class__.__on_right_clicked,
             )
             set_on_scroll(self, self.__class__.__on_scroll)
@@ -64,26 +64,19 @@ class Tray(Gtk.FlowBox):
             """
             Creates an async task and catches the ``GLib.Error``.
             """
-
             asyncio.create_task(cls.try_async(coro))
 
         def __on_changed(self, *_):
-            if self.__item:
-                self.__icon.image = self.__item.icon or ""
-                self.set_tooltip_text(self.__item.tooltip)
+            self.__icon.image = self.__item.icon or ""
+            self.set_tooltip_text(self.__item.tooltip)
 
         def __on_clicked(self):
-            if self.__item:
-                self.create_task(self.__item.activate_async())
+            self.create_task(self.__item.activate_async())
 
-        def __on_middlet_clicked(self):
-            if self.__item:
-                self.create_task(self.__item.secondary_activate_async())
+        def __on_middle_clicked(self):
+            self.create_task(self.__item.secondary_activate_async())
 
         def __on_scroll(self, dx: float, dy: float):
-            if not self.__item:
-                return
-
             if dx != 0:
                 self.__item.scroll(int(dx), orientation="horizontal")
             elif dy != 0:
