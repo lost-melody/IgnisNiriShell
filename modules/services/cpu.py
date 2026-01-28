@@ -11,20 +11,21 @@ class CpuLoadService(BaseService):
         self._user_time: int = 0
         self._system_time: int = 0
         self._idle_time: int = 0
+        self._iowait_time: int = 0
         self._total_time: int = 0
 
         self.__cpu_times = self.__read_cpu_times()
         self.__poll = Poll(timeout=1000, callback=self.__update_times)
 
     @classmethod
-    def __read_cpu_times(cls) -> tuple[int, int, int, int]:
+    def __read_cpu_times(cls) -> tuple[int, int, int, int, int]:
         """
-        Returns the ``(user, system, idle, total)`` cpu times since system up
+        Returns the ``(user, system, idle, iowait, total)`` cpu times since system up
         """
         with open("/proc/stat") as stat:
             line = stat.readline().split()[1:]
             times = list(map(int, line[: min(7, len(line))]))
-            return times[0] + times[1], times[2], times[3] + times[4], sum(times)
+            return times[0] + times[1], times[2], times[3], times[4], sum(times)
 
     @GProperty
     def user_time(self) -> int:
@@ -43,9 +44,16 @@ class CpuLoadService(BaseService):
     @GProperty
     def idle_time(self) -> int:
         """
-        idle (and iowait) cpu time during last polling interval
+        idle cpu time during last polling interval
         """
         return self._idle_time
+
+    @GProperty
+    def iowait_time(self) -> int:
+        """
+        iowait cpu time during last polling interval
+        """
+        return self._iowait_time
 
     @GProperty
     def total_time(self) -> int:
@@ -76,9 +84,11 @@ class CpuLoadService(BaseService):
         self._user_time = deltas[0]
         self._system_time = deltas[1]
         self._idle_time = deltas[2]
-        self._total_time = deltas[3]
+        self._iowait_time = deltas[3]
+        self._total_time = deltas[4]
 
         self.notify("user-time")
         self.notify("system-time")
         self.notify("idle-time")
+        self.notify("iowait-time")
         self.notify("total-time")

@@ -34,24 +34,25 @@ class CpuUsagePill(CommandPill):
 
     def __on_updated(self, *_):
         cpu_count = os.cpu_count() or 1
-        user, system, idle, total = (
+        user, system, idle, iowait, total = (
             self.__cpu.user_time,
             self.__cpu.system_time,
             self.__cpu.idle_time,
+            self.__cpu.iowait_time,
             self.__cpu.total_time,
         )
 
         if not total:
             return
 
-        usage = (total - idle) / total
+        usage = (total - idle - iowait) / total
         self.set_tooltip_text(
             "\n".join(
                 [
-                    f"CPU Usage: {round(usage * cpu_count, 2)}",
+                    f"CPU Usage: {round(usage * cpu_count, 2)} / {cpu_count}",
                     f"User: {round(user / total * cpu_count, 2)}",
                     f"System: {round(system / total * cpu_count, 2)}",
-                    f"Total: {cpu_count} core{'s' if cpu_count > 1 else ''}",
+                    f"IO Wait: {round(iowait / total * cpu_count, 2)}",
                 ]
             )
         )
